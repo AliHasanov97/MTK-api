@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\MTK.Common.Presentation\MTK.Common.Presentation.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Identity.Infrastructure\MTK.Modules.Identity.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
