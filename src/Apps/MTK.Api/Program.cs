@@ -24,13 +24,15 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.OAuth2,
         Flows = new OpenApiOAuthFlows
         {
-            Implicit = new OpenApiOAuthFlow
+            AuthorizationCode = new OpenApiOAuthFlow
             {
                 AuthorizationUrl = new Uri(builder.Configuration["Keycloak:AuthorizationUrl"]!),
+                TokenUrl = new Uri(builder.Configuration["Keycloak:TokenUrl"]!),
                 Scopes = new Dictionary<string, string>
                 {
                     { "openid", "OpenID" },
-                    { "profile", "Profile" }
+                    { "profile", "Profile" },
+                    { "email", "Email" }
                 }
             }
         }
@@ -84,8 +86,9 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "MTK API V1");
         options.OAuthClientId(builder.Configuration["Keycloak:AuthClientId"]);
-        options.OAuthScopes("openid", "profile");
+        options.OAuthScopes("openid", "profile", "email");
         options.OAuthUsePkce();
+        options.EnablePersistAuthorization();
     });
 }
 
