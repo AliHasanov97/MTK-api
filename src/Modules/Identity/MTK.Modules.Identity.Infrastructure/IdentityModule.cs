@@ -10,6 +10,9 @@ using MTK.Common.Application.Authorization;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Identity.Application.Abstractions;
 using MTK.Modules.Identity.Domain.Users;
+using MTK.Modules.Identity.Domain.Groups;
+using MTK.Modules.Identity.Domain.Roles;
+using MTK.Modules.Identity.Domain.AuditLogs;
 using MTK.Modules.Identity.Infrastructure.Authentication;
 using MTK.Modules.Identity.Infrastructure.Database;
 using MTK.Modules.Identity.Infrastructure.Database.Interceptors;
@@ -49,6 +52,9 @@ public static class IdentityModule
 
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IGroupRepository, GroupRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         // Authentication & Authorization
         services.AddAuthenticationAndAuthorization(configuration);

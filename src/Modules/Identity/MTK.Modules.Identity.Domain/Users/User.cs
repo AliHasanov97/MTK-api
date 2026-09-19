@@ -77,6 +77,7 @@ public sealed class User : Entity, IKeycloakSyncable
         PhoneNumber = phoneNumber;
         UpdatedAt = DateTime.UtcNow;
 
+        RaiseDomainEvent(new Users.Events.UserUpdatedDomainEvent(Id, DateTime.UtcNow));
         MarkForSync();
     }
 
@@ -123,6 +124,8 @@ public sealed class User : Entity, IKeycloakSyncable
     public void Delete()
     {
         DeletedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new Users.Events.UserDeletedDomainEvent(Id, DateTime.UtcNow));
         MarkForSync();
     }
 
