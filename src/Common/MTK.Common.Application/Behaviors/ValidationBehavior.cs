@@ -55,13 +55,14 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
                 string.Join(", ", errors.Select(e => e.Message))));
         }
 
-        object validationResult = typeof(Result<>)
-            .GetGenericTypeDefinition()
-            .MakeGenericType(typeof(TResult).GenericTypeArguments[0])
-            .GetMethod(nameof(Result.Failure))!
-            .Invoke(null, new object?[] { new Error(
-                "Validation.Error",
-                string.Join(", ", errors.Select(e => e.Message))) })!;
+        var failureMethod = typeof(Result)
+            .GetMethods()
+            .First(m => m.Name == nameof(Result.Failure) && m.IsGenericMethod)
+            .MakeGenericMethod(typeof(TResult).GenericTypeArguments[0]);
+
+        object validationResult = failureMethod.Invoke(null, new object?[] { new Error(
+            "Validation.Error",
+            string.Join(", ", errors.Select(e => e.Message))) })!;
 
         return (TResult)validationResult;
     }
