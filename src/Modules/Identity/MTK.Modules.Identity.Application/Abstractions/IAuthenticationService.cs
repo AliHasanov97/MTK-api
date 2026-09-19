@@ -14,9 +14,10 @@ public interface IAuthenticationService
 
     Task UpdateUserAsync(
         string userId,
-        string email,
         string firstName,
         string lastName,
+        string email,
+        string? phoneNumber,
         CancellationToken cancellationToken = default);
 
     Task UpdateUserPasswordAsync(
@@ -64,5 +65,46 @@ public interface IAuthenticationService
 
     Task<List<string>> GetUserDirectRoleNamesAsync(
         string userId,
+        CancellationToken cancellationToken = default);
+
+    // Group Management
+    Task<Guid> CreateGroupAsync(
+        string name,
+        string? description,
+        CancellationToken cancellationToken = default);
+
+    Task UpdateGroupAsync(
+        Guid keycloakGroupId,
+        string name,
+        string? description,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteGroupAsync(
+        Guid keycloakGroupId,
+        CancellationToken cancellationToken = default);
+
+    Task AddUserToGroupAsync(
+        string identityId,
+        Guid keycloakGroupId,
+        CancellationToken cancellationToken = default);
+
+    Task RemoveUserFromGroupAsync(
+        string identityId,
+        Guid keycloakGroupId,
+        CancellationToken cancellationToken = default);
+
+    // Group-Role Management
+    Task AssignRolesToGroupAsync(
+        Guid keycloakGroupId,
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken = default);
+
+    Task RemoveRolesFromGroupAsync(
+        Guid keycloakGroupId,
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<string>> GetGroupRoleNamesAsync(
+        Guid keycloakGroupId,
         CancellationToken cancellationToken = default);
 }
