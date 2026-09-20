@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Infrastructure.Inbox;
+using MTK.Common.Infrastructure.Outbox;
 using MTK.Modules.Identity.Domain.Users;
 using MTK.Modules.Identity.Domain.Groups;
 using MTK.Modules.Identity.Domain.Roles;
@@ -22,11 +24,25 @@ public sealed class IdentityDbContext : DbContext, IUnitOfWork
     public DbSet<UserRoleAssignment> UserRoleAssignments => Set<UserRoleAssignment>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // Outbox Pattern
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<OutboxMessageConsumer> OutboxMessageConsumers => Set<OutboxMessageConsumer>();
+
+    // Inbox Pattern
+    public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
+    public DbSet<InboxMessageConsumer> InboxMessageConsumers => Set<InboxMessageConsumer>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("identity");
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
+
+        // Apply Outbox and Inbox configurations from Common.Infrastructure
+        modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
+        modelBuilder.ApplyConfiguration(new OutboxMessageConsumerConfiguration());
+        modelBuilder.ApplyConfiguration(new InboxMessageConfiguration());
+        modelBuilder.ApplyConfiguration(new InboxMessageConsumerConfiguration());
 
         // Global query filter for soft delete
         modelBuilder.Entity<User>().HasQueryFilter(u => u.DeletedAt == null);

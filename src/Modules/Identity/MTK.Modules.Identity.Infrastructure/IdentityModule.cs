@@ -1,4 +1,5 @@
 using FluentValidation;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -6,8 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MTK.Common.Application.Authorization;
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Infrastructure.Inbox;
+using MTK.Common.Infrastructure.Outbox;
 using MTK.Modules.Identity.Application.Abstractions;
 using MTK.Modules.Identity.Domain.Users;
 using MTK.Modules.Identity.Domain.Groups;
@@ -41,10 +45,11 @@ public static class IdentityModule
 
         services.AddDbContext<IdentityDbContext>((sp, options) =>
         {
-            var interceptor = sp.GetRequiredService<ISaveChangesInterceptor>();
+            var keycloakInterceptor = sp.GetRequiredService<ISaveChangesInterceptor>();
+            var outboxInterceptor = sp.GetRequiredService<InsertOutboxMessagesInterceptor>();
 
             options.UseNpgsql(configuration.GetConnectionString("Database"))
-                .AddInterceptors(interceptor);
+                .AddInterceptors(keycloakInterceptor, outboxInterceptor);
         });
 
         // Unit of Work
@@ -59,9 +64,16 @@ public static class IdentityModule
         // Authentication & Authorization
         services.AddAuthenticationAndAuthorization(configuration);
 
+        // Outbox & Inbox Configuration
+        services.Configure<OutboxOptions>(configuration.GetSection("Identity:Outbox"));
+        services.Configure<InboxOptions>(configuration.GetSection("Identity:Inbox"));
+
+        // Quartz Job Configurators
+        services.ConfigureOptions<Outbox.ConfigureProcessOutboxJob>();
+        services.ConfigureOptions<Inbox.ConfigureProcessInboxJob>();
+
         // Keycloak Sync
-        services.Configure<KeycloakSyncOptions>(configuration.GetSection("KeycloakSync"));
-        services.AddHostedService<KeycloakSyncJob>();
+        services.Configure<KeycloakSyncOptions>(configuration.GetSection("Identity:KeycloakSync"));
 
         return services;
     }
@@ -104,5 +116,12 @@ public static class IdentityModule
         // User context
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();
+    }
+
+    public static void ConfigureConsumers(IRegistrationConfigurator registrationConfigurator)
+    {
+        // Register integration event consumers
+        // For now, no consumers are needed as Identity doesn't consume events from other modules
+        // This method is here for future use when cross-module events are needed
     }
 }

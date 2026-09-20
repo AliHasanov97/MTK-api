@@ -6,4 +6,4 @@ public sealed record GroupDeletedDomainEvent(
     Guid GroupId,
     Guid KeycloakGroupId,
     string Name,
-    DateTime OccurredOnUtc) : IDomainEvent;
+    DateTime OccurredOnUtc) : DomainEvent;

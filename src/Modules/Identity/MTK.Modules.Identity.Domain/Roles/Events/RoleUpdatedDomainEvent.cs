@@ -8,4 +8,4 @@ public sealed record RoleUpdatedDomainEvent(
     string? Description,
     RoleType RoleType,
     bool IsActive,
-    DateTime OccurredOnUtc) : IDomainEvent;
+    DateTime OccurredOnUtc) : DomainEvent;

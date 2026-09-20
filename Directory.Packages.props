@@ -27,5 +27,25 @@
 
     <!-- Authentication -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+
+    <!-- Quartz Scheduler -->
+    <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.8.1" />
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.8.1" />
+    <PackageVersion Include="Quartz" Version="3.8.1" />
+
+    <!-- MassTransit -->
+    <PackageVersion Include="MassTransit" Version="8.2.1" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.2.1" />
+    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.2.1" />
+
+    <!-- Database -->
+    <PackageVersion Include="Npgsql" Version="9.0.2" />
+    <PackageVersion Include="Dapper" Version="2.1.35" />
+
+    <!-- Serialization -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+
+    <!-- Options -->
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
   </ItemGroup>
 </Project>

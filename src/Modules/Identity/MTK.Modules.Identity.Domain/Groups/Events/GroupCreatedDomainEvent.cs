@@ -8,4 +8,4 @@ public sealed record GroupCreatedDomainEvent(
     string Name,
     string? Description,
     Guid? ParentGroupId,
-    DateTime OccurredOnUtc) : IDomainEvent;
+    DateTime OccurredOnUtc) : DomainEvent;

@@ -7,4 +7,4 @@ public sealed record GroupUpdatedDomainEvent(
     Guid KeycloakGroupId,
     string Name,
     string? Description,
-    DateTime OccurredOnUtc) : IDomainEvent;
+    DateTime OccurredOnUtc) : DomainEvent;

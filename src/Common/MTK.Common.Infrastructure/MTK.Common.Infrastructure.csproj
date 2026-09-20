@@ -10,10 +10,21 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+      <PackageReference Include="Quartz.Extensions.DependencyInjection" />
+      <PackageReference Include="Quartz.Extensions.Hosting" />
+      <PackageReference Include="MassTransit" />
+      <PackageReference Include="MassTransit.RabbitMQ" />
+      <PackageReference Include="MassTransit.EntityFrameworkCore" />
+      <PackageReference Include="Npgsql" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+      <PackageReference Include="Dapper" />
+      <PackageReference Include="Newtonsoft.Json" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\MTK.Common.Application\MTK.Common.Application.csproj" />
+      <ProjectReference Include="..\MTK.Common.Domain\MTK.Common.Domain.csproj" />
     </ItemGroup>
 
 </Project>

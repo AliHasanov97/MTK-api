@@ -7,4 +7,4 @@ public sealed record RoleCreatedDomainEvent(
     string Name,
     string? Description,
     RoleType RoleType,
-    DateTime OccurredOnUtc) : IDomainEvent;
+    DateTime OccurredOnUtc) : DomainEvent;
