@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Modules.Identity.Application.Users.AssignRolesToUser;
 using MTK.Modules.Identity.Application.Users.DeleteUser;
 using MTK.Modules.Identity.Application.Users.GetAllUsers;
@@ -28,7 +29,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    [RequireAnyRole(Permissions.UsersView, Permissions.UsersManage)]
     public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken)
     {
         var query = new GetAllUsersQuery();
@@ -43,7 +44,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("search")]
-    [Authorize]
+    [RequireAnyRole(Permissions.UsersView, Permissions.UsersManage)]
     public async Task<IActionResult> SearchUsers([FromBody] SearchUsersRequest request, CancellationToken cancellationToken)
     {
         var query = new SearchUsersQuery(
@@ -79,7 +80,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("register")]
-    [AllowAnonymous]
+    [RequireAnyRole(Permissions.UsersCreate)]
     public async Task<IActionResult> Register([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
     {
         var command = new RegisterUserCommand(
@@ -100,7 +101,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id:guid}")]
-    [Authorize]
+    [RequireAnyRole(Permissions.UsersUpdate, Permissions.UsersManage)]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateUserCommand(
@@ -120,7 +121,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [RequireAnyRole(Permissions.UsersDelete, Permissions.UsersManage)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteUserCommand(id);
@@ -150,7 +151,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{userId:guid}/roles")]
-    [Authorize]
+    [RequireAnyRole(Permissions.RolesManage)]
     public async Task<IActionResult> AssignRolesToUser(Guid userId, [FromBody] AssignRolesRequest request, CancellationToken cancellationToken)
     {
         var command = new AssignRolesToUserCommand(userId, request.RoleNames);
@@ -165,7 +166,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{userId:guid}/roles")]
-    [Authorize]
+    [RequireAnyRole(Permissions.RolesManage)]
     public async Task<IActionResult> RemoveRolesFromUser(Guid userId, [FromBody] RemoveRolesRequest request, CancellationToken cancellationToken)
     {
         var command = new RemoveRolesFromUserCommand(userId, request.RoleNames);

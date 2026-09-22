@@ -11,14 +11,12 @@ public sealed class User : Entity, IKeycloakSyncable
         string lastName,
         string email,
         string? phoneNumber,
-        UserRole role,
         UserStatus status) : base(id)
     {
         FirstName = firstName;
         LastName = lastName;
         Email = email;
         PhoneNumber = phoneNumber;
-        Role = role;
         Status = status;
         KeycloakSyncStatus = KeycloakSyncStatus.PendingSync;
     }
@@ -32,7 +30,6 @@ public sealed class User : Entity, IKeycloakSyncable
     public string LastName { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public string? PhoneNumber { get; private set; }
-    public UserRole Role { get; private set; }
     public UserStatus Status { get; private set; }
 
     // Keycloak integration
@@ -50,7 +47,6 @@ public sealed class User : Entity, IKeycloakSyncable
         string lastName,
         string email,
         string? phoneNumber,
-        UserRole role = UserRole.User,
         UserStatus status = UserStatus.PendingVerification)
     {
         var user = new User(
@@ -59,7 +55,6 @@ public sealed class User : Entity, IKeycloakSyncable
             lastName,
             email,
             phoneNumber,
-            role,
             status)
         {
             CreatedAt = DateTime.UtcNow
@@ -84,14 +79,6 @@ public sealed class User : Entity, IKeycloakSyncable
     public void UpdateEmail(string email)
     {
         Email = email;
-        UpdatedAt = DateTime.UtcNow;
-
-        MarkForSync();
-    }
-
-    public void UpdateRole(UserRole role)
-    {
-        Role = role;
         UpdatedAt = DateTime.UtcNow;
 
         MarkForSync();

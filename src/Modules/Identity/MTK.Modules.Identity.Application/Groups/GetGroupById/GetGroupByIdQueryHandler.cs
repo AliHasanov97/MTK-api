@@ -1,36 +1,24 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
-using MTK.Modules.Identity.Domain.Groups;
+using MTK.Modules.Identity.Application.Abstractions;
 
 namespace MTK.Modules.Identity.Application.Groups.GetGroupById;
 
 internal sealed class GetGroupByIdQueryHandler : IQueryHandler<GetGroupByIdQuery, GroupDetailResponse>
 {
-    private readonly IGroupRepository _groupRepository;
+    private readonly IAuthenticationService _authenticationService;
 
-    public GetGroupByIdQueryHandler(IGroupRepository groupRepository)
+    public GetGroupByIdQueryHandler(IAuthenticationService authenticationService)
     {
-        _groupRepository = groupRepository;
+        _authenticationService = authenticationService;
     }
 
-    public async Task<Result<GroupDetailResponse>> Handle(GetGroupByIdQuery request, CancellationToken cancellationToken)
+    public Task<Result<GroupDetailResponse>> Handle(GetGroupByIdQuery request, CancellationToken cancellationToken)
     {
-        Group? group = await _groupRepository.GetByIdAsync(request.Id, cancellationToken);
-
-        if (group is null)
-        {
-            return Result.Failure<GroupDetailResponse>(GroupErrors.NotFound(request.Id));
-        }
-
-        var response = new GroupDetailResponse(
-            group.Id,
-            group.KeycloakGroupId,
-            group.Name,
-            group.Description,
-            group.ParentGroupId,
-            group.CreatedAt,
-            group.UpdatedAt);
-
-        return Result.Success(response);
+        // Keycloak does not provide a direct method to get group by ID via IAuthenticationService
+        // This requires additional implementation in the service
+        return Task.FromResult(Result.Failure<GroupDetailResponse>(
+            new Error("Group.GetByIdNotSupported",
+                "Group lookup by ID is not supported with current Keycloak integration. Additional API methods required.")));
     }
 }

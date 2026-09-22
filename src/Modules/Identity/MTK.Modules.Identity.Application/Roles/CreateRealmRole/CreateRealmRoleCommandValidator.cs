@@ -13,8 +13,5 @@ internal sealed class CreateRealmRoleCommandValidator : AbstractValidator<Create
         RuleFor(x => x.Description)
             .MaximumLength(500)
             .When(x => !string.IsNullOrEmpty(x.Description));
-
-        RuleFor(x => x.RoleType)
-            .IsInEnum();
     }
 }

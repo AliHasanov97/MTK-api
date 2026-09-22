@@ -1,35 +1,24 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
-using MTK.Modules.Identity.Domain.Groups;
+using MTK.Modules.Identity.Application.Abstractions;
 
 namespace MTK.Modules.Identity.Application.Groups.GetGroupUsers;
 
 internal sealed class GetGroupUsersQueryHandler : IQueryHandler<GetGroupUsersQuery, List<UserDto>>
 {
-    private readonly IGroupRepository _groupRepository;
+    private readonly IAuthenticationService _authenticationService;
 
-    public GetGroupUsersQueryHandler(IGroupRepository groupRepository)
+    public GetGroupUsersQueryHandler(IAuthenticationService authenticationService)
     {
-        _groupRepository = groupRepository;
+        _authenticationService = authenticationService;
     }
 
-    public async Task<Result<List<UserDto>>> Handle(GetGroupUsersQuery request, CancellationToken cancellationToken)
+    public Task<Result<List<UserDto>>> Handle(GetGroupUsersQuery request, CancellationToken cancellationToken)
     {
-        Group? group = await _groupRepository.GetByIdAsync(request.GroupId, cancellationToken);
-        if (group is null)
-        {
-            return Result.Failure<List<UserDto>>(GroupErrors.NotFound(request.GroupId));
-        }
-
-        var users = await _groupRepository.GetGroupMembersAsync(request.GroupId, cancellationToken);
-
-        var userDtos = users.Select(u => new UserDto(
-            u.Id,
-            u.Email,
-            u.FirstName,
-            u.LastName,
-            u.PhoneNumber)).ToList();
-
-        return Result.Success(userDtos);
+        // Keycloak does not provide a direct method to get group members via IAuthenticationService
+        // This requires additional implementation in the service
+        return Task.FromResult(Result.Failure<List<UserDto>>(
+            new Error("Group.GetMembersNotSupported",
+                "Group members lookup is not supported with current Keycloak integration. Additional API methods required.")));
     }
 }

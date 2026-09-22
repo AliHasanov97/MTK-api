@@ -1,27 +1,27 @@
 using Microsoft.EntityFrameworkCore;
-using MTK.Common.Domain.Abstractions;
+using Microsoft.Extensions.Logging;
 using MTK.Common.Infrastructure.Inbox;
 using MTK.Common.Infrastructure.Outbox;
+using IUnitOfWork = MTK.Modules.Identity.Application.Abstractions.Data.IUnitOfWork;
 using MTK.Modules.Identity.Domain.Users;
-using MTK.Modules.Identity.Domain.Groups;
-using MTK.Modules.Identity.Domain.Roles;
 using MTK.Modules.Identity.Domain.AuditLogs;
 
 namespace MTK.Modules.Identity.Infrastructure.Database;
 
 public sealed class IdentityDbContext : DbContext, IUnitOfWork
 {
-    public IdentityDbContext(DbContextOptions<IdentityDbContext> options)
+    private readonly ILogger<IdentityDbContext> _logger;
+
+    public IdentityDbContext(
+        DbContextOptions<IdentityDbContext> options,
+        ILogger<IdentityDbContext> logger)
         : base(options)
     {
+        _logger = logger;
+        _logger.LogInformation("IdentityDbContext instance created. HashCode = {HashCode}", GetHashCode());
     }
 
     public DbSet<User> Users => Set<User>();
-    public DbSet<Group> Groups => Set<Group>();
-    public DbSet<Role> Roles => Set<Role>();
-    public DbSet<UserGroup> UserGroups => Set<UserGroup>();
-    public DbSet<GroupRole> GroupRoles => Set<GroupRole>();
-    public DbSet<UserRoleAssignment> UserRoleAssignments => Set<UserRoleAssignment>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     // Outbox Pattern
@@ -52,6 +52,23 @@ public sealed class IdentityDbContext : DbContext, IUnitOfWork
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await base.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("=== IdentityDbContext.SaveChangesAsync called === Instance HashCode = {HashCode}", GetHashCode());
+
+        var entries = ChangeTracker.Entries().ToList();
+        _logger.LogInformation("ChangeTracker has {Count} entries", entries.Count);
+
+        foreach (var entry in entries)
+        {
+            _logger.LogInformation("Entity: {EntityType}, State: {State}, Keys: {Keys}",
+                entry.Entity.GetType().Name,
+                entry.State,
+                string.Join(", ", entry.Properties.Where(p => p.Metadata.IsKey()).Select(p => $"{p.Metadata.Name}={p.CurrentValue}")));
+        }
+
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("SaveChangesAsync completed. Rows affected: {RowsAffected}", result);
+
+        return result;
     }
 }

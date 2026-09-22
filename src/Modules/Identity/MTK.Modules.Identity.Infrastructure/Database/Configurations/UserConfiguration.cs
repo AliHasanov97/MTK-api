@@ -30,10 +30,6 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.IdentityId)
             .HasMaxLength(100);
 
-        builder.Property(u => u.Role)
-            .IsRequired()
-            .HasConversion<string>();
-
         builder.Property(u => u.Status)
             .IsRequired()
             .HasConversion<string>();

@@ -1,41 +1,24 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
-using MTK.Modules.Identity.Domain.Roles;
+using MTK.Modules.Identity.Application.Abstractions;
 
 namespace MTK.Modules.Identity.Application.Roles.GetRoleAssignments;
 
 internal sealed class GetRoleAssignmentsQueryHandler : IQueryHandler<GetRoleAssignmentsQuery, RoleAssignmentsResponse>
 {
-    private readonly IRoleRepository _roleRepository;
+    private readonly IAuthenticationService _authenticationService;
 
-    public GetRoleAssignmentsQueryHandler(IRoleRepository roleRepository)
+    public GetRoleAssignmentsQueryHandler(IAuthenticationService authenticationService)
     {
-        _roleRepository = roleRepository;
+        _authenticationService = authenticationService;
     }
 
-    public async Task<Result<RoleAssignmentsResponse>> Handle(GetRoleAssignmentsQuery request, CancellationToken cancellationToken)
+    public Task<Result<RoleAssignmentsResponse>> Handle(GetRoleAssignmentsQuery request, CancellationToken cancellationToken)
     {
-        Role? role = await _roleRepository.GetByIdAsync(request.Id, cancellationToken);
-
-        if (role is null)
-        {
-            return Result.Failure<RoleAssignmentsResponse>(RoleErrors.NotFound(request.Id));
-        }
-
-        // Get groups with this role
-        var groups = await _roleRepository.GetGroupsWithRoleAsync(request.Id, cancellationToken);
-        var groupInfos = groups.Select(g => new GroupInfo(g.Id, g.Name)).ToList();
-
-        // Get users with direct role assignment
-        var users = await _roleRepository.GetUsersWithDirectRoleAsync(request.Id, cancellationToken);
-        int userCount = users.Count;
-
-        var response = new RoleAssignmentsResponse(
-            role.Id,
-            role.Name,
-            groupInfos,
-            userCount);
-
-        return Result.Success(response);
+        // Keycloak does not support querying role assignments by role ID
+        // This functionality requires additional Keycloak API methods
+        return Task.FromResult(Result.Failure<RoleAssignmentsResponse>(
+            new Error("Role.AssignmentsNotSupported",
+                "Role assignments lookup is not supported with direct Keycloak integration. This requires additional API methods.")));
     }
 }

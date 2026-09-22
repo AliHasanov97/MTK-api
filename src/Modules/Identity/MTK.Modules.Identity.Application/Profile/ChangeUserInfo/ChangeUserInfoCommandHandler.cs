@@ -1,5 +1,6 @@
-using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Application.Messaging;
+using MTK.Modules.Identity.Application.Abstractions.Data;
 using MTK.Modules.Identity.Application.Abstractions;
 using MTK.Modules.Identity.Domain.Users;
 

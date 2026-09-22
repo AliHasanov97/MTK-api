@@ -1,4 +1,4 @@
-namespace MTK.Common.Domain.Abstractions;
+namespace MTK.Modules.Identity.Application.Abstractions.Data;
 
 public interface IUnitOfWork
 {

@@ -1,72 +1,24 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
-using MTK.Modules.Identity.Domain.Groups;
+using MTK.Modules.Identity.Application.Abstractions;
 
 namespace MTK.Modules.Identity.Application.Groups.SearchGroups;
 
 internal sealed class SearchGroupsQueryHandler : IQueryHandler<SearchGroupsQuery, SearchGroupsResponse>
 {
-    private readonly IGroupRepository _groupRepository;
+    private readonly IAuthenticationService _authenticationService;
 
-    public SearchGroupsQueryHandler(IGroupRepository groupRepository)
+    public SearchGroupsQueryHandler(IAuthenticationService authenticationService)
     {
-        _groupRepository = groupRepository;
+        _authenticationService = authenticationService;
     }
 
-    public async Task<Result<SearchGroupsResponse>> Handle(SearchGroupsQuery request, CancellationToken cancellationToken)
+    public Task<Result<SearchGroupsResponse>> Handle(SearchGroupsQuery request, CancellationToken cancellationToken)
     {
-        IReadOnlyList<Group> allGroups = await _groupRepository.GetAllAsync(cancellationToken);
-
-        // Apply search filter
-        IEnumerable<Group> filteredGroups = allGroups;
-        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
-            string searchLower = request.SearchTerm.ToLower();
-            filteredGroups = allGroups.Where(g =>
-                g.Name.ToLower().Contains(searchLower) ||
-                (g.Description != null && g.Description.ToLower().Contains(searchLower)));
-        }
-
-        // Apply sorting
-        filteredGroups = ApplySorting(filteredGroups, request.SortBy, request.SortDirection);
-
-        int totalCount = filteredGroups.Count();
-
-        // Apply pagination
-        var paginatedGroups = filteredGroups
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(g => new GroupSearchResult(
-                g.Id,
-                g.KeycloakGroupId,
-                g.Name,
-                g.Description,
-                g.ParentGroupId))
-            .ToList();
-
-        var response = new SearchGroupsResponse(
-            paginatedGroups,
-            totalCount,
-            request.PageNumber,
-            request.PageSize);
-
-        return Result.Success(response);
-    }
-
-    private static IEnumerable<Group> ApplySorting(IEnumerable<Group> groups, string? sortBy, string? sortDirection)
-    {
-        if (string.IsNullOrWhiteSpace(sortBy))
-        {
-            return groups.OrderBy(g => g.CreatedAt);
-        }
-
-        bool descending = sortDirection?.ToLower() == "desc";
-
-        return sortBy.ToLower() switch
-        {
-            "name" => descending ? groups.OrderByDescending(g => g.Name) : groups.OrderBy(g => g.Name),
-            "createdat" => descending ? groups.OrderByDescending(g => g.CreatedAt) : groups.OrderBy(g => g.CreatedAt),
-            _ => groups.OrderBy(g => g.CreatedAt)
-        };
+        // Keycloak does not provide a direct method to search groups via IAuthenticationService
+        // This requires additional implementation in the service
+        return Task.FromResult(Result.Failure<SearchGroupsResponse>(
+            new Error("Group.SearchNotSupported",
+                "Group search is not supported with current Keycloak integration. Additional API methods required.")));
     }
 }

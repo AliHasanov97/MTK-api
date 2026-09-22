@@ -125,7 +125,8 @@ internal sealed class UserContext : IUserContext
             _lastName = dbUser.LastName;
             _email = dbUser.Email;
             _phoneNumber = dbUser.PhoneNumber;
-            _role = dbUser.Role.ToString();
+            // Role is now managed in Keycloak, get from claims
+            _role = user.FindFirst(ClaimTypes.Role)?.Value ?? "User";
         }
         else
         {

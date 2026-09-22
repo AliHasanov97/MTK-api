@@ -9,13 +9,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MTK.Common.Application.Authorization;
-using MTK.Common.Domain.Abstractions;
 using MTK.Common.Infrastructure.Inbox;
+using IUnitOfWork = MTK.Modules.Identity.Application.Abstractions.Data.IUnitOfWork;
 using MTK.Common.Infrastructure.Outbox;
 using MTK.Modules.Identity.Application.Abstractions;
 using MTK.Modules.Identity.Domain.Users;
-using MTK.Modules.Identity.Domain.Groups;
-using MTK.Modules.Identity.Domain.Roles;
 using MTK.Modules.Identity.Domain.AuditLogs;
 using MTK.Modules.Identity.Infrastructure.Authentication;
 using MTK.Modules.Identity.Infrastructure.Database;
@@ -41,11 +39,12 @@ public static class IdentityModule
         services.AddValidatorsFromAssembly(typeof(IUserContext).Assembly, includeInternalTypes: true);
 
         // Database
-        services.AddSingleton<ISaveChangesInterceptor, KeycloakSyncStatusInterceptor>();
+        services.AddSingleton<KeycloakSyncStatusInterceptor>();
+        services.AddSingleton<InsertOutboxMessagesInterceptor>();
 
         services.AddDbContext<IdentityDbContext>((sp, options) =>
         {
-            var keycloakInterceptor = sp.GetRequiredService<ISaveChangesInterceptor>();
+            var keycloakInterceptor = sp.GetRequiredService<KeycloakSyncStatusInterceptor>();
             var outboxInterceptor = sp.GetRequiredService<InsertOutboxMessagesInterceptor>();
 
             options.UseNpgsql(configuration.GetConnectionString("Database"))
@@ -57,8 +56,6 @@ public static class IdentityModule
 
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IGroupRepository, GroupRepository>();
-        services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         // Authentication & Authorization

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MTK.Common.Domain.Abstractions;
 using MTK.Common.Infrastructure.Inbox;
 using MTK.Common.Infrastructure.Outbox;
+using IUnitOfWork = MTK.Modules.Buildings.Application.Abstractions.Data.IUnitOfWork;
 using MTK.Modules.Buildings.Domain.Apartments;
 using MTK.Modules.Buildings.Domain.Buildings;
 using MTK.Modules.Buildings.Domain.Garages;

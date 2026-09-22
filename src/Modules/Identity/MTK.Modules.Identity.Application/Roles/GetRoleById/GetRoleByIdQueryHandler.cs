@@ -1,36 +1,24 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
-using MTK.Modules.Identity.Domain.Roles;
+using MTK.Modules.Identity.Application.Abstractions;
 
 namespace MTK.Modules.Identity.Application.Roles.GetRoleById;
 
 internal sealed class GetRoleByIdQueryHandler : IQueryHandler<GetRoleByIdQuery, RoleDetailResponse>
 {
-    private readonly IRoleRepository _roleRepository;
+    private readonly IAuthenticationService _authenticationService;
 
-    public GetRoleByIdQueryHandler(IRoleRepository roleRepository)
+    public GetRoleByIdQueryHandler(IAuthenticationService authenticationService)
     {
-        _roleRepository = roleRepository;
+        _authenticationService = authenticationService;
     }
 
     public async Task<Result<RoleDetailResponse>> Handle(GetRoleByIdQuery request, CancellationToken cancellationToken)
     {
-        Role? role = await _roleRepository.GetByIdAsync(request.Id, cancellationToken);
+        var roleNames = await _authenticationService.GetRealmRoleNamesAsync(cancellationToken);
 
-        if (role is null)
-        {
-            return Result.Failure<RoleDetailResponse>(RoleErrors.NotFound(request.Id));
-        }
-
-        var response = new RoleDetailResponse(
-            role.Id,
-            role.Name,
-            role.Description,
-            role.RoleType.ToString(),
-            role.IsActive,
-            role.CreatedAt,
-            role.UpdatedAt);
-
-        return Result.Success(response);
+        // ID ilə role tapmaq mümkün olmadığı üçün, error qaytarırıq
+        return Result.Failure<RoleDetailResponse>(
+            new Error("Role.NotFoundById", "Role lookup by ID is not supported with Keycloak. Use role name instead."));
     }
 }

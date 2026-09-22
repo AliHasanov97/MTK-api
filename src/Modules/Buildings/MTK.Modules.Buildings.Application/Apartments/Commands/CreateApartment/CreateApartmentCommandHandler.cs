@@ -1,6 +1,7 @@
+using MTK.Common.Domain.Abstractions;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
-using MTK.Common.Domain.Abstractions;
+using MTK.Modules.Buildings.Application.Abstractions.Data;
 using MTK.Modules.Buildings.Domain.Apartments;
 using MTK.Modules.Buildings.Domain.Repositories;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;

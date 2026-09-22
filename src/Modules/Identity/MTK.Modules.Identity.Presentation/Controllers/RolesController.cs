@@ -9,7 +9,6 @@ using MTK.Modules.Identity.Application.Roles.GetRoleById;
 using MTK.Modules.Identity.Application.Roles.GetRoleByName;
 using MTK.Modules.Identity.Application.Roles.SearchRoles;
 using MTK.Modules.Identity.Application.Roles.UpdateRole;
-using MTK.Modules.Identity.Domain.Roles;
 
 namespace MTK.Modules.Identity.Presentation.Controllers;
 
@@ -30,8 +29,7 @@ public class RolesController : ControllerBase
     {
         var command = new CreateRealmRoleCommand(
             request.Name,
-            request.Description,
-            request.RoleType);
+            request.Description);
 
         var result = await _sender.Send(command, cancellationToken);
 
@@ -124,15 +122,14 @@ public class RolesController : ControllerBase
         return Ok(result.Value);
     }
 
-    [HttpPatch("{id:guid}")]
+    [HttpPatch("{oldRoleName}")]
     [Authorize]
-    public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateRole(string oldRoleName, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateRoleCommand(
-            id,
+            oldRoleName,
             request.Name,
-            request.Description,
-            request.IsActive);
+            request.Description);
 
         var result = await _sender.Send(command, cancellationToken);
 
@@ -144,11 +141,11 @@ public class RolesController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("{roleName}")]
     [Authorize]
-    public async Task<IActionResult> DeleteRole(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteRole(string roleName, CancellationToken cancellationToken)
     {
-        var command = new DeleteRoleCommand(id);
+        var command = new DeleteRoleCommand(roleName);
         var result = await _sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -163,13 +160,11 @@ public class RolesController : ControllerBase
 // Request DTOs
 public sealed record CreateRealmRoleRequest(
     string Name,
-    string? Description,
-    RoleType RoleType);
+    string? Description);
 
 public sealed record UpdateRoleRequest(
     string Name,
-    string? Description,
-    bool IsActive);
+    string? Description);
 
 public sealed record SearchRolesRequest(
     string? SearchTerm,

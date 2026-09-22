@@ -1,5 +1,6 @@
-using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Application.Messaging;
+using MTK.Modules.Buildings.Application.Abstractions.Data;
 using MTK.Modules.Buildings.Domain.Buildings;
 using MTK.Modules.Buildings.Domain.Repositories;
 using MTK.Modules.Buildings.Domain.ValueObjects;
