@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\MTK.Common.Presentation\MTK.Common.Presentation.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Buildings.Application\MTK.Modules.Buildings.Application.csproj" />
+    <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
+  </ItemGroup>
+
+</Project>

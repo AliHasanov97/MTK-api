@@ -317,6 +317,58 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                         .HasFilter("\"DeletedAt\" IS NULL");
 
                     b.ToTable("Roles", "identity");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Sistem administratoru - tam giriş hüququ",
+                            IsActive = true,
+                            KeycloakSyncStatus = "PendingSync",
+                            Name = "SystemAdmin",
+                            RoleType = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            CreatedAt = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bina idarəçisi (Komandant) - bina əməliyyatları və maliyyəsini idarə edir",
+                            IsActive = true,
+                            KeycloakSyncStatus = "PendingSync",
+                            Name = "BuildingManager",
+                            RoleType = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            CreatedAt = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Mühasib - maliyyə əməliyyatları və hesabatları idarə edir",
+                            IsActive = true,
+                            KeycloakSyncStatus = "PendingSync",
+                            Name = "Accountant",
+                            RoleType = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
+                            CreatedAt = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Mənzil sahibi - bir və ya bir neçə mənzilin sahibi olan sakin",
+                            IsActive = true,
+                            KeycloakSyncStatus = "PendingSync",
+                            Name = "ApartmentOwner",
+                            RoleType = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
+                            CreatedAt = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "İşçi - təmizlikçi, mühafizəçi, texniki işçilər",
+                            IsActive = true,
+                            KeycloakSyncStatus = "PendingSync",
+                            Name = "Employee",
+                            RoleType = 1
+                        });
                 });
 
             modelBuilder.Entity("MTK.Modules.Identity.Domain.Roles.UserRoleAssignment", b =>

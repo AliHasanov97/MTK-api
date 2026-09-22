@@ -1,7 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MTK.Common.Application.Behaviors;
 using MTK.Common.Infrastructure;
+using MTK.Modules.Buildings.Infrastructure;
+using MTK.Modules.Buildings.Infrastructure.Database;
 using MTK.Modules.Identity.Infrastructure;
+using MTK.Modules.Identity.Infrastructure.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,7 +67,10 @@ builder.Services.AddSwaggerGen(options =>
 // Add Common Infrastructure (Quartz, MassTransit, RabbitMQ, Outbox/Inbox)
 builder.Services.AddInfrastructure(
     serviceName: "MTK API",
-    moduleConfigureConsumers: [IdentityModule.ConfigureConsumers],
+    moduleConfigureConsumers: [
+        IdentityModule.ConfigureConsumers,
+        BuildingsModule.ConfigureConsumers
+    ],
     databaseConnectionString: builder.Configuration.GetConnectionString("Database")!,
     configuration: builder.Configuration);
 
@@ -79,14 +86,21 @@ builder.Services.AddMediatR(config =>
 
 // Add Modules
 builder.Services.AddIdentityModule(builder.Configuration);
+builder.Services.AddBuildingsModule(builder.Configuration);
 
 // TODO: Register other modules here
-// builder.Services.AddPropertiesModule(builder.Configuration);
-// builder.Services.AddTenantsModule(builder.Configuration);
-// builder.Services.AddPaymentsModule(builder.Configuration);
-// builder.Services.AddServicesModule(builder.Configuration);
+// builder.Services.AddBillingModule(builder.Configuration);
+// builder.Services.AddFinanceModule(builder.Configuration);
+// builder.Services.AddExpensesModule(builder.Configuration);
+// builder.Services.AddEmployeesModule(builder.Configuration);
+// builder.Services.AddMaintenanceModule(builder.Configuration);
+// builder.Services.AddVotingModule(builder.Configuration);
 
 var app = builder.Build();
+
+// ========== AUTO MIGRATION ==========
+// Automatically apply pending migrations on startup
+await ApplyMigrationsAsync(app.Services);
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -108,3 +122,20 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// ========== HELPER METHODS ==========
+
+static async Task ApplyMigrationsAsync(IServiceProvider serviceProvider)
+{
+    await using var scope = serviceProvider.CreateAsyncScope();
+
+    // Apply Identity module migrations
+    var identityDbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+    await identityDbContext.Database.MigrateAsync();
+
+    // Apply Buildings module migrations
+    var buildingsDbContext = scope.ServiceProvider.GetRequiredService<BuildingsDbContext>();
+    await buildingsDbContext.Database.MigrateAsync();
+
+    // TODO: Apply other module migrations here
+}
