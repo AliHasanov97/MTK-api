@@ -34,6 +34,7 @@ public static class IdentityModule
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(IUserContext).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(IdentityModule).Assembly); // Infrastructure layer (Domain event handlers)
         });
 
         services.AddValidatorsFromAssembly(typeof(IUserContext).Assembly, includeInternalTypes: true);
