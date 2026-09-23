@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Common\MTK.Common.Infrastructure\MTK.Common.Infrastructure.csproj" />
     <ProjectReference Include="..\MTK.Modules.Identity.Application\MTK.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
   </ItemGroup>
 
 </Project>

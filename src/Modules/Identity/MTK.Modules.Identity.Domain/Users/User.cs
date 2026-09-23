@@ -47,7 +47,8 @@ public sealed class User : Entity, IKeycloakSyncable
         string lastName,
         string email,
         string? phoneNumber,
-        UserStatus status = UserStatus.PendingVerification)
+        UserStatus status = UserStatus.PendingVerification,
+        string[]? roleNames = null)
     {
         var user = new User(
             Guid.NewGuid(),
@@ -60,7 +61,9 @@ public sealed class User : Entity, IKeycloakSyncable
             CreatedAt = DateTime.UtcNow
         };
 
-        user.RaiseDomainEvent(new UserCreatedDomainEvent(user.Id));
+        user.RaiseDomainEvent(new UserCreatedDomainEvent(
+            user.Id,
+            roleNames ?? Array.Empty<string>()));
 
         return user;
     }

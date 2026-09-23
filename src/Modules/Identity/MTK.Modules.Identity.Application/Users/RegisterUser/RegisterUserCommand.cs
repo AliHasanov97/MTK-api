@@ -7,4 +7,5 @@ public sealed record RegisterUserCommand(
     string FirstName,
     string LastName,
     string Password,
-    string? PhoneNumber) : ICommand<Guid>;
+    string? PhoneNumber,
+    string[]? RoleNames = null) : ICommand<Guid>;

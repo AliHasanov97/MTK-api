@@ -14,14 +14,14 @@ namespace MTK.Modules.Buildings.Presentation.IntegrationEventHandlers.Users;
 public sealed class UserCreatedIntegrationEventHandler(ISender sender)
     : IntegrationEventHandler<UserCreatedIntegrationEvent>
 {
-    public override async Task Handle(
+    public override async Task<Result> Handle(
         UserCreatedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken = default)
     {
         // Yalnız ApartmentOwner rolu olan istifadəçilər üçün Owner yaradırıq
-        if (integrationEvent.UserRole != "ApartmentOwner")
+        if (!integrationEvent.HasRole("ApartmentOwner"))
         {
-            return;
+            return Result.Success();
         }
 
         var command = new CreateOwnerCommand(
@@ -37,5 +37,7 @@ public sealed class UserCreatedIntegrationEventHandler(ISender sender)
         {
             throw new ValidationException("Failed to create owner in Buildings module");
         }
+
+        return Result.Success();
     }
 }

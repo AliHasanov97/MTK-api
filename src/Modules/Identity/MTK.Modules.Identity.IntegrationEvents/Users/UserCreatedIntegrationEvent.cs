@@ -16,7 +16,7 @@ public sealed class UserCreatedIntegrationEvent : IntegrationEvent
         string lastName,
         string email,
         string phoneNumber,
-        string userRole)
+        string[] roleNames)
         : base(integrationEventId, occurredOnUtc)
     {
         UserId = userId;
@@ -24,7 +24,7 @@ public sealed class UserCreatedIntegrationEvent : IntegrationEvent
         LastName = lastName;
         Email = email;
         PhoneNumber = phoneNumber;
-        UserRole = userRole;
+        RoleNames = roleNames ?? Array.Empty<string>();
     }
 
     public Guid UserId { get; }
@@ -32,5 +32,11 @@ public sealed class UserCreatedIntegrationEvent : IntegrationEvent
     public string LastName { get; }
     public string Email { get; }
     public string PhoneNumber { get; }
-    public string UserRole { get; }
+    public string[] RoleNames { get; }
+
+    /// <summary>
+    /// Helper method to check if user has a specific role
+    /// </summary>
+    public bool HasRole(string roleName) =>
+        RoleNames.Contains(roleName, StringComparer.OrdinalIgnoreCase);
 }

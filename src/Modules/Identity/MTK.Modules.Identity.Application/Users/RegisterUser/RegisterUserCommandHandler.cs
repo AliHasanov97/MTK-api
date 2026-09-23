@@ -50,6 +50,17 @@ internal sealed class RegisterUserCommandHandler : ICommandHandler<RegisterUserC
                 request.Password,
                 cancellationToken);
             _logger.LogInformation("User created in Keycloak successfully. IdentityId: {IdentityId}, Email: {Email}", identityId, request.Email);
+
+            // Assign roles if provided
+            if (request.RoleNames?.Length > 0)
+            {
+                _logger.LogInformation("Assigning roles to user {IdentityId}: {Roles}", identityId, string.Join(", ", request.RoleNames));
+                await _authenticationService.AssignRealmRolesToUserAsync(
+                    identityId,
+                    request.RoleNames,
+                    cancellationToken);
+                _logger.LogInformation("Roles assigned successfully to user {IdentityId}", identityId);
+            }
         }
         catch (Exception ex)
         {
@@ -65,7 +76,9 @@ internal sealed class RegisterUserCommandHandler : ICommandHandler<RegisterUserC
                 request.FirstName,
                 request.LastName,
                 request.Email,
-                request.PhoneNumber);
+                request.PhoneNumber,
+                UserStatus.Active,
+                request.RoleNames);
 
             user.SetIdentityId(identityId);
             user.MarkSynced();
