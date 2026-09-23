@@ -28,11 +28,8 @@ internal sealed class SearchGroupsQueryHandler : IQueryHandler<SearchGroupsQuery
         // Map to response
         var groupResults = paginatedGroups.Select(g => new GroupSearchResult(
             g.Id,
-            g.Id, // KeycloakGroupId is same as Id from Keycloak
             g.Name,
-            g.Description,
-            null // ParentGroupId - Keycloak API may not provide this in simple search
-        )).ToList();
+            g.Description)).ToList();
 
         var response = new SearchGroupsResponse(
             groupResults,

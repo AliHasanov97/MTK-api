@@ -8,7 +8,5 @@ public sealed record SearchGroupsResponse(
 
 public sealed record GroupSearchResult(
     Guid Id,
-    Guid KeycloakGroupId,
     string Name,
-    string? Description,
-    Guid? ParentGroupId);
+    string? Description);

@@ -15,16 +15,7 @@ internal sealed class GetGroupUsersQueryHandler : IQueryHandler<GetGroupUsersQue
 
     public async Task<Result<List<UserDto>>> Handle(GetGroupUsersQuery request, CancellationToken cancellationToken)
     {
-        List<Abstractions.UserDto> keycloakMembers = await _authenticationService.GetGroupMembersAsync(request.GroupId, cancellationToken);
-
-        // Map from Keycloak UserDto to local UserDto
-        var members = keycloakMembers.Select(u => new UserDto(
-            Guid.Parse(u.Id), // Convert string ID to Guid
-            u.Email,
-            u.FirstName ?? string.Empty,
-            u.LastName ?? string.Empty,
-            null // PhoneNumber - not provided by Keycloak API
-        )).ToList();
+        List<UserDto> members = await _authenticationService.GetGroupMembersAsync(request.GroupId, cancellationToken);
 
         return Result.Success(members);
     }

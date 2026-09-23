@@ -25,12 +25,8 @@ internal sealed class GetGroupByIdQueryHandler : IQueryHandler<GetGroupByIdQuery
 
         var response = new GroupDetailResponse(
             group.Id,
-            group.Id, // KeycloakGroupId is same as Id from Keycloak
             group.Name,
-            group.Description,
-            null, // ParentGroupId - not provided by Keycloak API in this method
-            DateTime.UtcNow, // CreatedAt - not provided by Keycloak API
-            null); // UpdatedAt - not provided by Keycloak API
+            group.Description);
 
         return Result.Success(response);
     }

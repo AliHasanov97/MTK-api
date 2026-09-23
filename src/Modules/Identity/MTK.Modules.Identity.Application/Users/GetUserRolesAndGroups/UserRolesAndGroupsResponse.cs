@@ -14,6 +14,5 @@ public sealed record RoleInfo(
 
 public sealed record GroupInfo(
     Guid Id,
-    Guid KeycloakGroupId,
     string Name,
     string? Description);
