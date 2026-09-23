@@ -88,7 +88,8 @@ public class UsersController : ControllerBase
             request.FirstName,
             request.LastName,
             request.Password,
-            request.PhoneNumber);
+            request.PhoneNumber,
+            request.RoleNames);
 
         var result = await _sender.Send(command, cancellationToken);
 
@@ -232,7 +233,8 @@ public sealed record RegisterUserRequest(
     string FirstName,
     string LastName,
     string Password,
-    string? PhoneNumber);
+    string? PhoneNumber,
+    string[]? RoleNames = null);
 
 public sealed record UpdateUserRequest(
     string FirstName,
