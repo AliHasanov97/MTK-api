@@ -13,12 +13,16 @@ internal sealed class GetGroupsQueryHandler : IQueryHandler<GetGroupsQuery, List
         _authenticationService = authenticationService;
     }
 
-    public Task<Result<List<GroupResponse>>> Handle(GetGroupsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<List<GroupResponse>>> Handle(GetGroupsQuery request, CancellationToken cancellationToken)
     {
-        // Keycloak does not provide a direct method to list all groups via IAuthenticationService
-        // This requires additional implementation in the service
-        return Task.FromResult(Result.Failure<List<GroupResponse>>(
-            new Error("Group.ListNotSupported",
-                "Group listing is not supported with current Keycloak integration. Additional API methods required.")));
+        var groups = await _authenticationService.GetAllGroupsAsync(cancellationToken);
+
+        var response = groups.Select(g => new GroupResponse(
+            g.Id,
+            g.Name,
+            g.Description
+        )).ToList();
+
+        return Result.Success(response);
     }
 }

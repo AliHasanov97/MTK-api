@@ -68,6 +68,8 @@ public interface IAuthenticationService
         CancellationToken cancellationToken = default);
 
     // Group Management
+    Task<List<GroupDto>> GetAllGroupsAsync(CancellationToken cancellationToken = default);
+
     Task<Guid> CreateGroupAsync(
         string name,
         string? description,

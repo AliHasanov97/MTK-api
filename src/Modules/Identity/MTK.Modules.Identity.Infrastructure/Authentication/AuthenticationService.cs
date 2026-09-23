@@ -254,6 +254,23 @@ internal sealed class AuthenticationService : IAuthenticationService
     }
 
     // Group Management
+    public async Task<List<GroupDto>> GetAllGroupsAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync("groups", cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var groups = await response.Content.ReadFromJsonAsync<List<GroupRepresentationModel>>(cancellationToken);
+
+        return groups?.Select(g => new GroupDto(
+            Guid.Parse(g.Id!),
+            g.Name!,
+            g.Attributes?.ContainsKey("description") == true
+                ? g.Attributes["description"].FirstOrDefault()
+                : null
+        )).ToList() ?? new List<GroupDto>();
+    }
+
     public async Task<Guid> CreateGroupAsync(
         string name,
         string? description,
