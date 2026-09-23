@@ -27,10 +27,19 @@ internal sealed class GetUserGroupsQueryHandler : IQueryHandler<GetUserGroupsQue
             return Result.Failure<UserGroupsResponse>(UserErrors.NotFound(request.UserId));
         }
 
-        // Keycloak does not provide a direct method to get user groups via IAuthenticationService
-        // This requires additional implementation
-        return Result.Failure<UserGroupsResponse>(
-            new Error("User.GroupsNotSupported",
-                "User groups lookup is not supported with current Keycloak integration. Additional API methods required."));
+        List<Abstractions.GroupDto> keycloakGroups = await _authenticationService.GetUserGroupsAsync(user.IdentityId, cancellationToken);
+
+        // Map to response DTOs
+        var groupDtos = keycloakGroups.Select(g => new GroupDto(
+            g.Id,
+            g.Id, // KeycloakGroupId is same as Id from Keycloak
+            g.Name,
+            g.Description,
+            null // ParentGroupId - not provided by Keycloak API
+        )).ToList();
+
+        var response = new UserGroupsResponse(request.UserId, groupDtos);
+
+        return Result.Success(response);
     }
 }

@@ -70,6 +70,22 @@ public interface IAuthenticationService
     // Group Management
     Task<List<GroupDto>> GetAllGroupsAsync(CancellationToken cancellationToken = default);
 
+    Task<List<GroupDto>> SearchGroupsAsync(
+        string? searchTerm,
+        CancellationToken cancellationToken = default);
+
+    Task<GroupDto?> GetGroupByIdAsync(
+        Guid groupId,
+        CancellationToken cancellationToken = default);
+
+    Task<List<UserDto>> GetGroupMembersAsync(
+        Guid groupId,
+        CancellationToken cancellationToken = default);
+
+    Task<List<GroupDto>> GetUserGroupsAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
+
     Task<Guid> CreateGroupAsync(
         string name,
         string? description,

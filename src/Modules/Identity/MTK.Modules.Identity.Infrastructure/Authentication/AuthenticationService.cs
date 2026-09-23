@@ -271,6 +271,100 @@ internal sealed class AuthenticationService : IAuthenticationService
         )).ToList() ?? new List<GroupDto>();
     }
 
+    public async Task<List<GroupDto>> SearchGroupsAsync(
+        string? searchTerm,
+        CancellationToken cancellationToken = default)
+    {
+        var url = string.IsNullOrWhiteSpace(searchTerm)
+            ? "groups"
+            : $"groups?search={Uri.EscapeDataString(searchTerm)}";
+
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var groups = await response.Content.ReadFromJsonAsync<List<GroupRepresentationModel>>(cancellationToken);
+
+        return groups?.Select(g => new GroupDto(
+            Guid.Parse(g.Id!),
+            g.Name!,
+            g.Attributes?.ContainsKey("description") == true
+                ? g.Attributes["description"].FirstOrDefault()
+                : null
+        )).ToList() ?? new List<GroupDto>();
+    }
+
+    public async Task<GroupDto?> GetGroupByIdAsync(
+        Guid groupId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"groups/{groupId}", cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            var group = await response.Content.ReadFromJsonAsync<GroupRepresentationModel>(cancellationToken);
+
+            if (group == null) return null;
+
+            return new GroupDto(
+                Guid.Parse(group.Id!),
+                group.Name!,
+                group.Attributes?.ContainsKey("description") == true
+                    ? group.Attributes["description"].FirstOrDefault()
+                    : null
+            );
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    public async Task<List<UserDto>> GetGroupMembersAsync(
+        Guid groupId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"groups/{groupId}/members", cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var users = await response.Content.ReadFromJsonAsync<List<UserRepresentationModel>>(cancellationToken);
+
+        return users?.Select(u => new UserDto(
+            u.Id!,
+            u.Username!,
+            u.Email!,
+            u.FirstName,
+            u.LastName
+        )).ToList() ?? new List<UserDto>();
+    }
+
+    public async Task<List<GroupDto>> GetUserGroupsAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"users/{userId}/groups", cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var groups = await response.Content.ReadFromJsonAsync<List<GroupRepresentationModel>>(cancellationToken);
+
+        return groups?.Select(g => new GroupDto(
+            Guid.Parse(g.Id!),
+            g.Name!,
+            g.Attributes?.ContainsKey("description") == true
+                ? g.Attributes["description"].FirstOrDefault()
+                : null
+        )).ToList() ?? new List<GroupDto>();
+    }
+
     public async Task<Guid> CreateGroupAsync(
         string name,
         string? description,

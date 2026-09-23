@@ -13,12 +13,19 @@ internal sealed class GetGroupUsersQueryHandler : IQueryHandler<GetGroupUsersQue
         _authenticationService = authenticationService;
     }
 
-    public Task<Result<List<UserDto>>> Handle(GetGroupUsersQuery request, CancellationToken cancellationToken)
+    public async Task<Result<List<UserDto>>> Handle(GetGroupUsersQuery request, CancellationToken cancellationToken)
     {
-        // Keycloak does not provide a direct method to get group members via IAuthenticationService
-        // This requires additional implementation in the service
-        return Task.FromResult(Result.Failure<List<UserDto>>(
-            new Error("Group.GetMembersNotSupported",
-                "Group members lookup is not supported with current Keycloak integration. Additional API methods required.")));
+        List<Abstractions.UserDto> keycloakMembers = await _authenticationService.GetGroupMembersAsync(request.GroupId, cancellationToken);
+
+        // Map from Keycloak UserDto to local UserDto
+        var members = keycloakMembers.Select(u => new UserDto(
+            Guid.Parse(u.Id), // Convert string ID to Guid
+            u.Email,
+            u.FirstName ?? string.Empty,
+            u.LastName ?? string.Empty,
+            null // PhoneNumber - not provided by Keycloak API
+        )).ToList();
+
+        return Result.Success(members);
     }
 }

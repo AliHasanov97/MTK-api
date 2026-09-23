@@ -13,12 +13,25 @@ internal sealed class GetGroupByIdQueryHandler : IQueryHandler<GetGroupByIdQuery
         _authenticationService = authenticationService;
     }
 
-    public Task<Result<GroupDetailResponse>> Handle(GetGroupByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<GroupDetailResponse>> Handle(GetGroupByIdQuery request, CancellationToken cancellationToken)
     {
-        // Keycloak does not provide a direct method to get group by ID via IAuthenticationService
-        // This requires additional implementation in the service
-        return Task.FromResult(Result.Failure<GroupDetailResponse>(
-            new Error("Group.GetByIdNotSupported",
-                "Group lookup by ID is not supported with current Keycloak integration. Additional API methods required.")));
+        Abstractions.GroupDto? group = await _authenticationService.GetGroupByIdAsync(request.Id, cancellationToken);
+
+        if (group is null)
+        {
+            return Result.Failure<GroupDetailResponse>(
+                new Error("Group.NotFound", $"Group with ID '{request.Id}' was not found."));
+        }
+
+        var response = new GroupDetailResponse(
+            group.Id,
+            group.Id, // KeycloakGroupId is same as Id from Keycloak
+            group.Name,
+            group.Description,
+            null, // ParentGroupId - not provided by Keycloak API in this method
+            DateTime.UtcNow, // CreatedAt - not provided by Keycloak API
+            null); // UpdatedAt - not provided by Keycloak API
+
+        return Result.Success(response);
     }
 }

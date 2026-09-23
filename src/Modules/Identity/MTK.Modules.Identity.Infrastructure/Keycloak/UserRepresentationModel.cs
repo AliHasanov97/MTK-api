@@ -4,6 +4,9 @@ namespace MTK.Modules.Identity.Infrastructure.Keycloak;
 
 internal sealed class UserRepresentationModel
 {
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+
     [JsonPropertyName("username")]
     public string Username { get; init; } = string.Empty;
 

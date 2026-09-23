@@ -38,8 +38,13 @@ internal sealed class GetUserRolesAndGroupsQueryHandler : IQueryHandler<GetUserR
         // Inherited roles (Keycloak does not provide this separately)
         var inheritedRoleInfos = new List<RoleInfo>();
 
-        // Groups (not supported with current IAuthenticationService)
-        var groupInfos = new List<GroupInfo>();
+        // Get user groups from Keycloak
+        List<Abstractions.GroupDto> keycloakGroups = await _authenticationService.GetUserGroupsAsync(user.IdentityId, cancellationToken);
+        var groupInfos = keycloakGroups.Select(g => new GroupInfo(
+            g.Id,
+            g.Id, // KeycloakGroupId is same as Id from Keycloak
+            g.Name,
+            g.Description)).ToList();
 
         var response = new UserRolesAndGroupsResponse(
             request.UserId,

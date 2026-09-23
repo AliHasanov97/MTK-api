@@ -13,12 +13,33 @@ internal sealed class SearchGroupsQueryHandler : IQueryHandler<SearchGroupsQuery
         _authenticationService = authenticationService;
     }
 
-    public Task<Result<SearchGroupsResponse>> Handle(SearchGroupsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<SearchGroupsResponse>> Handle(SearchGroupsQuery request, CancellationToken cancellationToken)
     {
-        // Keycloak does not provide a direct method to search groups via IAuthenticationService
-        // This requires additional implementation in the service
-        return Task.FromResult(Result.Failure<SearchGroupsResponse>(
-            new Error("Group.SearchNotSupported",
-                "Group search is not supported with current Keycloak integration. Additional API methods required.")));
+        List<GroupDto> allGroups = await _authenticationService.SearchGroupsAsync(request.SearchTerm, cancellationToken);
+
+        int totalCount = allGroups.Count;
+
+        // Apply pagination
+        List<GroupDto> paginatedGroups = allGroups
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToList();
+
+        // Map to response
+        var groupResults = paginatedGroups.Select(g => new GroupSearchResult(
+            g.Id,
+            g.Id, // KeycloakGroupId is same as Id from Keycloak
+            g.Name,
+            g.Description,
+            null // ParentGroupId - Keycloak API may not provide this in simple search
+        )).ToList();
+
+        var response = new SearchGroupsResponse(
+            groupResults,
+            totalCount,
+            request.PageNumber,
+            request.PageSize);
+
+        return Result.Success(response);
     }
 }
