@@ -13,11 +13,11 @@ internal sealed class OwnerConfiguration : IEntityTypeConfiguration<Owner>
         builder.HasKey(o => o.Id);
 
         builder.Property(o => o.UserId)
-            .IsRequired();
+            .IsRequired(false); // Nullable - passive owners don't have user accounts
 
         builder.HasIndex(o => o.UserId)
             .IsUnique()
-            .HasFilter("\"DeletedAt\" IS NULL");
+            .HasFilter("\"UserId\" IS NOT NULL AND \"DeletedAt\" IS NULL"); // Unique only for non-null UserIds
 
         builder.Property(o => o.FirstName)
             .IsRequired()

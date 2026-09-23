@@ -21,6 +21,16 @@ internal sealed class OwnerRepository : Repository<Owner>, IOwnerRepository
             .FirstOrDefaultAsync(o => o.UserId == userId, cancellationToken);
     }
 
+    public async Task<Owner?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbContext.Owners
+            .Include(o => o.OwnedApartments)
+            .Include(o => o.OwnedGarages)
+            .FirstOrDefaultAsync(o => o.Email == email, cancellationToken);
+    }
+
     public async Task<IEnumerable<Owner>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {

@@ -16,7 +16,7 @@ public sealed class Owner : Entity
 
     private Owner(
         Guid id,
-        Guid userId,
+        Guid? userId,
         string firstName,
         string lastName,
         string phoneNumber,
@@ -36,7 +36,7 @@ public sealed class Owner : Entity
     }
 
     // İstifadəçi məlumatları (snapshot - Identity module-dən sync edilir)
-    public Guid UserId { get; private set; }
+    public Guid? UserId { get; private set; }  // Nullable - passive owners don't have user accounts
     public string FirstName { get; private set; } = string.Empty;
     public string LastName { get; private set; } = string.Empty;
     public string PhoneNumber { get; private set; } = string.Empty;
@@ -45,6 +45,11 @@ public sealed class Owner : Entity
 
     public bool IsActive { get; private set; }
     public string? Notes { get; private set; }
+
+    /// <summary>
+    /// İstifadəçi hesabı ilə əlaqələndirilmişmi?
+    /// </summary>
+    public bool IsRegistered => UserId.HasValue;
 
     // Timestamps
     public DateTime CreatedAt { get; private set; }
@@ -78,6 +83,52 @@ public sealed class Owner : Entity
         owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, userId, owner.FullName));
 
         return owner;
+    }
+
+    /// <summary>
+    /// Passive owner yarat (istifadəçi hesabı olmadan)
+    /// Bu owner-lər yalnız məlumat saxlamaq üçündür (invoice, debt tracking)
+    /// Sistemi istifadə edə bilməzlər
+    /// </summary>
+    public static Owner CreatePassive(
+        string firstName,
+        string lastName,
+        string phoneNumber,
+        string email,
+        string? notes = null)
+    {
+        var owner = new Owner(
+            Guid.NewGuid(),
+            null,  // No user account
+            firstName,
+            lastName,
+            phoneNumber,
+            email)
+        {
+            Notes = notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, null, owner.FullName));
+
+        return owner;
+    }
+
+    /// <summary>
+    /// Passive owner-i User hesabı ilə link et
+    /// Owner artıq sistemə daxil ola bilər
+    /// </summary>
+    public void LinkToUser(Guid userId)
+    {
+        if (UserId.HasValue)
+        {
+            throw new InvalidOperationException($"Owner {Id} is already linked to user {UserId}");
+        }
+
+        UserId = userId;
+        UpdatedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new OwnerLinkedToUserDomainEvent(Id, userId));
     }
 
     public void UpdateContactInfo(
