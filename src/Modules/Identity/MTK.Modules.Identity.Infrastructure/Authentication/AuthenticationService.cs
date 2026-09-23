@@ -267,7 +267,8 @@ internal sealed class AuthenticationService : IAuthenticationService
             g.Name!,
             g.Attributes?.ContainsKey("description") == true
                 ? g.Attributes["description"].FirstOrDefault()
-                : null
+                : null,
+            string.IsNullOrEmpty(g.ParentId) ? null : Guid.Parse(g.ParentId)
         )).ToList() ?? new List<GroupDto>();
     }
 
@@ -290,7 +291,8 @@ internal sealed class AuthenticationService : IAuthenticationService
             g.Name!,
             g.Attributes?.ContainsKey("description") == true
                 ? g.Attributes["description"].FirstOrDefault()
-                : null
+                : null,
+            string.IsNullOrEmpty(g.ParentId) ? null : Guid.Parse(g.ParentId)
         )).ToList() ?? new List<GroupDto>();
     }
 
@@ -318,7 +320,8 @@ internal sealed class AuthenticationService : IAuthenticationService
                 group.Name!,
                 group.Attributes?.ContainsKey("description") == true
                     ? group.Attributes["description"].FirstOrDefault()
-                    : null
+                    : null,
+                string.IsNullOrEmpty(group.ParentId) ? null : Guid.Parse(group.ParentId)
             );
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -361,7 +364,8 @@ internal sealed class AuthenticationService : IAuthenticationService
             g.Name!,
             g.Attributes?.ContainsKey("description") == true
                 ? g.Attributes["description"].FirstOrDefault()
-                : null
+                : null,
+            string.IsNullOrEmpty(g.ParentId) ? null : Guid.Parse(g.ParentId)
         )).ToList() ?? new List<GroupDto>();
     }
 

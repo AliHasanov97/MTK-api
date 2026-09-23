@@ -9,4 +9,5 @@ public sealed record SearchGroupsResponse(
 public sealed record GroupSearchResult(
     Guid Id,
     string Name,
-    string? Description);
+    string? Description,
+    Guid? ParentId);

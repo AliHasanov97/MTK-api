@@ -29,7 +29,8 @@ internal sealed class SearchGroupsQueryHandler : IQueryHandler<SearchGroupsQuery
         var groupResults = paginatedGroups.Select(g => new GroupSearchResult(
             g.Id,
             g.Name,
-            g.Description)).ToList();
+            g.Description,
+            g.ParentId)).ToList();
 
         var response = new SearchGroupsResponse(
             groupResults,

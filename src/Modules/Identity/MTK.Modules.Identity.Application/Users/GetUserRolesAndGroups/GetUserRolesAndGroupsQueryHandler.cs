@@ -43,7 +43,8 @@ internal sealed class GetUserRolesAndGroupsQueryHandler : IQueryHandler<GetUserR
         var groupInfos = keycloakGroups.Select(g => new GroupInfo(
             g.Id,
             g.Name,
-            g.Description)).ToList();
+            g.Description,
+            g.ParentId)).ToList();
 
         var response = new UserRolesAndGroupsResponse(
             request.UserId,

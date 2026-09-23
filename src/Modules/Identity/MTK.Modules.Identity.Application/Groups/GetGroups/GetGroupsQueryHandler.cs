@@ -20,7 +20,8 @@ internal sealed class GetGroupsQueryHandler : IQueryHandler<GetGroupsQuery, List
         var response = groups.Select(g => new GroupResponse(
             g.Id,
             g.Name,
-            g.Description
+            g.Description,
+            g.ParentId
         )).ToList();
 
         return Result.Success(response);

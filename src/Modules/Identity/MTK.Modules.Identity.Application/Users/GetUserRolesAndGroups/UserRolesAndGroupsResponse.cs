@@ -15,4 +15,5 @@ public sealed record RoleInfo(
 public sealed record GroupInfo(
     Guid Id,
     string Name,
-    string? Description);
+    string? Description,
+    Guid? ParentId);

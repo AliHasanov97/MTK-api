@@ -26,7 +26,8 @@ internal sealed class GetGroupByIdQueryHandler : IQueryHandler<GetGroupByIdQuery
         var response = new GroupDetailResponse(
             group.Id,
             group.Name,
-            group.Description);
+            group.Description,
+            group.ParentId);
 
         return Result.Success(response);
     }

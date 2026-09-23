@@ -10,6 +10,9 @@ internal sealed class GroupRepresentationModel
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
+    [JsonPropertyName("parentId")]
+    public string? ParentId { get; set; }
+
     [JsonPropertyName("path")]
     public string? Path { get; set; }
 
