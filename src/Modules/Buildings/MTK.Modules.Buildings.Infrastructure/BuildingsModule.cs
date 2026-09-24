@@ -1,6 +1,7 @@
 using FluentValidation;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MTK.Common.Application.EventBus;
@@ -39,6 +40,7 @@ public static class BuildingsModule
         services.AddIntegrationEventHandlers();
 
         // Database
+        services.AddHttpContextAccessor();
         services.AddDbContext<BuildingsDbContext>((sp, options) =>
         {
             var outboxInterceptor = sp.GetRequiredService<InsertOutboxMessagesInterceptor>();

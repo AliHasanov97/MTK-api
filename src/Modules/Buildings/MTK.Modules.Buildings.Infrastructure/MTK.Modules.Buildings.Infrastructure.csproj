@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\..\Common\MTK.Common.Infrastructure\MTK.Common.Infrastructure.csproj" />
     <ProjectReference Include="..\MTK.Modules.Buildings.Application\MTK.Modules.Buildings.Application.csproj" />
     <ProjectReference Include="..\MTK.Modules.Buildings.Presentation\MTK.Modules.Buildings.Presentation.csproj" />
+    <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.Application\MTK.Modules.Identity.Application.csproj" />
     <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
   </ItemGroup>
 
