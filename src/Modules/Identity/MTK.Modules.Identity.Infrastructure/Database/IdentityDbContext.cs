@@ -1,24 +1,25 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using MTK.Common.Infrastructure.Inbox;
 using MTK.Common.Infrastructure.Outbox;
 using IUnitOfWork = MTK.Modules.Identity.Application.Abstractions.Data.IUnitOfWork;
 using MTK.Modules.Identity.Domain.Users;
 using MTK.Modules.Identity.Domain.AuditLogs;
+using System.Text.Json;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace MTK.Modules.Identity.Infrastructure.Database;
 
 public sealed class IdentityDbContext : DbContext, IUnitOfWork
 {
-    private readonly ILogger<IdentityDbContext> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public IdentityDbContext(
         DbContextOptions<IdentityDbContext> options,
-        ILogger<IdentityDbContext> logger)
+        IHttpContextAccessor httpContextAccessor)
         : base(options)
     {
-        _logger = logger;
-        _logger.LogInformation("IdentityDbContext instance created. HashCode = {HashCode}", GetHashCode());
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public DbSet<User> Users => Set<User>();
@@ -52,25 +53,52 @@ public sealed class IdentityDbContext : DbContext, IUnitOfWork
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("=== IdentityDbContext.SaveChangesAsync called === Instance HashCode = {HashCode}", GetHashCode());
+        ChangeTracker.DetectChanges();
 
-        var entries = ChangeTracker.Entries().ToList();
-        _logger.LogInformation("ChangeTracker has {Count} entries", entries.Count);
+        var principal = _httpContextAccessor.HttpContext?.User;
+        var identityId = principal?.Identity?.IsAuthenticated == true
+            ? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            : null;
+        Guid? actorUserId = identityId is null
+            ? null
+            : await Users.IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(user => user.IdentityId == identityId)
+                .Select(user => (Guid?)user.Id)
+                .SingleOrDefaultAsync(cancellationToken);
 
-        foreach (var entry in entries)
-        {
-            _logger.LogInformation("Entity: {EntityType}, State: {State}, Keys: {Keys}",
-                entry.Entity.GetType().Name,
-                entry.State,
-                string.Join(", ", entry.Properties.Where(p => p.Metadata.IsKey()).Select(p => $"{p.Metadata.Name}={p.CurrentValue}")));
-        }
+        var auditEntries = ChangeTracker.Entries<User>()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .Select(entry =>
+            {
+                var action = entry.State switch
+                {
+                    EntityState.Added => "Created",
+                    EntityState.Deleted => "Deleted",
+                    _ when entry.Property(user => user.DeletedAt).IsModified && entry.Entity.DeletedAt.HasValue => "Deleted",
+                    _ => "Updated"
+                };
+
+                var oldValues = entry.State == EntityState.Added
+                    ? null
+                    : JsonSerializer.Serialize(entry.Properties.ToDictionary(
+                        property => property.Metadata.Name,
+                        property => property.OriginalValue));
+                var newValues = entry.State == EntityState.Deleted
+                    ? null
+                    : JsonSerializer.Serialize(entry.Properties.ToDictionary(
+                        property => property.Metadata.Name,
+                        property => property.CurrentValue));
+
+                return AuditLog.Create(nameof(User), entry.Entity.Id, action, oldValues, newValues, actorUserId);
+            })
+            .ToList();
+
+        AuditLogs.AddRange(auditEntries);
 
         // Domain events are automatically captured by InsertOutboxMessagesInterceptor
         // ProcessOutboxJob will handle publishing them asynchronously
         var result = await base.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation("SaveChangesAsync completed. Rows affected: {RowsAffected}", result);
-
         return result;
     }
 }
