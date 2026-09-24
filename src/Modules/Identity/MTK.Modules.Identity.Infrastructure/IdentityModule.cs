@@ -34,10 +34,12 @@ public static class IdentityModule
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(IUserContext).Assembly);
-            cfg.RegisterServicesFromAssembly(typeof(IdentityModule).Assembly); // Infrastructure layer (Domain event handlers)
         });
 
         services.AddValidatorsFromAssembly(typeof(IUserContext).Assembly, includeInternalTypes: true);
+
+        // Domain Event Handlers (for ProcessOutboxJob)
+        services.AddDomainEventHandlers();
 
         // Database
         services.AddSingleton<KeycloakSyncStatusInterceptor>();
@@ -74,6 +76,21 @@ public static class IdentityModule
         services.Configure<KeycloakSyncOptions>(configuration.GetSection("Identity:KeycloakSync"));
 
         return services;
+    }
+
+    private static void AddDomainEventHandlers(this IServiceCollection services)
+    {
+        // Find all domain event handlers in Application assembly (NOT Infrastructure!)
+        Type[] domainEventHandlers = typeof(IUserContext).Assembly
+            .GetTypes()
+            .Where(t => t.IsAssignableTo(typeof(MTK.Common.Application.Messaging.IDomainEventHandler)))
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .ToArray();
+
+        foreach (Type domainEventHandler in domainEventHandlers)
+        {
+            services.AddScoped(domainEventHandler);
+        }
     }
 
     private static void AddAuthenticationAndAuthorization(

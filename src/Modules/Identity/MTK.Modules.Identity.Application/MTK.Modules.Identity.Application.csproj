@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Common\MTK.Common.Application\MTK.Common.Application.csproj" />
     <ProjectReference Include="..\MTK.Modules.Identity.Domain\MTK.Modules.Identity.Domain.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
   </ItemGroup>
 
 </Project>

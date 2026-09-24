@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using MTK.Common.Application.Data;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
+using MTK.Common.Infrastructure.Serialization;
 using Newtonsoft.Json;
 using Npgsql;
 using Quartz;
@@ -56,12 +57,22 @@ public abstract class ProcessInboxJobBase(
 
                 try
                 {
+                    logger.LogInformation(
+                        "{Module} - Processing inbox message {MessageId}. Content: {Content}",
+                        ModuleName,
+                        inboxMessage.Id,
+                        inboxMessage.Content);
+
+                    // Use SerializerSettings.Instance with MetadataPropertyHandling.ReadAhead
+                    // This tells Newtonsoft.Json to read $type FIRST before deserializing
                     IIntegrationEvent integrationEvent = JsonConvert.DeserializeObject<IIntegrationEvent>(
                         inboxMessage.Content,
-                        new JsonSerializerSettings
-                        {
-                            TypeNameHandling = TypeNameHandling.All
-                        })!;
+                        SerializerSettings.Instance)!;
+
+                    logger.LogInformation(
+                        "{Module} - Deserialized integration event of type {EventType}",
+                        ModuleName,
+                        integrationEvent.GetType().Name);
 
                     using IServiceScope scope = serviceScopeFactory.CreateScope();
 
@@ -70,18 +81,35 @@ public abstract class ProcessInboxJobBase(
                         scope.ServiceProvider,
                         HandlerAssembly);
 
+                    logger.LogInformation(
+                        "{Module} - Found {HandlerCount} handlers for event type {EventType}",
+                        ModuleName,
+                        handlers.Count(),
+                        integrationEvent.GetType().Name);
+
                     foreach (IIntegrationEventHandler integrationEventHandler in handlers)
                     {
+                        logger.LogInformation(
+                            "{Module} - Executing handler {HandlerType}",
+                            ModuleName,
+                            integrationEventHandler.GetType().Name);
+
                         await integrationEventHandler.Handle(integrationEvent, context.CancellationToken);
+
+                        logger.LogInformation(
+                            "{Module} - Handler {HandlerType} completed successfully",
+                            ModuleName,
+                            integrationEventHandler.GetType().Name);
                     }
                 }
                 catch (Exception caughtException)
                 {
                     logger.LogError(
                         caughtException,
-                        "{Module} - Exception while processing inbox message {MessageId}",
+                        "{Module} - Exception while processing inbox message {MessageId}. Content: {Content}",
                         ModuleName,
-                        inboxMessage.Id);
+                        inboxMessage.Id,
+                        inboxMessage.Content);
 
                     exception = caughtException;
                 }

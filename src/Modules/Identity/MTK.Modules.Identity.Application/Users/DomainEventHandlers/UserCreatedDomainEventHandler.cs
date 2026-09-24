@@ -1,15 +1,15 @@
-using MediatR;
 using MTK.Common.Application.EventBus;
+using MTK.Common.Application.Messaging;
 using MTK.Modules.Identity.Domain.Users;
 using MTK.Modules.Identity.IntegrationEvents.Users;
 
-namespace MTK.Modules.Identity.Infrastructure.DomainEventHandlers;
+namespace MTK.Modules.Identity.Application.Users.DomainEventHandlers;
 
 /// <summary>
 /// Handles UserCreatedDomainEvent and publishes UserCreatedIntegrationEvent
 /// to notify other modules (like Buildings) about the new user
 /// </summary>
-internal sealed class UserCreatedDomainEventHandler : INotificationHandler<UserCreatedDomainEvent>
+internal sealed class UserCreatedDomainEventHandler : DomainEventHandler<UserCreatedDomainEvent>
 {
     private readonly IUserRepository _userRepository;
     private readonly IEventBus _eventBus;
@@ -22,9 +22,9 @@ internal sealed class UserCreatedDomainEventHandler : INotificationHandler<UserC
         _eventBus = eventBus;
     }
 
-    public async Task Handle(
+    public override async Task Handle(
         UserCreatedDomainEvent domainEvent,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         // Get user details from repository
         var user = await _userRepository.GetByIdAsync(domainEvent.UserId, cancellationToken);

@@ -3,6 +3,7 @@ using MassTransit;
 using MTK.Common.Application.Data;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Infrastructure.Inbox;
+using MTK.Common.Infrastructure.Serialization;
 using Newtonsoft.Json;
 using System.Data.Common;
 
@@ -23,18 +24,15 @@ internal sealed class IntegrationEventConsumer<TIntegrationEvent>(
         {
             Id = integrationEvent.IntegrationEventId,
             Type = integrationEvent.GetType().Name,
-            Content = JsonConvert.SerializeObject(integrationEvent, new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All
-            }),
+            Content = JsonConvert.SerializeObject(integrationEvent, SerializerSettings.Instance),
             OccurredOnUtc = integrationEvent.OccurredOnUtc
         };
 
         const string sql =
             """
-            INSERT INTO buildings.inbox_messages(id, type, content, occurred_on_utc)
+            INSERT INTO buildings.inbox_messages("Id", "Type", "Content", "OccurredOnUtc")
             VALUES (@Id, @Type, @Content::jsonb, @OccurredOnUtc)
-            ON CONFLICT (id) DO NOTHING
+            ON CONFLICT ("Id") DO NOTHING
             """;
 
         await connection.ExecuteAsync(sql, inboxMessage);

@@ -20,5 +20,5 @@ internal sealed class ProcessInboxJob(
 {
     protected override string ModuleName => "Buildings";
     protected override string Schema => "buildings";
-    protected override Assembly HandlerAssembly => typeof(Presentation.IntegrationEventHandlers.Users.UserCreatedIntegrationEventHandler).Assembly;
+    protected override Assembly HandlerAssembly => Presentation.AssemblyReference.Assembly;
 }

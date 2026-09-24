@@ -7,6 +7,7 @@ using MTK.Common.Application.Data;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Infrastructure.Serialization;
 using Newtonsoft.Json;
 using Npgsql;
 using Quartz;
@@ -58,12 +59,22 @@ public abstract class ProcessOutboxJobBase(
 
                 try
                 {
+                    logger.LogInformation(
+                        "{Module} - Processing outbox message {MessageId}. Content: {Content}",
+                        ModuleName,
+                        outboxMessage.Id,
+                        outboxMessage.Content);
+
+                    // Use SerializerSettings.Instance with MetadataPropertyHandling.ReadAhead
+                    // This tells Newtonsoft.Json to read $type FIRST before deserializing
                     IDomainEvent domainEvent = JsonConvert.DeserializeObject<IDomainEvent>(
                         outboxMessage.Content,
-                        new JsonSerializerSettings
-                        {
-                            TypeNameHandling = TypeNameHandling.All
-                        })!;
+                        SerializerSettings.Instance)!;
+
+                    logger.LogInformation(
+                        "{Module} - Deserialized domain event of type {EventType}",
+                        ModuleName,
+                        domainEvent.GetType().Name);
 
                     using IServiceScope scope = serviceScopeFactory.CreateScope();
 
@@ -72,18 +83,35 @@ public abstract class ProcessOutboxJobBase(
                         scope.ServiceProvider,
                         HandlerAssembly);
 
+                    logger.LogInformation(
+                        "{Module} - Found {HandlerCount} handlers for event type {EventType}",
+                        ModuleName,
+                        handlers.Count(),
+                        domainEvent.GetType().Name);
+
                     foreach (IDomainEventHandler domainEventHandler in handlers)
                     {
+                        logger.LogInformation(
+                            "{Module} - Executing handler {HandlerType}",
+                            ModuleName,
+                            domainEventHandler.GetType().Name);
+
                         await domainEventHandler.Handle(domainEvent, context.CancellationToken);
+
+                        logger.LogInformation(
+                            "{Module} - Handler {HandlerType} completed successfully",
+                            ModuleName,
+                            domainEventHandler.GetType().Name);
                     }
                 }
                 catch (Exception caughtException)
                 {
                     logger.LogError(
                         caughtException,
-                        "{Module} - Exception while processing outbox message {MessageId}",
+                        "{Module} - Exception while processing outbox message {MessageId}. Content: {Content}",
                         ModuleName,
-                        outboxMessage.Id);
+                        outboxMessage.Id,
+                        outboxMessage.Content);
 
                     exception = caughtException;
                 }

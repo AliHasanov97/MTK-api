@@ -65,6 +65,8 @@ public sealed class IdentityDbContext : DbContext, IUnitOfWork
                 string.Join(", ", entry.Properties.Where(p => p.Metadata.IsKey()).Select(p => $"{p.Metadata.Name}={p.CurrentValue}")));
         }
 
+        // Domain events are automatically captured by InsertOutboxMessagesInterceptor
+        // ProcessOutboxJob will handle publishing them asynchronously
         var result = await base.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("SaveChangesAsync completed. Rows affected: {RowsAffected}", result);

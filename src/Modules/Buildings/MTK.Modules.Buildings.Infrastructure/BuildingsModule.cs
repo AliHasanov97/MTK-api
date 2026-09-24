@@ -11,11 +11,11 @@ using MTK.Common.Infrastructure.Outbox;
 using MTK.Modules.Buildings.Application.Apartments.Commands.CreateApartment;
 using MTK.Modules.Buildings.Domain.Repositories;
 using MTK.Modules.Buildings.Infrastructure.Database;
+using MTK.Modules.Buildings.Infrastructure.Inbox;
 using MTK.Modules.Buildings.Infrastructure.Repositories;
 using MTK.Modules.Buildings.Presentation.IntegrationEventHandlers.Users;
 using MTK.Modules.Identity.IntegrationEvents.Users;
 using Outbox = MTK.Modules.Buildings.Infrastructure.Outbox;
-using Inbox = MTK.Modules.Buildings.Infrastructure.Inbox;
 
 namespace MTK.Modules.Buildings.Infrastructure;
 
@@ -34,6 +34,9 @@ public static class BuildingsModule
         services.AddValidatorsFromAssembly(
             typeof(CreateApartmentCommand).Assembly,
             includeInternalTypes: true);
+
+        // Integration Event Handlers (for ProcessInboxJob)
+        services.AddIntegrationEventHandlers();
 
         // Database
         services.AddDbContext<BuildingsDbContext>((sp, options) =>
@@ -58,14 +61,6 @@ public static class BuildingsModule
         services.AddScoped<IGarageRepository, GarageRepository>();
         services.AddScoped<IOwnershipHistoryRepository, OwnershipHistoryRepository>();
 
-        // Integration Event Handlers
-        services.AddScoped<IIntegrationEventHandler<UserCreatedIntegrationEvent>,
-            UserCreatedIntegrationEventHandler>();
-        services.AddScoped<IIntegrationEventHandler<UserUpdatedIntegrationEvent>,
-            UserUpdatedIntegrationEventHandler>();
-        services.AddScoped<IIntegrationEventHandler<UserRoleChangedIntegrationEvent>,
-            UserRoleChangedIntegrationEventHandler>();
-
         // Outbox & Inbox Configuration
         services.Configure<OutboxOptions>(configuration.GetSection("Buildings:Outbox"));
         services.Configure<InboxOptions>(configuration.GetSection("Buildings:Inbox"));
@@ -77,11 +72,26 @@ public static class BuildingsModule
         return services;
     }
 
+    private static void AddIntegrationEventHandlers(this IServiceCollection services)
+    {
+        // Find all integration event handlers in Presentation assembly
+        Type[] integrationEventHandlers = Presentation.AssemblyReference.Assembly
+            .GetTypes()
+            .Where(t => t.IsAssignableTo(typeof(MTK.Common.Application.EventBus.IIntegrationEventHandler)))
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .ToArray();
+
+        foreach (Type integrationEventHandler in integrationEventHandlers)
+        {
+            services.AddScoped(integrationEventHandler);
+        }
+    }
+
     public static void ConfigureConsumers(IRegistrationConfigurator registrationConfigurator)
     {
         // Register integration event consumers from Identity module
-        registrationConfigurator.AddConsumer<Inbox.IntegrationEventConsumer<UserCreatedIntegrationEvent>>();
-        registrationConfigurator.AddConsumer<Inbox.IntegrationEventConsumer<UserUpdatedIntegrationEvent>>();
-        registrationConfigurator.AddConsumer<Inbox.IntegrationEventConsumer<UserRoleChangedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserUpdatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserRoleChangedIntegrationEvent>>();
     }
 }
