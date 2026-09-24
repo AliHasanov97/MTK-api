@@ -8,7 +8,6 @@ namespace MTK.Modules.Buildings.Domain.Repositories;
 /// </summary>
 public interface IGarageRepository : IRepository<Garage>
 {
-    Task<IEnumerable<Garage>> GetByApartmentIdAsync(Guid apartmentId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Garage>> GetByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken = default);
     Task<bool> ExistsByNumberAsync(string garageNumber, CancellationToken cancellationToken = default);
 }

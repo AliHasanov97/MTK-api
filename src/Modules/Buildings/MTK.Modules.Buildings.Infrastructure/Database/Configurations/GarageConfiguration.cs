@@ -12,9 +12,6 @@ internal sealed class GarageConfiguration : IEntityTypeConfiguration<Garage>
 
         builder.HasKey(g => g.Id);
 
-        builder.Property(g => g.ApartmentId)
-            .IsRequired();
-
         builder.Property(g => g.GarageNumber)
             .IsRequired()
             .HasMaxLength(20);
@@ -44,11 +41,6 @@ internal sealed class GarageConfiguration : IEntityTypeConfiguration<Garage>
         builder.HasQueryFilter(g => g.DeletedAt == null);
 
         // Relationships
-        builder.HasOne(g => g.Apartment)
-            .WithMany(a => a.Garages)
-            .HasForeignKey(g => g.ApartmentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasOne(g => g.Owner)
             .WithMany(o => o.OwnedGarages)
             .HasForeignKey(g => g.OwnerId)

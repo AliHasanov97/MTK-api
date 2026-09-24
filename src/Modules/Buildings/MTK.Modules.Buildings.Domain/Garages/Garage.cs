@@ -1,6 +1,5 @@
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.Domain.Enums;
-using MTK.Modules.Buildings.Domain.Apartments;
 using MTK.Modules.Buildings.Domain.Owners;
 using MTK.Modules.Buildings.Domain.Garages.Events;
 
@@ -13,11 +12,11 @@ public sealed class Garage : Entity
 {
     private Garage(
         Guid id,
-        Guid apartmentId,
+        Guid? ownerId,
         string garageNumber,
         GarageType type) : base(id)
     {
-        ApartmentId = apartmentId;
+        OwnerId = ownerId;
         GarageNumber = garageNumber;
         Type = type;
     }
@@ -27,7 +26,6 @@ public sealed class Garage : Entity
     {
     }
 
-    public Guid ApartmentId { get; private set; }
     public string GarageNumber { get; private set; } = string.Empty;
     public GarageType Type { get; private set; }
     public Guid? OwnerId { get; private set; }
@@ -39,18 +37,17 @@ public sealed class Garage : Entity
     public DateTime? DeletedAt { get; private set; }
 
     // Navigation
-    public Apartment Apartment { get; private set; } = null!;
     public Owner? Owner { get; private set; }
 
     public static Garage Create(
-        Guid apartmentId,
+        Guid? ownerId,
         string garageNumber,
         GarageType type,
         string? description = null)
     {
         var garage = new Garage(
             Guid.NewGuid(),
-            apartmentId,
+            ownerId,
             garageNumber,
             type)
         {
@@ -58,7 +55,7 @@ public sealed class Garage : Entity
             CreatedAt = DateTime.UtcNow
         };
 
-        garage.RaiseDomainEvent(new GarageCreatedDomainEvent(garage.Id, apartmentId, garageNumber, type));
+        garage.RaiseDomainEvent(new GarageCreatedDomainEvent(garage.Id, ownerId, garageNumber, type));
 
         return garage;
     }

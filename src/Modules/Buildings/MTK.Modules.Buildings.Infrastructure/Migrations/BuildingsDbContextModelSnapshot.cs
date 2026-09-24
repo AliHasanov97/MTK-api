@@ -255,9 +255,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ApartmentId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -285,8 +282,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApartmentId");
 
                     b.HasIndex("GarageNumber")
                         .IsUnique()
@@ -468,18 +463,10 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
 
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Garages.Garage", b =>
                 {
-                    b.HasOne("MTK.Modules.Buildings.Domain.Apartments.Apartment", "Apartment")
-                        .WithMany("Garages")
-                        .HasForeignKey("ApartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MTK.Modules.Buildings.Domain.Owners.Owner", "Owner")
                         .WithMany("OwnedGarages")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Apartment");
 
                     b.Navigation("Owner");
                 });
@@ -508,11 +495,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     b.Navigation("NewOwner");
 
                     b.Navigation("PreviousOwner");
-                });
-
-            modelBuilder.Entity("MTK.Modules.Buildings.Domain.Apartments.Apartment", b =>
-                {
-                    b.Navigation("Garages");
                 });
 
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Buildings.Building", b =>

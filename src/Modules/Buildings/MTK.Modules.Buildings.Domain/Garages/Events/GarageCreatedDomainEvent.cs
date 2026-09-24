@@ -5,6 +5,6 @@ namespace MTK.Modules.Buildings.Domain.Garages.Events;
 
 public sealed record GarageCreatedDomainEvent(
     Guid GarageId,
-    Guid ApartmentId,
+    Guid? OwnerId,
     string GarageNumber,
     GarageType Type) : DomainEvent;

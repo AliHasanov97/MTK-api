@@ -18,7 +18,6 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
         return await DbContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
-            .Include(a => a.Garages)
             .Where(a => a.BuildingId == buildingId)
             .ToListAsync(cancellationToken);
     }
@@ -30,7 +29,6 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
         return await DbContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
-            .Include(a => a.Garages)
             .Where(a => a.CurrentOwnerId == ownerId)
             .ToListAsync(cancellationToken);
     }
@@ -41,7 +39,6 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
         return await DbContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
-            .Include(a => a.Garages)
             .ToListAsync(cancellationToken);
     }
 
@@ -63,7 +60,6 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
         return await DbContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
-            .Include(a => a.Garages)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
     }
 }

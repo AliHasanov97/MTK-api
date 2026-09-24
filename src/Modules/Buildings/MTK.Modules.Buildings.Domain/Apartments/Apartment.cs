@@ -2,7 +2,6 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.Domain.Enums;
 using MTK.Modules.Buildings.Domain.Buildings;
 using MTK.Modules.Buildings.Domain.Owners;
-using MTK.Modules.Buildings.Domain.Garages;
 using MTK.Modules.Buildings.Domain.Apartments.Events;
 
 namespace MTK.Modules.Buildings.Domain.Apartments;
@@ -12,7 +11,6 @@ namespace MTK.Modules.Buildings.Domain.Apartments;
 /// </summary>
 public sealed class Apartment : Entity
 {
-    private readonly List<Garage> _garages = new();
 
     private Apartment(
         Guid id,
@@ -51,7 +49,6 @@ public sealed class Apartment : Entity
     // Navigation
     public Building Building { get; private set; } = null!;
     public Owner? CurrentOwner { get; private set; }
-    public IReadOnlyCollection<Garage> Garages => _garages.AsReadOnly();
 
     public static Apartment Create(
         Guid buildingId,

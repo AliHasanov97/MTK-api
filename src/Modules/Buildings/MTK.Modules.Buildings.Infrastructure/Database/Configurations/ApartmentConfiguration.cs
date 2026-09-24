@@ -61,9 +61,5 @@ internal sealed class ApartmentConfiguration : IEntityTypeConfiguration<Apartmen
             .HasForeignKey(a => a.CurrentOwnerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(a => a.Garages)
-            .WithOne(g => g.Apartment)
-            .HasForeignKey(g => g.ApartmentId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

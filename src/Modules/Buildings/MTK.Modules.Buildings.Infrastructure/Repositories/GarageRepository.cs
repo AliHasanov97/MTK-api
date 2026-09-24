@@ -11,23 +11,11 @@ internal sealed class GarageRepository : Repository<Garage>, IGarageRepository
     {
     }
 
-    public async Task<IEnumerable<Garage>> GetByApartmentIdAsync(
-        Guid apartmentId,
-        CancellationToken cancellationToken = default)
-    {
-        return await DbContext.Garages
-            .Include(g => g.Apartment)
-            .Include(g => g.Owner)
-            .Where(g => g.ApartmentId == apartmentId)
-            .ToListAsync(cancellationToken);
-    }
-
     public async Task<IEnumerable<Garage>> GetByOwnerIdAsync(
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
         return await DbContext.Garages
-            .Include(g => g.Apartment)
             .Include(g => g.Owner)
             .Where(g => g.OwnerId == ownerId)
             .ToListAsync(cancellationToken);
@@ -46,7 +34,6 @@ internal sealed class GarageRepository : Repository<Garage>, IGarageRepository
         CancellationToken cancellationToken = default)
     {
         return await DbContext.Garages
-            .Include(g => g.Apartment)
             .Include(g => g.Owner)
             .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
     }

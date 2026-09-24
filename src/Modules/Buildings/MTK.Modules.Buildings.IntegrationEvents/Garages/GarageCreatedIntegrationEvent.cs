@@ -12,19 +12,19 @@ public sealed class GarageCreatedIntegrationEvent : IntegrationEvent
         Guid integrationEventId,
         DateTime occurredOnUtc,
         Guid garageId,
-        Guid apartmentId,
+        Guid? ownerId,
         string garageNumber,
         string garageType)
         : base(integrationEventId, occurredOnUtc)
     {
         GarageId = garageId;
-        ApartmentId = apartmentId;
+        OwnerId = ownerId;
         GarageNumber = garageNumber;
         GarageType = garageType;
     }
 
     public Guid GarageId { get; }
-    public Guid ApartmentId { get; }
+    public Guid? OwnerId { get; }
     public string GarageNumber { get; }
     public string GarageType { get; }
 }

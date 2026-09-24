@@ -6,13 +6,32 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MTK.Modules.Buildings.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialBuildingsModule : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
                 name: "buildings");
+
+            migrationBuilder.CreateTable(
+                name: "AuditLogs",
+                schema: "buildings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    EntityType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    EntityId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Action = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    OldValues = table.Column<string>(type: "jsonb", nullable: true),
+                    NewValues = table.Column<string>(type: "jsonb", nullable: true),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
                 name: "Buildings",
@@ -105,7 +124,7 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     PhoneNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
@@ -163,7 +182,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApartmentId = table.Column<Guid>(type: "uuid", nullable: false),
                     GarageNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     OwnerId = table.Column<Guid>(type: "uuid", nullable: true),
@@ -175,13 +193,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Garages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Garages_Apartments_ApartmentId",
-                        column: x => x.ApartmentId,
-                        principalSchema: "buildings",
-                        principalTable: "Apartments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Garages_Owners_OwnerId",
                         column: x => x.OwnerId,
@@ -248,18 +259,36 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 column: "CurrentOwnerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_EntityId",
+                schema: "buildings",
+                table: "AuditLogs",
+                column: "EntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_EntityType",
+                schema: "buildings",
+                table: "AuditLogs",
+                column: "EntityType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_Timestamp",
+                schema: "buildings",
+                table: "AuditLogs",
+                column: "Timestamp");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_UserId",
+                schema: "buildings",
+                table: "AuditLogs",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Buildings_Name",
                 schema: "buildings",
                 table: "Buildings",
                 column: "Name",
                 unique: true,
                 filter: "\"DeletedAt\" IS NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Garages_ApartmentId",
-                schema: "buildings",
-                table: "Garages",
-                column: "ApartmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Garages_GarageNumber",
@@ -281,7 +310,7 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 table: "Owners",
                 column: "UserId",
                 unique: true,
-                filter: "\"DeletedAt\" IS NULL");
+                filter: "\"UserId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OwnershipHistories_ApartmentId_TransferDate",
@@ -305,6 +334,10 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AuditLogs",
+                schema: "buildings");
+
             migrationBuilder.DropTable(
                 name: "Garages",
                 schema: "buildings");
