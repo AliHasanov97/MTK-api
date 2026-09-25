@@ -35,7 +35,7 @@ internal sealed class AuthenticationService : IAuthenticationService
                 {
                     Type = "password",
                     Value = password,
-                    Temporary = false
+                    Temporary = true
                 }
             }
         };

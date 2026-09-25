@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("search")]
-    [RequireAnyRole(Permissions.UsersView, Permissions.UsersManage)]
+    [RequireAnyRole(Permissions.UsersView, Permissions.UsersManage,Permissions.UsersCreate)]
     public async Task<IActionResult> SearchUsers([FromBody] SearchUsersRequest request, CancellationToken cancellationToken)
     {
         var query = new SearchUsersQuery(

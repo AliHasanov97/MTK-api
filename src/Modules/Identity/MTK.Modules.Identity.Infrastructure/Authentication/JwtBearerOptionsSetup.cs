@@ -25,6 +25,7 @@ public sealed class JwtBearerOptionsSetup : IConfigureNamedOptions<JwtBearerOpti
             ValidateIssuerSigningKey = true,
             ValidateIssuer = true,
             ValidateAudience = true,
+            ValidAudience = _options.Audience,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
             NameClaimType = ClaimTypes.NameIdentifier,
