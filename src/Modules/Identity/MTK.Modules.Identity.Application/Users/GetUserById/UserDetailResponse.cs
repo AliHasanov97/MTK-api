@@ -8,5 +8,5 @@ public sealed record UserDetailResponse(
     string? PhoneNumber,
     string Status,
     string? IdentityId,
-    DateTime CreatedAt,
-    DateTime? UpdatedAt);
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? UpdatedAt);

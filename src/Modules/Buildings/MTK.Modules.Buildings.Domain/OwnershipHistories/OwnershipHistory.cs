@@ -9,7 +9,7 @@ namespace MTK.Modules.Buildings.Domain.OwnershipHistories;
 /// Mənzil mülkiyyət transfer tarixçəsi
 /// Hər dəfə mənzil satılanda bu entity yaradılır
 /// </summary>
-public sealed class OwnershipHistory : Entity
+public sealed class OwnershipHistory : SearchableEntity
 {
     private OwnershipHistory(
         Guid id,
@@ -25,7 +25,7 @@ public sealed class OwnershipHistory : Entity
     }
 
     // Private constructor for EF Core
-    private OwnershipHistory() : base(Guid.Empty)
+    private OwnershipHistory() : base()
     {
     }
 
@@ -43,9 +43,6 @@ public sealed class OwnershipHistory : Entity
     public DateTime TransferDate { get; private set; }
     public decimal? SalePrice { get; private set; }
     public string? Notes { get; private set; }
-
-    // Timestamps
-    public DateTime CreatedAt { get; private set; }
 
     // Navigation
     public Apartment Apartment { get; private set; } = null!;
@@ -72,10 +69,10 @@ public sealed class OwnershipHistory : Entity
             PreviousOwnerName = previousOwnerName,
             NewOwnerName = newOwnerName,
             SalePrice = salePrice,
-            Notes = notes,
-            CreatedAt = DateTime.UtcNow
+            Notes = notes
         };
 
+        history.SetCreatedAt();
         history.RaiseDomainEvent(new OwnershipTransferredDomainEvent(
             history.Id,
             apartmentId,

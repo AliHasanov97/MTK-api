@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Presentation.Responses;
 
 namespace MTK.Modules.Buildings.Presentation.Controllers;
 
@@ -17,11 +18,26 @@ public class BaseController : ControllerBase
         _sender = sender;
     }
 
+    protected IActionResult Success<T>(T data, string message = "Əməliyyat uğurla tamamlandı")
+    {
+        return Ok(new ResponseObjectWith<T>(data, message));
+    }
+
+    protected IActionResult Success(string message = "Əməliyyat uğurla tamamlandı")
+    {
+        return Ok(new ResponseObject(message));
+    }
+
+    protected IActionResult Created<T>(T data, string message = "Uğurla yaradıldı")
+    {
+        return StatusCode(201, new ResponseObjectWith<T>(data, message, 201));
+    }
+
     protected new IActionResult BadRequest(object? error)
     {
         if (error is Error err)
         {
-            return base.BadRequest(new { error = err.Message, code = err.Code });
+            return base.BadRequest(new ErrorResponse(err.Message, err.Code));
         }
         return base.BadRequest(error);
     }
@@ -30,7 +46,7 @@ public class BaseController : ControllerBase
     {
         if (error is Error err)
         {
-            return base.NotFound(new { error = err.Message, code = err.Code });
+            return base.NotFound(new ErrorResponse(err.Message, err.Code, 404));
         }
         return base.NotFound(error);
     }

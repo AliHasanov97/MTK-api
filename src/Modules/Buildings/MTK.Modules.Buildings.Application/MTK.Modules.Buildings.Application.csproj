@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Common\MTK.Common.Application\MTK.Common.Application.csproj" />
+    <ProjectReference Include="..\..\..\Common\MTK.Common.Presentation\MTK.Common.Presentation.csproj" />
     <ProjectReference Include="..\MTK.Modules.Buildings.Domain\MTK.Modules.Buildings.Domain.csproj" />
     <ProjectReference Include="..\MTK.Modules.Buildings.IntegrationEvents\MTK.Modules.Buildings.IntegrationEvents.csproj" />
     <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />

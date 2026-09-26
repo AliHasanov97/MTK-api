@@ -14,4 +14,4 @@ public sealed record AuditLogDto(
     string? OldValues,
     string? NewValues,
     Guid? UserId,
-    DateTime Timestamp);
+    DateTimeOffset Timestamp);

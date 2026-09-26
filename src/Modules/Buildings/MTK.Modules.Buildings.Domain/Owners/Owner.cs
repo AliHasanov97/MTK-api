@@ -9,7 +9,7 @@ namespace MTK.Modules.Buildings.Domain.Owners;
 /// Mənzil sahibi entity - Aggregate Root
 /// Bu entity Identity module-dəki User entity ilə əlaqəlidir
 /// </summary>
-public sealed class Owner : Entity
+public sealed class Owner : SearchableEntity
 {
     private readonly List<Apartment> _ownedApartments = new();
     private readonly List<Garage> _ownedGarages = new();
@@ -31,7 +31,7 @@ public sealed class Owner : Entity
     }
 
     // Private constructor for EF Core
-    private Owner() : base(Guid.Empty)
+    private Owner() : base()
     {
     }
 
@@ -50,11 +50,6 @@ public sealed class Owner : Entity
     /// İstifadəçi hesabı ilə əlaqələndirilmişmi?
     /// </summary>
     public bool IsRegistered => UserId.HasValue;
-
-    // Timestamps
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
 
     // Navigation
     public IReadOnlyCollection<Apartment> OwnedApartments => _ownedApartments.AsReadOnly();
@@ -76,10 +71,10 @@ public sealed class Owner : Entity
             phoneNumber,
             email)
         {
-            Notes = notes,
-            CreatedAt = DateTime.UtcNow
+            Notes = notes
         };
 
+        owner.SetCreatedAt();
         owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, userId, owner.FullName));
 
         return owner;
@@ -105,10 +100,10 @@ public sealed class Owner : Entity
             phoneNumber,
             email)
         {
-            Notes = notes,
-            CreatedAt = DateTime.UtcNow
+            Notes = notes
         };
 
+        owner.SetCreatedAt();
         owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, null, owner.FullName));
 
         return owner;
@@ -126,7 +121,7 @@ public sealed class Owner : Entity
         }
 
         UserId = userId;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new OwnerLinkedToUserDomainEvent(Id, userId));
     }
@@ -141,7 +136,7 @@ public sealed class Owner : Entity
         LastName = lastName;
         PhoneNumber = phoneNumber;
         Email = email;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new OwnerContactInfoUpdatedDomainEvent(Id, FullName, email, phoneNumber));
     }
@@ -149,13 +144,13 @@ public sealed class Owner : Entity
     public void UpdateNotes(string? notes)
     {
         Notes = notes;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
     }
 
     public void Activate()
     {
         IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new OwnerActivatedDomainEvent(Id));
     }
@@ -163,14 +158,14 @@ public sealed class Owner : Entity
     public void Deactivate()
     {
         IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new OwnerDeactivatedDomainEvent(Id));
     }
 
     public void Delete()
     {
-        DeletedAt = DateTime.UtcNow;
+        SetDeletedAt();
         RaiseDomainEvent(new OwnerDeletedDomainEvent(Id));
     }
 

@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Buildings.Domain.Owners;
 using MTK.Modules.Buildings.Domain.Repositories;
 using MTK.Modules.Buildings.Infrastructure.Database;
 
 namespace MTK.Modules.Buildings.Infrastructure.Repositories;
 
-internal sealed class OwnerRepository : Repository<Owner>, IOwnerRepository
+internal sealed class OwnerRepository : SearchableRepository<Owner>, IOwnerRepository
 {
+    private BuildingsDbContext BuildingsContext => (BuildingsDbContext)Context;
+
     public OwnerRepository(BuildingsDbContext dbContext) : base(dbContext)
     {
     }
@@ -15,7 +18,7 @@ internal sealed class OwnerRepository : Repository<Owner>, IOwnerRepository
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Owners
+        return await BuildingsContext.Owners
             .Include(o => o.OwnedApartments)
             .Include(o => o.OwnedGarages)
             .FirstOrDefaultAsync(o => o.UserId == userId, cancellationToken);
@@ -25,7 +28,7 @@ internal sealed class OwnerRepository : Repository<Owner>, IOwnerRepository
         string email,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Owners
+        return await BuildingsContext.Owners
             .Include(o => o.OwnedApartments)
             .Include(o => o.OwnedGarages)
             .FirstOrDefaultAsync(o => o.Email == email, cancellationToken);
@@ -34,7 +37,7 @@ internal sealed class OwnerRepository : Repository<Owner>, IOwnerRepository
     public async Task<IEnumerable<Owner>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Owners
+        return await BuildingsContext.Owners
             .Include(o => o.OwnedApartments)
             .Include(o => o.OwnedGarages)
             .ToListAsync(cancellationToken);
@@ -44,15 +47,15 @@ internal sealed class OwnerRepository : Repository<Owner>, IOwnerRepository
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Owners
+        return await BuildingsContext.Owners
             .AnyAsync(o => o.UserId == userId, cancellationToken);
     }
 
-    public override async Task<Owner?> GetByIdAsync(
+    public override async Task<Owner?> GetByIdDefaultAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Owners
+        return await BuildingsContext.Owners
             .Include(o => o.OwnedApartments)
             .Include(o => o.OwnedGarages)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Buildings.Domain.OwnershipHistories;
 using MTK.Modules.Buildings.Domain.Repositories;
 using MTK.Modules.Buildings.Infrastructure.Database;
@@ -6,8 +7,10 @@ using MTK.Modules.Buildings.Infrastructure.Database;
 namespace MTK.Modules.Buildings.Infrastructure.Repositories;
 
 internal sealed class OwnershipHistoryRepository
-    : Repository<OwnershipHistory>, IOwnershipHistoryRepository
+    : SearchableRepository<OwnershipHistory>, IOwnershipHistoryRepository
 {
+    private BuildingsDbContext BuildingsContext => (BuildingsDbContext)Context;
+
     public OwnershipHistoryRepository(BuildingsDbContext dbContext) : base(dbContext)
     {
     }
@@ -16,7 +19,7 @@ internal sealed class OwnershipHistoryRepository
         Guid apartmentId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.OwnershipHistories
+        return await BuildingsContext.OwnershipHistories
             .Include(oh => oh.Apartment)
             .Include(oh => oh.PreviousOwner)
             .Include(oh => oh.NewOwner)
@@ -29,7 +32,7 @@ internal sealed class OwnershipHistoryRepository
         Guid apartmentId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.OwnershipHistories
+        return await BuildingsContext.OwnershipHistories
             .Include(oh => oh.Apartment)
             .Include(oh => oh.PreviousOwner)
             .Include(oh => oh.NewOwner)
@@ -38,11 +41,11 @@ internal sealed class OwnershipHistoryRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public override async Task<OwnershipHistory?> GetByIdAsync(
+    public override async Task<OwnershipHistory?> GetByIdDefaultAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.OwnershipHistories
+        return await BuildingsContext.OwnershipHistories
             .Include(oh => oh.Apartment)
             .Include(oh => oh.PreviousOwner)
             .Include(oh => oh.NewOwner)

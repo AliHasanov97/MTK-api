@@ -3,7 +3,7 @@ using MTK.Modules.Identity.Domain.Keycloak;
 
 namespace MTK.Modules.Identity.Domain.Users;
 
-public sealed class User : Entity, IKeycloakSyncable
+public sealed class User : SearchableEntity, IKeycloakSyncable
 {
     private User(
         Guid id,
@@ -22,7 +22,7 @@ public sealed class User : Entity, IKeycloakSyncable
     }
 
     // Private constructor for EF Core
-    private User() : base(Guid.Empty)
+    private User() : base()
     {
     }
 
@@ -36,11 +36,6 @@ public sealed class User : Entity, IKeycloakSyncable
     public string? IdentityId { get; private set; }
     public KeycloakSyncStatus KeycloakSyncStatus { get; private set; }
     public string? LastSyncError { get; private set; }
-
-    // Timestamps
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
 
     public static User Create(
         string firstName,
@@ -56,10 +51,9 @@ public sealed class User : Entity, IKeycloakSyncable
             lastName,
             email,
             phoneNumber,
-            status)
-        {
-            CreatedAt = DateTime.UtcNow
-        };
+            status);
+
+        user.SetCreatedAt();
 
         user.RaiseDomainEvent(new UserCreatedDomainEvent(
             user.Id,
@@ -73,16 +67,16 @@ public sealed class User : Entity, IKeycloakSyncable
         FirstName = firstName;
         LastName = lastName;
         PhoneNumber = phoneNumber;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
-        RaiseDomainEvent(new Users.Events.UserUpdatedDomainEvent(Id, DateTime.UtcNow));
+        RaiseDomainEvent(new Events.UserUpdatedDomainEvent(Id));
         MarkForSync();
     }
 
     public void UpdateEmail(string email)
     {
         Email = email;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         MarkForSync();
     }
@@ -90,32 +84,32 @@ public sealed class User : Entity, IKeycloakSyncable
     public void UpdateStatus(UserStatus status)
     {
         Status = status;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
     }
 
     public void Activate()
     {
         Status = UserStatus.Active;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
     }
 
     public void Deactivate()
     {
         Status = UserStatus.Inactive;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
     }
 
     public void Block()
     {
         Status = UserStatus.Blocked;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
     }
 
     public void Delete()
     {
-        DeletedAt = DateTime.UtcNow;
+        SetDeletedAt();
 
-        RaiseDomainEvent(new Users.Events.UserDeletedDomainEvent(Id, DateTime.UtcNow));
+        RaiseDomainEvent(new Events.UserDeletedDomainEvent(Id));
         MarkForSync();
     }
 

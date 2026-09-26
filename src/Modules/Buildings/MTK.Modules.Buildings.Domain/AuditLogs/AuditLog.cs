@@ -2,7 +2,7 @@ using MTK.Common.Domain.Abstractions;
 
 namespace MTK.Modules.Buildings.Domain.AuditLogs;
 
-public sealed class AuditLog : Entity
+public sealed class AuditLog : SearchableEntity
 {
     private AuditLog(Guid id, string entityType, Guid entityId, string action, string? oldValues, string? newValues, Guid? userId)
         : base(id)
@@ -16,7 +16,7 @@ public sealed class AuditLog : Entity
         Timestamp = DateTime.UtcNow;
     }
 
-    private AuditLog() : base(Guid.Empty) { }
+    private AuditLog() : base() { }
 
     public string EntityType { get; private set; } = string.Empty;
     public Guid EntityId { get; private set; }

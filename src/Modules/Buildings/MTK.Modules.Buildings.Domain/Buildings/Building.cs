@@ -9,7 +9,7 @@ namespace MTK.Modules.Buildings.Domain.Buildings;
 /// <summary>
 /// Bina entity - MTK-nin idarə etdiyi binalardan biri
 /// </summary>
-public sealed class Building : Entity
+public sealed class Building : SearchableEntity
 {
     private readonly List<Apartment> _apartments = new();
 
@@ -28,7 +28,7 @@ public sealed class Building : Entity
     }
 
     // Private constructor for EF Core
-    private Building() : base(Guid.Empty)
+    private Building() : base()
     {
     }
 
@@ -39,11 +39,6 @@ public sealed class Building : Entity
     public int TotalApartments => TotalFloors * ApartmentsPerFloor;
     public BuildingStatus Status { get; private set; }
     public string? Description { get; private set; }
-
-    // Timestamps
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
 
     // Navigation
     public IReadOnlyCollection<Apartment> Apartments => _apartments.AsReadOnly();
@@ -62,10 +57,10 @@ public sealed class Building : Entity
             totalFloors,
             apartmentsPerFloor)
         {
-            Description = description,
-            CreatedAt = DateTime.UtcNow
+            Description = description
         };
 
+        building.SetCreatedAt();
         building.RaiseDomainEvent(new BuildingCreatedDomainEvent(building.Id, building.Name));
 
         return building;
@@ -76,7 +71,7 @@ public sealed class Building : Entity
         Name = name;
         Address = address;
         Description = description;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new BuildingUpdatedDomainEvent(Id, name));
     }
@@ -85,14 +80,14 @@ public sealed class Building : Entity
     {
         var oldStatus = Status;
         Status = status;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new BuildingStatusChangedDomainEvent(Id, oldStatus, status));
     }
 
     public void Delete()
     {
-        DeletedAt = DateTime.UtcNow;
+        SetDeletedAt();
         RaiseDomainEvent(new BuildingDeletedDomainEvent(Id));
     }
 }

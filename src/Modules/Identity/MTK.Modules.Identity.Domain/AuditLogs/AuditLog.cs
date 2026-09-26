@@ -2,7 +2,7 @@ using MTK.Common.Domain.Abstractions;
 
 namespace MTK.Modules.Identity.Domain.AuditLogs;
 
-public sealed class AuditLog : Entity
+public sealed class AuditLog : SearchableEntity
 {
     private AuditLog(
         Guid id,
@@ -19,11 +19,11 @@ public sealed class AuditLog : Entity
         OldValues = oldValues;
         NewValues = newValues;
         UserId = userId;
-        Timestamp = DateTime.UtcNow;
+        Timestamp = DateTimeOffset.UtcNow;
     }
 
     // Private constructor for EF Core
-    private AuditLog() : base(Guid.Empty)
+    private AuditLog() : base()
     {
     }
 
@@ -33,7 +33,7 @@ public sealed class AuditLog : Entity
     public string? OldValues { get; private set; } // JSON
     public string? NewValues { get; private set; } // JSON
     public Guid? UserId { get; private set; }
-    public DateTime Timestamp { get; private set; }
+    public DateTimeOffset Timestamp { get; private set; }
 
     public static AuditLog Create(
         string entityType,
@@ -43,7 +43,7 @@ public sealed class AuditLog : Entity
         string? newValues = null,
         Guid? userId = null)
     {
-        return new AuditLog(
+        var auditLog = new AuditLog(
             Guid.NewGuid(),
             entityType,
             entityId,
@@ -51,5 +51,9 @@ public sealed class AuditLog : Entity
             oldValues,
             newValues,
             userId);
+
+        auditLog.SetCreatedAt();
+
+        return auditLog;
     }
 }

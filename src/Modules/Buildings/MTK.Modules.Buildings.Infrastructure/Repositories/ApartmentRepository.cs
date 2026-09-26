@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Buildings.Domain.Apartments;
 using MTK.Modules.Buildings.Domain.Repositories;
 using MTK.Modules.Buildings.Infrastructure.Database;
 
 namespace MTK.Modules.Buildings.Infrastructure.Repositories;
 
-internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRepository
+internal sealed class ApartmentRepository : SearchableRepository<Apartment>, IApartmentRepository
 {
+    private BuildingsDbContext BuildingsContext => (BuildingsDbContext)Context;
+
     public ApartmentRepository(BuildingsDbContext dbContext) : base(dbContext)
     {
     }
@@ -15,7 +18,7 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
         Guid buildingId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Apartments
+        return await BuildingsContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
             .Where(a => a.BuildingId == buildingId)
@@ -26,7 +29,7 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Apartments
+        return await BuildingsContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
             .Where(a => a.CurrentOwnerId == ownerId)
@@ -36,7 +39,7 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
     public async Task<IEnumerable<Apartment>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Apartments
+        return await BuildingsContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
             .ToListAsync(cancellationToken);
@@ -47,17 +50,17 @@ internal sealed class ApartmentRepository : Repository<Apartment>, IApartmentRep
         string apartmentNumber,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Apartments
+        return await BuildingsContext.Apartments
             .AnyAsync(
                 a => a.BuildingId == buildingId && a.ApartmentNumber == apartmentNumber,
                 cancellationToken);
     }
 
-    public override async Task<Apartment?> GetByIdAsync(
+    public override async Task<Apartment?> GetByIdDefaultAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.Apartments
+        return await BuildingsContext.Apartments
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);

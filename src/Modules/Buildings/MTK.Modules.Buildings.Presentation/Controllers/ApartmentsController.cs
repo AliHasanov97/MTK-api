@@ -1,16 +1,46 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Domain.Queries;
 using MTK.Modules.Buildings.Application.Apartments.Commands.AssignOwnerToApartment;
 using MTK.Modules.Buildings.Application.Apartments.Commands.CreateApartment;
 using MTK.Modules.Buildings.Application.Apartments.Commands.TransferApartmentOwnership;
 using MTK.Modules.Buildings.Application.Apartments.Commands.UpdateApartment;
 using MTK.Modules.Buildings.Application.Apartments.Queries.GetApartmentById;
 using MTK.Modules.Buildings.Application.Apartments.Queries.GetApartmentsByBuilding;
+using MTK.Modules.Buildings.Application.Apartments.Queries.SearchApartments;
 
 namespace MTK.Modules.Buildings.Presentation.Controllers;
 
 public class ApartmentsController(ISender sender) : BaseController(sender)
 {
+    [Produces<SearchApartmentsResponse>]
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchApartments(
+        [FromQuery] string? searchTerm,
+        [FromQuery] string? sortColumn,
+        [FromQuery] SortDirection? sortDirection,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize,
+        CancellationToken cancellationToken)
+    {
+        var sortCriteria = !string.IsNullOrEmpty(sortColumn)
+            ? new SortCriteria { ColumnName = sortColumn, Direction = sortDirection ?? SortDirection.Ascending }
+            : null;
+
+        var query = new SearchApartmentsQuery(
+            Filters: null,
+            sortCriteria,
+            searchTerm,
+            page,
+            pageSize);
+
+        var result = await _sender.Send(query, cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value)
+            : BadRequest(result.Error);
+    }
+
     [Produces<ApartmentResponse>]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetApartmentById(Guid id, CancellationToken cancellationToken)

@@ -9,7 +9,7 @@ namespace MTK.Modules.Buildings.Domain.Apartments;
 /// <summary>
 /// Mənzil entity
 /// </summary>
-public sealed class Apartment : Entity
+public sealed class Apartment : SearchableEntity
 {
 
     private Apartment(
@@ -27,7 +27,7 @@ public sealed class Apartment : Entity
     }
 
     // Private constructor for EF Core
-    private Apartment() : base(Guid.Empty)
+    private Apartment() : base()
     {
     }
 
@@ -40,11 +40,6 @@ public sealed class Apartment : Entity
 
     // Current owner (nullable - can be vacant)
     public Guid? CurrentOwnerId { get; private set; }
-
-    // Timestamps
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
 
     // Navigation
     public Building Building { get; private set; } = null!;
@@ -64,10 +59,10 @@ public sealed class Apartment : Entity
             floor,
             areaSquareMeters)
         {
-            RoomCount = roomCount,
-            CreatedAt = DateTime.UtcNow
+            RoomCount = roomCount
         };
 
+        apartment.SetCreatedAt();
         apartment.RaiseDomainEvent(new ApartmentCreatedDomainEvent(apartment.Id, buildingId, apartmentNumber));
 
         return apartment;
@@ -77,7 +72,7 @@ public sealed class Apartment : Entity
     {
         AreaSquareMeters = areaSquareMeters;
         RoomCount = roomCount;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new ApartmentUpdatedDomainEvent(Id, BuildingId));
     }
@@ -86,7 +81,7 @@ public sealed class Apartment : Entity
     {
         var oldStatus = Status;
         Status = status;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new ApartmentStatusChangedDomainEvent(Id, oldStatus, status));
     }
@@ -96,7 +91,7 @@ public sealed class Apartment : Entity
         var previousOwnerId = CurrentOwnerId;
         CurrentOwnerId = ownerId;
         Status = ApartmentStatus.Active;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new ApartmentOwnerAssignedDomainEvent(Id, ownerId, previousOwnerId));
     }
@@ -106,7 +101,7 @@ public sealed class Apartment : Entity
         var previousOwnerId = CurrentOwnerId;
         CurrentOwnerId = null;
         Status = ApartmentStatus.Vacant;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         if (previousOwnerId.HasValue)
         {
@@ -117,14 +112,14 @@ public sealed class Apartment : Entity
     public void MarkInTransfer()
     {
         Status = ApartmentStatus.InTransfer;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new ApartmentTransferStartedDomainEvent(Id, CurrentOwnerId));
     }
 
     public void Delete()
     {
-        DeletedAt = DateTime.UtcNow;
+        SetDeletedAt();
         RaiseDomainEvent(new ApartmentDeletedDomainEvent(Id));
     }
 }

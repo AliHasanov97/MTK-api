@@ -8,7 +8,7 @@ namespace MTK.Modules.Buildings.Domain.Garages;
 /// <summary>
 /// Qaraj və ya dayanacaq entity
 /// </summary>
-public sealed class Garage : Entity
+public sealed class Garage : SearchableEntity
 {
     private Garage(
         Guid id,
@@ -22,7 +22,7 @@ public sealed class Garage : Entity
     }
 
     // Private constructor for EF Core
-    private Garage() : base(Guid.Empty)
+    private Garage() : base()
     {
     }
 
@@ -30,11 +30,6 @@ public sealed class Garage : Entity
     public GarageType Type { get; private set; }
     public Guid? OwnerId { get; private set; }
     public string? Description { get; private set; }
-
-    // Timestamps
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-    public DateTime? DeletedAt { get; private set; }
 
     // Navigation
     public Owner? Owner { get; private set; }
@@ -51,10 +46,10 @@ public sealed class Garage : Entity
             garageNumber,
             type)
         {
-            Description = description,
-            CreatedAt = DateTime.UtcNow
+            Description = description
         };
 
+        garage.SetCreatedAt();
         garage.RaiseDomainEvent(new GarageCreatedDomainEvent(garage.Id, ownerId, garageNumber, type));
 
         return garage;
@@ -65,7 +60,7 @@ public sealed class Garage : Entity
         var oldType = Type;
         Type = type;
         Description = description;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         if (oldType != type)
         {
@@ -77,7 +72,7 @@ public sealed class Garage : Entity
     {
         var previousOwnerId = OwnerId;
         OwnerId = ownerId;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         RaiseDomainEvent(new GarageOwnerAssignedDomainEvent(Id, ownerId, previousOwnerId));
     }
@@ -86,7 +81,7 @@ public sealed class Garage : Entity
     {
         var previousOwnerId = OwnerId;
         OwnerId = null;
-        UpdatedAt = DateTime.UtcNow;
+        SetUpdatedAt();
 
         if (previousOwnerId.HasValue)
         {
@@ -96,7 +91,7 @@ public sealed class Garage : Entity
 
     public void Delete()
     {
-        DeletedAt = DateTime.UtcNow;
+        SetDeletedAt();
         RaiseDomainEvent(new GarageDeletedDomainEvent(Id));
     }
 

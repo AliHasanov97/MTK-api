@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using NpgsqlTypes;
 
 #nullable disable
 
@@ -37,10 +38,10 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                     b.Property<string>("Error")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("OccurredOnUtc")
+                    b.Property<DateTimeOffset>("OccurredOnUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("ProcessedOnUtc")
+                    b.Property<DateTimeOffset?>("ProcessedOnUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Type")
@@ -80,10 +81,10 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                     b.Property<string>("Error")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("OccurredOnUtc")
+                    b.Property<DateTimeOffset>("OccurredOnUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("ProcessedOnUtc")
+                    b.Property<DateTimeOffset?>("ProcessedOnUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Type")
@@ -120,6 +121,12 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("EntityId")
                         .HasColumnType("uuid");
 
@@ -134,7 +141,15 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                     b.Property<string>("OldValues")
                         .HasColumnType("jsonb");
 
-                    b.Property<DateTime>("Timestamp")
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("UserId")
@@ -159,10 +174,10 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
@@ -196,11 +211,16 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
