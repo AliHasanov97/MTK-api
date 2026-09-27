@@ -14,25 +14,17 @@ namespace MTK.Modules.Buildings.Presentation.Controllers;
 public class ApartmentsController(ISender sender) : BaseController(sender)
 {
     [Produces<SearchApartmentsResponse>]
-    [HttpGet("search")]
+    [HttpPost("search")]
     public async Task<IActionResult> SearchApartments(
-        [FromQuery] string? searchTerm,
-        [FromQuery] string? sortColumn,
-        [FromQuery] SortDirection? sortDirection,
-        [FromQuery] int? page,
-        [FromQuery] int? pageSize,
+        [FromBody] SearchApartmentsRequest request,
         CancellationToken cancellationToken)
     {
-        var sortCriteria = !string.IsNullOrEmpty(sortColumn)
-            ? new SortCriteria { ColumnName = sortColumn, Direction = sortDirection ?? SortDirection.Ascending }
-            : null;
-
         var query = new SearchApartmentsQuery(
-            Filters: null,
-            sortCriteria,
-            searchTerm,
-            page,
-            pageSize);
+            request.Filters,
+            request.SortCriteria,
+            request.SearchTerm,
+            request.Page,
+            request.PageSize);
 
         var result = await _sender.Send(query, cancellationToken);
 

@@ -460,6 +460,38 @@ public static class QueryHelper
                     : strElement.ToString();
             }
 
+            // Handle JsonElement to numeric/bool conversion.
+            // Convert.ChangeType below cannot do this itself: JsonElement does not
+            // implement IConvertible, so it throws for every numeric/bool target
+            // and this silently falls through to the catch block, dropping the value.
+            if (value is JsonElement numElement)
+            {
+                if (underlyingType == typeof(bool)
+                    && (numElement.ValueKind == JsonValueKind.True || numElement.ValueKind == JsonValueKind.False))
+                {
+                    return numElement.GetBoolean();
+                }
+
+                if (numElement.ValueKind == JsonValueKind.Number)
+                {
+                    if (underlyingType == typeof(int)) return numElement.GetInt32();
+                    if (underlyingType == typeof(long)) return numElement.GetInt64();
+                    if (underlyingType == typeof(short)) return numElement.GetInt16();
+                    if (underlyingType == typeof(decimal)) return numElement.GetDecimal();
+                    if (underlyingType == typeof(double)) return numElement.GetDouble();
+                    if (underlyingType == typeof(float)) return numElement.GetSingle();
+                }
+
+                if (numElement.ValueKind == JsonValueKind.String)
+                {
+                    var raw = numElement.GetString();
+                    if (raw != null)
+                    {
+                        return Convert.ChangeType(raw, underlyingType);
+                    }
+                }
+            }
+
             // General conversion
             return Convert.ChangeType(value, underlyingType);
         }

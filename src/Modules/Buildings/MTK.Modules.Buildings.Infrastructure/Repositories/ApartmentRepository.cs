@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Domain.Queries;
 using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Buildings.Domain.Apartments;
 using MTK.Modules.Buildings.Domain.Repositories;
@@ -12,6 +13,32 @@ internal sealed class ApartmentRepository : SearchableRepository<Apartment>, IAp
 
     public ApartmentRepository(BuildingsDbContext dbContext) : base(dbContext)
     {
+    }
+
+    public override async Task<List<Apartment>> SearchAsync(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria,
+        string? searchTerm,
+        int? page,
+        int? pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ApplyFiltersAndSort(filters, sortCriteria);
+
+        // Include navigation properties
+        query = query
+            .Include(a => a.Building)
+            .Include(a => a.CurrentOwner);
+
+        // Apply search term
+        string? searchTermQuery = GetSearchTerm(searchTerm);
+        if (!string.IsNullOrWhiteSpace(searchTermQuery))
+        {
+            query = query.Where(p => p.SearchVector.Matches(EF.Functions.ToTsQuery(searchTermQuery)));
+        }
+
+        query = ApplyPages(query, page, pageSize);
+        return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Apartment>> GetByBuildingIdAsync(
