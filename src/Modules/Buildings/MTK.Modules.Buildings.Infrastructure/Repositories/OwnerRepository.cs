@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Domain.Queries;
 using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Buildings.Domain.Owners;
 using MTK.Modules.Buildings.Domain.Repositories;
@@ -12,6 +13,50 @@ internal sealed class OwnerRepository : SearchableRepository<Owner>, IOwnerRepos
 
     public OwnerRepository(BuildingsDbContext dbContext) : base(dbContext)
     {
+    }
+
+    // tsvector search only does whole-token prefix matching, so a phone
+    // number typed from the middle (e.g. "501234" out of "+994501234567")
+    // would never match even once SearchVector is populated — PhoneNumber
+    // gets an extra plain substring check here for that reason.
+    public override async Task<List<Owner>> SearchAsync(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria,
+        string? searchTerm,
+        int? page,
+        int? pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ApplyFiltersAndSort(filters, sortCriteria);
+        query = ApplySearchTerm(query, searchTerm);
+        query = ApplyPages(query, page, pageSize);
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    public override async Task<int> CountAsync(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria,
+        string? searchTerm,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ApplyFiltersAndSort(filters, sortCriteria);
+        query = ApplySearchTerm(query, searchTerm);
+        return await query.CountAsync(cancellationToken);
+    }
+
+    private IQueryable<Owner> ApplySearchTerm(IQueryable<Owner> query, string? searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return query;
+        }
+
+        string? searchTermQuery = GetSearchTerm(searchTerm);
+        var trimmedTerm = searchTerm.Trim();
+
+        return query.Where(o =>
+            (searchTermQuery != null && o.SearchVector.Matches(EF.Functions.ToTsQuery(searchTermQuery)))
+            || o.PhoneNumber.Contains(trimmedTerm));
     }
 
     public async Task<Owner?> GetByUserIdAsync(
@@ -57,6 +102,7 @@ internal sealed class OwnerRepository : SearchableRepository<Owner>, IOwnerRepos
     {
         return await BuildingsContext.Owners
             .Include(o => o.OwnedApartments)
+                .ThenInclude(a => a.Building)
             .Include(o => o.OwnedGarages)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }

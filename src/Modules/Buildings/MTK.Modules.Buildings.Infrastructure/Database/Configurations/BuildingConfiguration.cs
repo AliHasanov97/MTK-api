@@ -70,6 +70,17 @@ internal sealed class BuildingConfiguration : IEntityTypeConfiguration<Building>
         // Global soft delete filter
         builder.HasQueryFilter(b => b.DeletedAt == null);
 
+        // Was a plain nullable column with no generation expression, so it
+        // was never populated (search always matched nothing). This makes
+        // Postgres maintain it automatically.
+        builder
+            .HasGeneratedTsVectorColumn(
+                b => b.SearchVector,
+                "english",
+                b => new { b.Name, b.Description })
+            .HasIndex(b => b.SearchVector)
+            .HasMethod("GIN");
+
         // Relationships
         builder.HasMany(b => b.Apartments)
             .WithOne(a => a.Building)

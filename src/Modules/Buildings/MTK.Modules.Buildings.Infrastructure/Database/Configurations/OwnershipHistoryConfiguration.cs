@@ -41,6 +41,17 @@ internal sealed class OwnershipHistoryConfiguration : IEntityTypeConfiguration<O
         builder.Property(oh => oh.CreatedAt)
             .IsRequired();
 
+        // Was a plain nullable column with no generation expression, so it
+        // was never populated (search always matched nothing). This makes
+        // Postgres maintain it automatically.
+        builder
+            .HasGeneratedTsVectorColumn(
+                oh => oh.SearchVector,
+                "english",
+                oh => new { oh.PreviousOwnerName, oh.NewOwnerName, oh.Notes })
+            .HasIndex(oh => oh.SearchVector)
+            .HasMethod("GIN");
+
         // Relationships
         builder.HasOne(oh => oh.Apartment)
             .WithMany()

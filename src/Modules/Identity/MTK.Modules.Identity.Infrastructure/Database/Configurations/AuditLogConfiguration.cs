@@ -34,6 +34,25 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(al => al.Timestamp)
             .IsRequired();
 
+        builder.Property(al => al.CreatedAt)
+            .IsRequired();
+
+        builder.Property(al => al.UpdatedAt);
+
+        builder.Property(al => al.DeletedAt);
+
+        // Global soft delete filter
+        builder.HasQueryFilter(al => al.DeletedAt == null);
+
+        // SearchVector for full-text search
+        builder
+            .HasGeneratedTsVectorColumn(
+                al => al.SearchVector,
+                "english",
+                al => new { al.EntityType, al.Action })
+            .HasIndex(al => al.SearchVector)
+            .HasMethod("GIN");
+
         // Indexes for efficient querying
         builder.HasIndex(al => al.EntityType);
         builder.HasIndex(al => al.EntityId);

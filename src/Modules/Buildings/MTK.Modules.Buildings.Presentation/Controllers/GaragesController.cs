@@ -8,6 +8,7 @@ using MTK.Modules.Buildings.Application.Garages.Commands.UpdateGarage;
 using MTK.Modules.Buildings.Application.Garages.Queries.GetAllGarages;
 using MTK.Modules.Buildings.Application.Garages.Queries.GetGarageById;
 using MTK.Modules.Buildings.Application.Garages.Queries.GetGaragesByOwnerId;
+using MTK.Modules.Buildings.Application.Garages.Queries.SearchGarages;
 
 namespace MTK.Modules.Buildings.Presentation.Controllers;
 
@@ -45,6 +46,26 @@ public class GaragesController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value, "Sahibə aid qarajlar uğurla əldə edildi")
+            : BadRequest(result.Error);
+    }
+
+    [Produces<SearchGaragesResponse>]
+    [HttpPost("search")]
+    public async Task<IActionResult> SearchGarages(
+        [FromBody] SearchGaragesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new SearchGaragesQuery(
+            request.Filters,
+            request.SortCriteria,
+            request.SearchTerm,
+            request.Page,
+            request.PageSize);
+
+        var result = await _sender.Send(query, cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value)
             : BadRequest(result.Error);
     }
 

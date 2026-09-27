@@ -40,6 +40,17 @@ internal sealed class GarageConfiguration : IEntityTypeConfiguration<Garage>
         // Global soft delete filter
         builder.HasQueryFilter(g => g.DeletedAt == null);
 
+        // Was a plain nullable column with no generation expression, so it
+        // was never populated (search always matched nothing). This makes
+        // Postgres maintain it automatically.
+        builder
+            .HasGeneratedTsVectorColumn(
+                g => g.SearchVector,
+                "english",
+                g => new { g.GarageNumber, g.Type, g.Description })
+            .HasIndex(g => g.SearchVector)
+            .HasMethod("GIN");
+
         // Relationships
         builder.HasOne(g => g.Owner)
             .WithMany(o => o.OwnedGarages)

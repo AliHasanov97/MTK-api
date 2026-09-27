@@ -3,6 +3,7 @@ using System;
 using MTK.Modules.Buildings.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -12,9 +13,11 @@ using NpgsqlTypes;
 namespace MTK.Modules.Buildings.Infrastructure.Migrations
 {
     [DbContext(typeof(BuildingsDbContext))]
-    partial class BuildingsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260927095233_SomeChanges")]
+    partial class SomeChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

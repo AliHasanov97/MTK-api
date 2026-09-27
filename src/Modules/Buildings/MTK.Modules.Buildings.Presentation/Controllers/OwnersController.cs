@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Modules.Buildings.Application.Owners.Commands.CreatePassiveOwner;
+using MTK.Modules.Buildings.Application.Owners.Commands.LinkOwnerToUser;
 using MTK.Modules.Buildings.Application.Owners.Queries.GetOwnerById;
+using MTK.Modules.Buildings.Application.Owners.Queries.SearchOwners;
 
 namespace MTK.Modules.Buildings.Presentation.Controllers;
 
@@ -15,6 +17,26 @@ public class OwnersController(ISender sender) : BaseController(sender)
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+    }
+
+    [Produces<SearchOwnersResponse>]
+    [HttpPost("search")]
+    public async Task<IActionResult> SearchOwners(
+        [FromBody] SearchOwnersRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new SearchOwnersQuery(
+            request.Filters,
+            request.SortCriteria,
+            request.SearchTerm,
+            request.Page,
+            request.PageSize);
+
+        var result = await _sender.Send(query, cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value)
+            : BadRequest(result.Error);
     }
 
     /// <summary>
@@ -39,6 +61,24 @@ public class OwnersController(ISender sender) : BaseController(sender)
             ? CreatedAtAction(nameof(GetOwnerById), new { id = result.Value }, result.Value)
             : BadRequest(result.Error);
     }
+
+    /// <summary>
+    /// Passiv sahibi mövcud bir istifadəçi hesabına bağlayır
+    /// </summary>
+    [HttpPost("{id:guid}/link-user")]
+    public async Task<IActionResult> LinkOwnerToUser(
+        Guid id,
+        [FromBody] LinkOwnerToUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new LinkOwnerToUserCommand(id, request.UserId);
+
+        var result = await _sender.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? Success("Sahib hesaba uğurla bağlandı")
+            : BadRequest(result.Error);
+    }
 }
 
 public sealed record CreatePassiveOwnerRequest(
@@ -47,3 +87,5 @@ public sealed record CreatePassiveOwnerRequest(
     string PhoneNumber,
     string Email,
     string? Notes = null);
+
+public sealed record LinkOwnerToUserRequest(Guid UserId);

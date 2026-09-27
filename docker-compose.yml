@@ -61,6 +61,8 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HOSTNAME_STRICT: false
       KC_PROXY: edge
+    volumes:
+      - ./themes/mtk:/opt/keycloak/themes/mtk
     depends_on:
       - keycloak-postgres
     networks:

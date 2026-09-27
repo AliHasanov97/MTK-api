@@ -152,7 +152,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{userId:guid}/roles")]
-    [RequireAnyRole(Permissions.RolesManage)]
+    [Authorize]
     public async Task<IActionResult> AssignRolesToUser(Guid userId, [FromBody] AssignRolesRequest request, CancellationToken cancellationToken)
     {
         var command = new AssignRolesToUserCommand(userId, request.RoleNames);

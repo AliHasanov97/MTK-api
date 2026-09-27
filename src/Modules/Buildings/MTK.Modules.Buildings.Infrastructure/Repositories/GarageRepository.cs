@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Domain.Queries;
 using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Buildings.Domain.Garages;
 using MTK.Modules.Buildings.Domain.Repositories;
@@ -12,6 +13,30 @@ internal sealed class GarageRepository : SearchableRepository<Garage>, IGarageRe
 
     public GarageRepository(BuildingsDbContext dbContext) : base(dbContext)
     {
+    }
+
+    public override async Task<List<Garage>> SearchAsync(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria,
+        string? searchTerm,
+        int? page,
+        int? pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ApplyFiltersAndSort(filters, sortCriteria);
+
+        // Include navigation properties
+        query = query.Include(g => g.Owner);
+
+        // Apply search term
+        string? searchTermQuery = GetSearchTerm(searchTerm);
+        if (!string.IsNullOrWhiteSpace(searchTermQuery))
+        {
+            query = query.Where(p => p.SearchVector.Matches(EF.Functions.ToTsQuery(searchTermQuery)));
+        }
+
+        query = ApplyPages(query, page, pageSize);
+        return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Garage>> GetByOwnerIdAsync(

@@ -1,0 +1,788 @@
+/* MTK-UI matching theme for the Keycloak Account Console (keycloak.v3, PatternFly 5).
+   Class names verified against the actual compiled account-ui bundle, not guessed. */
+
+:root {
+  --ink: #162522;
+  --muted: #64716c;
+  --green: #345c4a;
+  --green-dark: #274939;
+  --lime: #c9e3a1;
+  --paper: #f7f8f4;
+  --line: #e5e9e1;
+}
+
+body {
+  background: var(--paper) !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  color: var(--ink);
+}
+
+/* Top bar — PatternFly ships this dark by default via the
+   --pf-v5-c-page__header--BackgroundColor variable on .pf-v5-c-page__header
+   itself (.pf-v5-c-masthead carries no background rule at all). */
+.pf-v5-c-page__header {
+  --pf-v5-c-page__header--BackgroundColor: #fff;
+  background-color: #fff !important;
+  border-bottom: 1px solid var(--line);
+  box-shadow: none !important;
+  color: var(--ink) !important;
+  min-height: 60px !important;
+  padding-inline: 20px !important;
+}
+
+.pf-v5-c-page__header * {
+  color: var(--ink) !important;
+}
+
+.pf-v5-c-page__header-brand-link .pf-v5-c-brand {
+  height: 40px;
+  width: auto;
+}
+
+/* Keycloak's brand slot is image-only; inject a wordmark next to the
+   logo. This is the Account Console specifically, not the main app, so
+   it reads "Hesabım" rather than app/components/Logo.tsx's "Vahid MTK". */
+.pf-v5-c-page__header-brand-link {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+.pf-v5-c-page__header-brand-link::after {
+  content: "Hesabım";
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -1.4px;
+  color: var(--ink);
+}
+
+/* Redundant default silhouette avatar rendered as a separate toolbar
+   item next to the name dropdown (no profile picture is set, so
+   Keycloak falls back to a generic placeholder icon with no info). */
+.pf-v5-c-page__header-tools .pf-v5-c-avatar {
+  display: none;
+}
+
+.pf-v5-c-page__header-tools .pf-v5-c-button {
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+.pf-v5-c-page__header-brand-toggle .pf-v5-c-button {
+  border-color: var(--line) !important;
+}
+
+/* The sidebar-collapse hamburger should only exist on phone-width
+   screens; on desktop the sidebar stays permanently open with no way to
+   toggle it closed. PatternFly's own "lg" breakpoint (992px) is what the
+   rest of this app's responsive rules key off, so match it here. */
+@media (min-width: 992px) {
+  .pf-v5-c-page__header-brand-toggle {
+    display: none !important;
+  }
+}
+
+.pf-v5-c-avatar {
+  border: 1px solid var(--line);
+  width: 26px;
+  height: 26px;
+}
+
+/* User menu toggle — matches app/components/UserMenu.tsx's
+   .panel-user-trigger exactly (transparent pill, no border, #f2f4ee
+   hover), not just an approximation of it. */
+.pf-v5-c-page__header-tools .pf-v5-c-dropdown__toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 5px 7px !important;
+  background: transparent !important;
+}
+
+.pf-v5-c-page__header-tools .pf-v5-c-dropdown__toggle:hover {
+  background: #f2f4ee !important;
+}
+
+.pf-v5-c-page__header-tools .pf-v5-c-dropdown__toggle-text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+/* Dropdown panel — same card as .panel-user-dropdown. */
+.pf-v5-c-dropdown__menu {
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 16px 40px rgba(29, 53, 37, 0.12) !important;
+  padding: 6px !important;
+}
+
+/* Menu items — same as .panel-user-dropdown-item. */
+.pf-v5-c-dropdown__menu-item {
+  font-size: 13px !important;
+  font-weight: 600;
+  color: #3c463f !important;
+  padding: 10px 12px !important;
+  border-radius: 7px !important;
+}
+
+.pf-v5-c-dropdown__menu-item:hover {
+  background: #f2f4ee !important;
+}
+
+/* "Çıxış" (signOut) is always pushed last (accountManagement, then
+   logout — see the header component's item order), matching
+   .panel-user-dropdown-danger's muted red on the same action in panel. */
+.pf-v5-c-dropdown__menu-item:last-child {
+  color: #a24a4a !important;
+}
+
+/* Sidebar navigation */
+.pf-v5-c-page__sidebar {
+  background: #fff !important;
+  border-right: 1px solid var(--line);
+  width: 260px;
+}
+
+.pf-v5-c-page__sidebar-body {
+  background: #fff !important;
+  padding: 24px 20px !important;
+}
+
+.pf-v5-c-nav__list {
+  gap: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pf-v5-c-nav__item {
+  margin: 0 !important;
+}
+
+.pf-v5-c-nav__link {
+  color: var(--ink) !important;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 8px !important;
+  padding: 11px 12px !important;
+  min-height: 0 !important;
+}
+
+.pf-v5-c-nav__link:hover {
+  background: var(--paper) !important;
+}
+
+/* Only "Hesab təhlükəsizliyi" (Account security) is kept — Personal info
+   and Applications are dropped. Nav order is fixed by Keycloak
+   (1=Personal info, 2=Account security, 3=Applications), verified
+   against the live rendered sidebar. Scoped to `.pf-v5-c-nav >` (not just
+   `.pf-v5-c-nav__list >`) because NavExpandable's subnav renders its own
+   nested .pf-v5-c-nav__list — the unscoped selector also matched its
+   nth-child(1)/(3), hiding "Giriş üsulları" and "Bağlı hesablar". */
+.pf-v5-c-nav > .pf-v5-c-nav__list > .pf-v5-c-nav__item:nth-child(1),
+.pf-v5-c-nav > .pf-v5-c-nav__list > .pf-v5-c-nav__item:nth-child(3) {
+  display: none !important;
+}
+
+/* The "Hesab təhlükəsizliyi" group's collapse arrow is hidden and the
+   heading itself is restyled as an inert section label (matches how
+   app/panel/PanelShell.tsx has no group headers at all — this is the
+   closest equivalent). It's a <button> that would otherwise still
+   collapse the group on click; pointer-events:none keeps it a label. */
+.pf-v5-c-nav__item.pf-m-expandable .pf-v5-c-nav__toggle {
+  display: none !important;
+}
+
+.pf-v5-c-nav__item.pf-m-expandable > .pf-v5-c-nav__link {
+  pointer-events: none;
+  cursor: default;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 12px 10px !important;
+}
+
+/* The collapse/expand animation relies on a fixed max-height token;
+   our taller padding on the 3 items pushed their combined height past
+   it, clipping the last two behind a hidden scrollbar. Let it grow. */
+.pf-v5-c-nav__subnav {
+  margin-top: 0 !important;
+  --pf-v5-c-nav__item--m-expanded__subnav--MaxHeight: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.pf-v5-c-nav__subnav__link {
+  padding: 11px 12px !important;
+  margin: 0 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  color: var(--ink) !important;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Same hover tint as app/panel's .panel-nav-item:hover (#f2f4ee) — the
+   previous var(--paper) (#f7f8f4) is the sidebar's own background-adjacent
+   tone and barely registered as a hover state against the white sidebar. */
+.pf-v5-c-nav__subnav__link:hover {
+  background: #f2f4ee !important;
+}
+
+.pf-v5-c-nav__subnav__link.pf-m-current {
+  color: #fff !important;
+  background: var(--green) !important;
+  font-weight: 700 !important;
+}
+
+.pf-v5-c-nav__link.pf-m-current {
+  color: #fff !important;
+  background: var(--green) !important;
+  font-weight: 700;
+}
+
+/* PatternFly's nav current/hover indicator is a left-border drawn via
+   ::after (not ::before, which is what the two rules above used to
+   target and so never actually removed anything) — its default color
+   token (--pf-v5-global--active-color--400, #73bcf7) is blue on the
+   current item, and a similar per-state token colors it on hover. Since
+   we already show state with a solid background instead, the bar is
+   pure PatternFly chrome we don't want. Kill the border specifically
+   (not `content`) so this same pseudo-element is still free to carry
+   the per-item icon glyph below. */
+.pf-v5-c-nav__link::after,
+.pf-v5-c-nav__subnav__link::after {
+  border: none !important;
+}
+
+/* Icons for the 3 account-security items, in the same glyph family and
+   sizing as app/panel/nav.ts's icons (◎ ⌂ ▦ ₼ ⇄ ▩ ✳ ◈ ◐ ⚙), keyed off
+   each link's route since these pages render no icon slot of their own.
+   Reuses ::after (which PatternFly's own current/hover indicator also
+   uses — its border is killed above, but its `content` must be beaten
+   with !important here or the icon would lose to PatternFly's own
+   same-specificity state rules on hover/current). */
+.pf-v5-c-nav__subnav__link[href*="signing-in"]::after,
+.pf-v5-c-nav__subnav__link[href*="device-activity"]::after,
+.pf-v5-c-nav__subnav__link[href*="linked-accounts"]::after {
+  order: -1;
+  font-size: 16px;
+  color: #93a08f;
+  line-height: 1;
+}
+
+.pf-v5-c-nav__subnav__link.pf-m-current[href*="signing-in"]::after,
+.pf-v5-c-nav__subnav__link.pf-m-current[href*="device-activity"]::after,
+.pf-v5-c-nav__subnav__link.pf-m-current[href*="linked-accounts"]::after {
+  color: #c9e3a1 !important;
+}
+
+.pf-v5-c-nav__subnav__link[href*="signing-in"]::after {
+  content: "\26BF" !important; /* ⚿ key */
+}
+
+.pf-v5-c-nav__subnav__link[href*="device-activity"]::after {
+  content: "\25A4" !important; /* ▤ device screen */
+}
+
+.pf-v5-c-nav__subnav__link[href*="linked-accounts"]::after {
+  content: "\26AF" !important; /* ⚯ linked rings */
+}
+
+/* Main content area */
+.pf-v5-c-page__main {
+  background: var(--paper) !important;
+}
+
+.pf-v5-c-page__main-section {
+  background: transparent !important;
+  padding: 36px 32px !important;
+}
+
+.pf-v5-c-title {
+  color: var(--ink) !important;
+  font-weight: 700;
+}
+
+/* Cards */
+.pf-v5-c-card {
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(22, 37, 34, 0.05) !important;
+}
+
+/* Form fields — match app/panel's .form-field input styling */
+.pf-v5-c-form__label-text {
+  font-weight: 700;
+  font-size: 12px;
+  color: #526354 !important;
+}
+
+.pf-v5-c-form-control {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 13px !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  height: auto !important;
+}
+
+.pf-v5-c-form-control:focus {
+  border-color: var(--green) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Buttons */
+.pf-v5-c-button.pf-m-primary {
+  background: var(--green) !important;
+  border-color: var(--green) !important;
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+  background: var(--green-dark) !important;
+}
+
+.pf-v5-c-button.pf-m-link {
+  color: var(--green) !important;
+}
+
+/* Root-cause fix (not just for Signing-in's "Yenilə"): PatternFly draws
+   pf-m-secondary's outline via a ::after pseudo-element with its own
+   border color token, not the real `border` property — so `border-color`
+   here never rendered anything, and the button showed PatternFly's
+   default blue after-border instead everywhere this variant is used
+   (Device Activity's "Çıxış" / "Bütün cihazlardan çıxış et" included).
+   Killing the pseudo-element and drawing a real border fixes every
+   secondary button across the account console at once. */
+.pf-v5-c-button.pf-m-secondary {
+  color: var(--green) !important;
+  background: transparent !important;
+  border: 1px solid var(--green) !important;
+}
+
+.pf-v5-c-button.pf-m-secondary::after {
+  content: none !important;
+}
+
+.pf-v5-c-button.pf-m-secondary:hover {
+  background: var(--paper) !important;
+}
+
+.pf-v5-c-button.pf-m-danger {
+  background: #b3403a !important;
+  border-color: #b3403a !important;
+}
+
+/* Personal info page: show only email/firstName/lastName, read-only,
+   no locale switcher, no save/cancel — display-only per request. */
+.pf-v5-c-form__group:has(#username),
+.pf-v5-c-form__group:has([data-testid="locale-select"]),
+.pf-v5-c-form__group:has([name="attributes.locale"]),
+.pf-v5-c-form__group:has([id="attributes.locale"]) {
+  display: none !important;
+}
+
+/* Keycloak's "jump to section" side-nav has no equivalent in the panel
+   layout — drop it and let the form take the full width. */
+.pf-v5-l-grid:has(.pf-v5-c-jump-links) {
+  grid-template-columns: 1fr !important;
+}
+
+.pf-v5-c-jump-links {
+  display: none !important;
+}
+
+/* Minimalist read-only display, not input boxes: strip all form-control
+   chrome so email/Ad/Soyad render as plain text, like a definition list. */
+.pf-v5-c-form__group:has(#email) input,
+.pf-v5-c-form__group:has(#firstName) input,
+.pf-v5-c-form__group:has(#lastName) input {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  font-size: 15px !important;
+  font-weight: 600;
+  color: var(--ink) !important;
+  pointer-events: none;
+  cursor: default;
+  height: auto !important;
+}
+
+.pf-v5-c-form__group:has(#email),
+.pf-v5-c-form__group:has(#firstName),
+.pf-v5-c-form__group:has(#lastName) {
+  margin-bottom: 22px !important;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pf-v5-c-form__group:has(#email) .pf-v5-c-form__label,
+.pf-v5-c-form__group:has(#firstName) .pf-v5-c-form__label,
+.pf-v5-c-form__group:has(#lastName) .pf-v5-c-form__label {
+  margin-bottom: 4px;
+}
+
+/* Scoped to the personal-info form specifically (the one containing the
+   firstName field) so other pages' Save/Cancel buttons are unaffected. */
+form:has(#firstName) [data-testid="save"],
+form:has(#firstName) [data-testid="cancel"] {
+  display: none !important;
+}
+
+/* Signing-in (credentials) page — minimalist rework. Selectors below are
+   taken directly from the compiled SigningIn-*.js chunk (categ-title id,
+   cred-title span, data-testid/data-testrole hooks it renders), not
+   guessed from generic PatternFly markup. */
+
+/* Every account page shares the same Page wrapper (Page-yh5eMHLr.js):
+   <PageSection light>title+description</PageSection>
+   <PageSection light>{children}</PageSection>  <- wraps the categories
+   Each of those, plus each category's own nested PageSection below, has
+   ~16-24px of PatternFly default padding-block. Three of those stack
+   before you even reach the first card, which is what actually produced
+   the large gap in the screenshot — not the small margins below. Cut
+   the two outer, content-less wrapper sections down to near-zero;
+   the header section (title/description) keeps enough top padding to
+   not touch the top bar, but its bottom is trimmed to match. */
+/* Scoped with :has(.pf-v5-u-px-0) so this only fires on the Signing-in
+   page (the only one whose content wrapper contains such nested
+   sections) — Personal Info/Device Activity/etc. share the exact same
+   two-PageSection Page wrapper but render their content flush inside
+   the second section with no padding of their own, so zeroing it there
+   too would leave their content touching the header with no gap. */
+.pf-v5-c-page__main:has(.pf-v5-u-px-0) > .pf-v5-c-page__main-section:first-of-type {
+  padding-bottom: 8px !important;
+}
+
+.pf-v5-c-page__main > .pf-v5-c-page__main-section:has(.pf-v5-u-px-0) {
+  padding-block: 0 !important;
+}
+
+/* Each category's own PageSection (the "Əsas doğrulama" grouping) —
+   already horizontal-padding-free via pf-v5-u-px-0 from SigningIn.js;
+   this trims its vertical padding too. */
+.pf-v5-c-page__main-section.pf-v5-u-px-0 {
+  padding-block: 4px !important;
+}
+
+/* Category heading ("Əsas doğrulama" / "İki mərhələli doğrulama") demoted
+   from a heavy PatternFly h2/xl to a quiet section label, same family as
+   "Hesab təhlükəsizliyi" in the sidebar. */
+[id$="-categ-title"] {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted) !important;
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+/* :first-of-type on the id selector itself would match in every section
+   (each PageSection has exactly one categ-title child, so it's always
+   "first" relative to its own parent) — scope to the first PageSection
+   among its page__main-section siblings instead. */
+.pf-v5-c-page__main-section:first-of-type [id$="-categ-title"] {
+  margin-top: 0 !important;
+}
+
+/* Each credential type (Split header + its DataList, always adjacent
+   siblings — see SigningIn-*.js: both are children of the same Fragment)
+   is styled as one bordered card, matching .pf-v5-c-card elsewhere in
+   this theme. The header supplies the top/side border+radius, the
+   DataList the bottom border+radius+shadow, joined with no border
+   between them so they read as a single box. */
+.pf-v5-l-split.pf-v5-u-mt-lg.pf-v5-u-mb-lg {
+  margin: 0 !important;
+  padding: 14px 16px 8px !important;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.pf-v5-l-split.pf-v5-u-mt-lg.pf-v5-u-mb-lg + [data-testid$="/credential-list"] {
+  margin: 0 0 12px !important;
+  padding: 4px 16px 10px !important;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 14px rgba(22, 37, 34, 0.05);
+}
+
+.cred-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+}
+
+/* Cut entirely rather than shrunk — "Şifrənizi daxil edərək daxil olun"
+   style copy restates what the title already says; dropping it removes
+   a whole line per credential type. Still in the DOM for screen readers. */
+[data-testid$="/help-text"] {
+  display: none;
+}
+
+/* "Autentifikasiya tətbiqi qur" / "Passkey qur" — PatternFly renders this
+   as variant="link" (plain colored text, no chrome at all), same
+   invisible-button problem as "Yenilə" had. Give it the same real outline
+   button treatment so both actions in a card header read as buttons. */
+[data-testid$="/create"] {
+  align-self: center;
+  background: transparent !important;
+  border: 1px solid var(--green) !important;
+  color: var(--green) !important;
+  border-radius: 8px !important;
+  padding: 5px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+[data-testid$="/create"]:hover {
+  background: var(--paper) !important;
+}
+
+/* Inside the card: rows separated by a hairline (not their own boxes),
+   since the card border already frames the group as a unit. */
+[data-testid$="/credential-list"] .pf-v5-c-data-list__item {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+[data-testid$="/credential-list"] .pf-v5-c-data-list__item:last-child {
+  border-bottom: none !important;
+}
+
+[data-testid$="/credential-list"] .pf-v5-c-data-list__item-content,
+[data-testid$="/credential-list"] .pf-v5-c-data-list__item-action {
+  padding-block: 10px !important;
+}
+
+[data-testid$="/not-set-up"] {
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  padding-block: 6px !important;
+}
+
+[data-testrole="label"] {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+}
+
+[data-testrole="created-at"] {
+  font-size: 12px !important;
+  color: var(--muted) !important;
+}
+
+/* "Yenilə" — a real outline button (not bare text: with only the text
+   colored, nothing signals it's clickable). PatternFly's pf-m-secondary
+   draws its outline via a ::after pseudo-element with its own border
+   (see .pf-v5-c-button:after in the compiled CSS), not the real `border`
+   property, and that after-border defaults to PatternFly's blue primary
+   color — never themed green anywhere in this file — which is the blue
+   box that was showing around this button originally. Fix: kill the
+   phantom ::after border and draw a real, properly-colored border
+   instead, so it reads as a normal secondary button in this theme's
+   palette rather than an unstyled or invisible one. */
+[data-testrole="update"] {
+  background: transparent !important;
+  border: 1px solid var(--green) !important;
+  color: var(--green) !important;
+  border-radius: 8px !important;
+  padding: 5px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+[data-testrole="update"]::after {
+  content: none !important;
+}
+
+[data-testrole="update"]:hover {
+  background: var(--paper) !important;
+}
+
+/* "Sil" is PatternFly's variant="danger" (solid fill via a real
+   background-color, not the ::after trick), already themed by the
+   existing .pf-v5-c-button.pf-m-danger rule above — it never had the
+   invisible-button problem, so it's left alone rather than re-flattened. */
+
+/* ============================================================
+   Cihaz fəaliyyəti (Device Activity) — selectors taken from the
+   compiled DeviceActivity-*.js chunk (signed-in-device-list/-grid
+   classes, session-title span, row-N data-testid), not guessed.
+   ============================================================ */
+
+/* "Daxil olunmuş cihazlar" sub-heading — same quiet label treatment as
+   Signing-in's category titles, for a consistent look across pages. */
+.pf-v5-c-page__main-section:has(.signed-in-device-list) .pf-v5-c-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted) !important;
+  margin-bottom: 4px !important;
+}
+
+/* Each device/session becomes its own bordered card, matching the
+   credential cards on Signing-in, instead of a plain DataList row. */
+.signed-in-device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.signed-in-device-list .pf-v5-c-data-list__item {
+  background: #fff;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(22, 37, 34, 0.05);
+}
+
+.signed-in-device-list .pf-v5-c-data-list__item-row {
+  padding: 16px !important;
+}
+
+.session-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+}
+
+/* "Cari sessiya" badge — PatternFly's stock green Label, retinted to
+   this theme's lime/green instead of the default PatternFly green. */
+.signed-in-device-list .pf-v5-c-label.pf-m-green {
+  --pf-v5-c-label--m-green--BackgroundColor: var(--lime);
+  --pf-v5-c-label--m-green__content--Color: var(--green-dark);
+  --pf-v5-c-label--m-green__content--before--BorderColor: transparent;
+  font-weight: 700;
+}
+
+/* IP/last-accessed/clients/started/expires grid: muted small-caps term,
+   plain ink value — same label convention used across this theme. */
+.signed-in-device-grid .pf-v5-c-description-list__term {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted) !important;
+}
+
+.signed-in-device-grid .pf-v5-c-description-list__description,
+.signed-in-device-grid .pf-v5-c-description-list__text {
+  font-size: 13px !important;
+  color: var(--ink) !important;
+}
+
+/* ============================================================
+   Bağlı hesablar (Linked Accounts) — selectors taken from the
+   compiled LinkedAccounts-*.js chunk (#linked-idps/#unlinked-idps,
+   -idp-name/-idp-label/-idp-username id suffixes), not guessed.
+   ============================================================ */
+
+/* "Bağlı giriş provayderləri" / "Bağlanmamış giriş provayderləri" —
+   same quiet label treatment as the rest of this theme's page headers. */
+.pf-v5-c-page__main-section:has(#linked-idps, #unlinked-idps) .pf-v5-c-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted) !important;
+}
+
+/* Each identity provider becomes its own bordered card. */
+#linked-idps,
+#unlinked-idps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#linked-idps .pf-v5-c-data-list__item,
+#unlinked-idps .pf-v5-c-data-list__item {
+  background: #fff;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(22, 37, 34, 0.05);
+}
+
+#linked-idps .pf-v5-c-data-list__item-row,
+#unlinked-idps .pf-v5-c-data-list__item-row {
+  padding: 14px 16px !important;
+}
+
+[id$="-idp-name"] {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+}
+
+[id$="-idp-username"] {
+  font-size: 13px !important;
+  color: var(--muted) !important;
+}
+
+/* "socialLogin" (Google etc.) / "systemDefined" badges — same lime/green
+   retint as Device Activity's "Cari sessiya", plus a matching blue tint
+   for the social variant instead of PatternFly's stock blue. */
+[id$="-idp-label"] .pf-v5-c-label.pf-m-green {
+  --pf-v5-c-label--m-green--BackgroundColor: var(--lime);
+  --pf-v5-c-label--m-green__content--Color: var(--green-dark);
+  --pf-v5-c-label--m-green__content--before--BorderColor: transparent;
+  font-weight: 700;
+}
+
+[id$="-idp-label"] .pf-v5-c-label.pf-m-blue {
+  --pf-v5-c-label--m-blue--BackgroundColor: #e3ecf7;
+  --pf-v5-c-label--m-blue__content--Color: #2b5a96;
+  --pf-v5-c-label--m-blue__content--before--BorderColor: transparent;
+  font-weight: 700;
+}
+
+/* "Hesabı bağla" / "Bağlantını ləğv et" — variant="link" (plain text by
+   default, the same invisible-button issue as elsewhere in this theme);
+   give both a real outline button, green for connect, muted red for the
+   destructive-leaning disconnect action. */
+[id$="-idp-link"],
+[id$="-idp-unlink"] {
+  border-radius: 8px !important;
+  padding: 5px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+[id$="-idp-link"] {
+  border: 1px solid var(--green) !important;
+  color: var(--green) !important;
+}
+
+[id$="-idp-link"]:hover {
+  background: var(--paper) !important;
+}
+
+[id$="-idp-unlink"] {
+  border: 1px solid #b3403a !important;
+  color: #b3403a !important;
+}
+
+[id$="-idp-unlink"]:hover {
+  background: #fbf2f2 !important;
+}

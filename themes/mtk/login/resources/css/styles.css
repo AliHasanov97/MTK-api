@@ -1,0 +1,490 @@
+/* MTK-UI matching theme for Keycloak's legacy "keycloak" (login-pf) theme.
+   Targets the real classes rendered by Keycloak 25's default login theme —
+   verified against the live login page, not guessed. */
+
+:root {
+  --ink: #162522;
+  --muted: #64716c;
+  --green: #345c4a;
+  --green-dark: #274939;
+  --lime: #c9e3a1;
+  --paper: #f7f8f4;
+  --line: #e5e9e1;
+}
+
+body,
+.login-pf-page {
+  background: var(--paper) !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  color: var(--ink);
+}
+
+.login-pf-page-header {
+  text-align: center;
+  padding-top: 44px;
+  padding-bottom: 8px;
+}
+
+/* Realm display name is replaced by the app's logo. Image-replacement
+   technique: hide the text via overflow while keeping it in the DOM. */
+#kc-header-wrapper {
+  display: inline-block;
+  background-image: url(../img/logo.png);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  width: 220px;
+  height: 62px;
+  text-indent: -9999px;
+  overflow: hidden;
+  color: transparent !important;
+}
+
+.card-pf {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(22, 37, 34, 0.1);
+  padding: 34px 30px 30px;
+  max-width: 400px;
+  margin: 20px auto 60px;
+}
+
+.login-pf-header {
+  margin-bottom: 8px;
+}
+
+#kc-page-title,
+.login-pf-header h1 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+.pf-c-form__label,
+.pf-c-form__label-text,
+label {
+  color: #526354;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.pf-c-form-control,
+input[type="text"].pf-c-form-control,
+input[type="password"].pf-c-form-control,
+input[type="email"].pf-c-form-control {
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 14px;
+  box-shadow: none !important;
+  height: auto !important;
+}
+
+.pf-c-form-control:focus {
+  border-color: var(--green) !important;
+  outline: none;
+}
+
+#kc-form-buttons .pf-c-button.pf-m-primary,
+input.pf-c-button.pf-m-primary {
+  background: var(--green) !important;
+  border-color: var(--green) !important;
+  border-radius: 8px !important;
+  font-weight: 700;
+  text-transform: none;
+  box-shadow: none !important;
+  padding: 11px 16px !important;
+}
+
+#kc-form-buttons .pf-c-button.pf-m-primary:hover,
+input.pf-c-button.pf-m-primary:hover {
+  background: var(--green-dark) !important;
+  border-color: var(--green-dark) !important;
+}
+
+.login-pf-settings a,
+#kc-content a,
+#kc-registration a,
+#kc-info a {
+  color: var(--green) !important;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+#kc-form-options {
+  margin-bottom: 14px;
+}
+
+#kc-info {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+#kc-info-wrapper,
+#kc-info-wrapper p {
+  color: var(--muted) !important;
+  font-size: 13px !important;
+  line-height: 1.5;
+  text-align: left !important;
+}
+
+.alert,
+.pf-c-alert {
+  border-radius: 8px;
+}
+
+#kc-locale {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+/* "Logged in as X — restart login" line shown above OTP/passkey steps */
+#kc-username {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+#kc-attempted-username {
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 14px;
+  word-break: break-all;
+}
+
+#reset-login {
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.kc-login-tooltip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--green) !important;
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.kc-login-tooltip i {
+  color: var(--green);
+  font-size: 12px;
+}
+
+.kc-tooltip-text {
+  color: var(--green);
+}
+
+/* "Try another way" (password <-> passkey switch) */
+#kc-select-try-another-way-form {
+  text-align: center;
+  margin: 4px 0 16px;
+}
+
+#try-another-way {
+  color: var(--green) !important;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+#try-another-way:hover {
+  text-decoration: underline;
+}
+
+/* Social login (Google / GitHub) */
+.kc-social-section {
+  margin-top: 18px;
+}
+
+.kc-social-section hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 0 0 14px;
+}
+
+.kc-social-section h2 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0 0 14px;
+}
+
+.kc-social-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kc-social-item {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: var(--ink) !important;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: none !important;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.kc-social-item:hover {
+  border-color: var(--green) !important;
+  background: var(--paper) !important;
+}
+
+.kc-social-provider-logo {
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.kc-social-provider-logo.fa-google {
+  color: #ea4335;
+}
+
+.kc-social-provider-logo.fa-github {
+  color: #24292e;
+}
+
+.kc-social-provider-name {
+  line-height: 1;
+}
+
+/* Authenticator chooser (passkey vs password vs OTP list) */
+.select-auth-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.select-auth-box-parent {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 18px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.select-auth-box-parent:hover,
+.select-auth-box-parent:focus-visible {
+  border-color: var(--green);
+  box-shadow: 0 6px 18px rgba(22, 37, 34, 0.08);
+  outline: none;
+}
+
+.select-auth-box-icon {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-auth-box-icon-properties {
+  color: var(--green-dark) !important;
+  font-size: 18px !important;
+}
+
+.select-auth-box-parent > .pf-l-stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.select-auth-box-headline {
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 14px;
+  margin: 0;
+}
+
+.select-auth-box-desc {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+  white-space: normal;
+  text-align: left;
+}
+
+.select-auth-box-parent > .pf-m-fill {
+  flex: 0 0 0 !important;
+  width: 0 !important;
+}
+
+.select-auth-box-arrow {
+  flex: none;
+  color: var(--muted);
+}
+
+.select-auth-box-arrow .fa-angle-right {
+  font-size: 16px !important;
+}
+
+.select-auth-box-parent:hover .select-auth-box-arrow {
+  color: var(--green);
+}
+
+/* WebAuthn / passkey prompt page */
+#kc-webauthn-form,
+.webauthn-registration-container {
+  text-align: center;
+}
+
+#kc-webauthn-form .pf-c-button.pf-m-primary,
+.webauthn-registration-container .pf-c-button.pf-m-primary {
+  background: var(--green) !important;
+  border-color: var(--green) !important;
+}
+
+/* OTP input */
+#totp {
+  letter-spacing: 4px;
+  text-align: center;
+  font-size: 18px !important;
+}
+
+/* OTP setup ("İki mərhələli doğrulama") — login-config-totp.ftl renders a
+   plain <ol id="kc-totp-settings"> with browser-default numbering and an
+   unframed <img>; style it as numbered steps consistent with this
+   theme's card/badge language instead. */
+#kc-totp-settings {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  counter-reset: totp-step;
+}
+
+#kc-totp-settings > li {
+  position: relative;
+  padding: 0 0 18px 38px;
+  margin-bottom: 4px;
+  border-left: 1px solid var(--line);
+}
+
+#kc-totp-settings > li:last-child {
+  border-left-color: transparent;
+  padding-bottom: 0;
+}
+
+#kc-totp-settings > li::before {
+  counter-increment: totp-step;
+  content: counter(totp-step);
+  position: absolute;
+  left: -15px;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--lime);
+  color: var(--green-dark);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#kc-totp-settings > li > p:first-child {
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Supported authenticator apps — a plain <ul> of app names under step 1;
+   render as small quiet tags side by side (wide row, short height)
+   instead of a bulleted list. */
+#kc-totp-supported-apps {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#kc-totp-supported-apps > li {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* QR code — a raw <img> by default; frame it like a scannable card. */
+#kc-totp-secret-qr-code {
+  display: block;
+  margin: 10px 0;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  width: 160px;
+  height: 160px;
+}
+
+/* Manual entry: secret key + the type/algorithm/digits/interval list */
+#kc-totp-secret-key {
+  display: inline-block;
+  margin: 6px 0;
+  padding: 8px 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+#kc-totp-settings ul:not(#kc-totp-supported-apps) {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#kc-totp-settings ul:not(#kc-totp-supported-apps) li {
+  margin-bottom: 4px;
+}

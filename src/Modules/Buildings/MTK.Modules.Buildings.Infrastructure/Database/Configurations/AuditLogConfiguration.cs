@@ -21,5 +21,16 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.HasIndex(log => log.EntityId);
         builder.HasIndex(log => log.UserId);
         builder.HasIndex(log => log.Timestamp);
+
+        // Was a plain nullable column with no generation expression, so it
+        // was never populated (search always matched nothing). This makes
+        // Postgres maintain it automatically.
+        builder
+            .HasGeneratedTsVectorColumn(
+                log => log.SearchVector,
+                "english",
+                log => new { log.EntityType, log.Action })
+            .HasIndex(log => log.SearchVector)
+            .HasMethod("GIN");
     }
 }

@@ -52,6 +52,17 @@ internal sealed class OwnerConfiguration : IEntityTypeConfiguration<Owner>
         // Global soft delete filter
         builder.HasQueryFilter(o => o.DeletedAt == null);
 
+        // SearchVector was previously just a plain nullable column with no
+        // generation expression, so it was never populated (search always
+        // matched nothing). This makes Postgres maintain it automatically.
+        builder
+            .HasGeneratedTsVectorColumn(
+                o => o.SearchVector,
+                "english",
+                o => new { o.FirstName, o.LastName, o.Email, o.PhoneNumber })
+            .HasIndex(o => o.SearchVector)
+            .HasMethod("GIN");
+
         // Relationships
         builder.HasMany(o => o.OwnedApartments)
             .WithOne(a => a.CurrentOwner)

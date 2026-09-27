@@ -48,16 +48,28 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.DeletedAt);
 
+        // Global soft delete filter
+        builder.HasQueryFilter(u => u.DeletedAt == null);
+
+        // SearchVector for full-text search
+        builder
+            .HasGeneratedTsVectorColumn(
+                u => u.SearchVector,
+                "english",
+                u => new { u.FirstName, u.LastName, u.Email, u.PhoneNumber })
+            .HasIndex(u => u.SearchVector)
+            .HasMethod("GIN");
+
         // Indexes
         builder.HasIndex(u => u.Email)
             .IsUnique()
-            .HasFilter("[DeletedAt] IS NULL");
+            .HasFilter("\"DeletedAt\" IS NULL");
 
         builder.HasIndex(u => u.IdentityId)
-            .HasFilter("[IdentityId] IS NOT NULL");
+            .HasFilter("\"IdentityId\" IS NOT NULL");
 
         builder.HasIndex(u => u.KeycloakSyncStatus)
-            .HasFilter("[KeycloakSyncStatus] != 'Synced'");
+            .HasFilter("\"KeycloakSyncStatus\" != 'Synced'");
 
         // Ignore domain events
         builder.Ignore(u => u.DomainEvents);
