@@ -1,0 +1,113 @@
+using FluentValidation;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MTK.Common.Application.EventBus;
+using MTK.Common.Infrastructure.EventBus;
+using IUnitOfWork = MTK.Modules.Payments.Application.Abstractions.Data.IUnitOfWork;
+using MTK.Common.Infrastructure.Inbox;
+using MTK.Common.Infrastructure.Outbox;
+using MTK.Modules.Payments.Application.Payments.Commands.CreatePayment;
+using MTK.Modules.Payments.Domain.Repositories;
+using MTK.Modules.Payments.Infrastructure.Database;
+using MTK.Modules.Payments.Infrastructure.Inbox;
+using MTK.Modules.Payments.Infrastructure.Repositories;
+using MTK.Modules.Buildings.IntegrationEvents.Apartments;
+using MTK.Modules.Buildings.IntegrationEvents.Garages;
+using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
+using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
+
+namespace MTK.Modules.Payments.Infrastructure;
+
+public static class PaymentsModule
+{
+    public static IServiceCollection AddPaymentsModule(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Application layer
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(typeof(CreatePaymentCommand).Assembly);
+        });
+
+        services.AddValidatorsFromAssembly(
+            typeof(CreatePaymentCommand).Assembly,
+            includeInternalTypes: true);
+
+        // Integration Event Handlers (for ProcessInboxJob)
+        services.AddIntegrationEventHandlers();
+
+        // Database
+        services.AddHttpContextAccessor();
+        services.AddDbContext<PaymentsDbContext>((sp, options) =>
+        {
+            var outboxInterceptor = sp.GetRequiredService<InsertOutboxMessagesInterceptor>();
+
+            options.UseNpgsql(
+                    configuration.GetConnectionString("Database"),
+                    npgsqlOptions => npgsqlOptions.MigrationsHistoryTable(
+                        "__EFMigrationsHistory",
+                        "payments"))
+                .AddInterceptors(outboxInterceptor);
+        });
+
+        // Unit of Work
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<PaymentsDbContext>());
+
+        // Repositories
+        services.AddScoped<IRateRepository, RateRepository>();
+        services.AddScoped<IChargeRepository, ChargeRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IOwnerBalanceRepository, OwnerBalanceRepository>();
+        services.AddScoped<IPropertyOwnershipRepository, PropertyOwnershipRepository>();
+
+        // Services
+        services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.ChargeGenerationService>();
+
+        // Outbox & Inbox Configuration
+        services.Configure<OutboxOptions>(configuration.GetSection("Payments:Outbox"));
+        services.Configure<InboxOptions>(configuration.GetSection("Payments:Inbox"));
+
+        // Monthly Charge Generation Configuration
+        services.Configure<Jobs.MonthlyChargeGenerationOptions>(
+            configuration.GetSection("Payments:MonthlyChargeGeneration"));
+
+        // Quartz Job Configurators
+        services.ConfigureOptions<Outbox.ConfigureProcessOutboxJob>();
+        services.ConfigureOptions<Inbox.ConfigureProcessInboxJob>();
+        services.ConfigureOptions<Jobs.ConfigureMonthlyChargeGenerationJob>();
+
+        return services;
+    }
+
+    private static void AddIntegrationEventHandlers(this IServiceCollection services)
+    {
+        // Find all integration event handlers in Presentation assembly
+        Type[] integrationEventHandlers = Presentation.AssemblyReference.Assembly
+            .GetTypes()
+            .Where(t => t.IsAssignableTo(typeof(MTK.Common.Application.EventBus.IIntegrationEventHandler)))
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .ToArray();
+
+        foreach (Type integrationEventHandler in integrationEventHandlers)
+        {
+            services.AddScoped(integrationEventHandler);
+        }
+    }
+
+    public static void ConfigureConsumers(IRegistrationConfigurator registrationConfigurator)
+    {
+        // Register integration event consumers from Buildings module
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<ApartmentCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<ApartmentOwnerChangedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<ApartmentUpdatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<GarageCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<GarageOwnerChangedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<GarageOwnerRemovedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<OwnershipTransferredIntegrationEvent>>();
+    }
+}

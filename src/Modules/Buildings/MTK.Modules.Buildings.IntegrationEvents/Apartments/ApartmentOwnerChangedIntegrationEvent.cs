@@ -13,15 +13,18 @@ public sealed class ApartmentOwnerChangedIntegrationEvent : IntegrationEvent
         DateTime occurredOnUtc,
         Guid apartmentId,
         Guid newOwnerId,
-        Guid? previousOwnerId)
+        Guid? previousOwnerId,
+        decimal areaSquareMeters)
         : base(integrationEventId, occurredOnUtc)
     {
         ApartmentId = apartmentId;
         NewOwnerId = newOwnerId;
         PreviousOwnerId = previousOwnerId;
+        AreaSquareMeters = areaSquareMeters;
     }
 
     public Guid ApartmentId { get; }
     public Guid NewOwnerId { get; }
     public Guid? PreviousOwnerId { get; }
+    public decimal AreaSquareMeters { get; }
 }

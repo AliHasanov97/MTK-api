@@ -1,10 +1,8 @@
 using MTK.Common.Domain.Abstractions;
-using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
 using MTK.Modules.Buildings.Application.Abstractions.Data;
 using MTK.Modules.Buildings.Domain.OwnershipHistories;
 using MTK.Modules.Buildings.Domain.Repositories;
-using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
 
 namespace MTK.Modules.Buildings.Application.Apartments.Commands.TransferApartmentOwnership;
 
@@ -14,20 +12,17 @@ internal sealed class TransferApartmentOwnershipCommandHandler
     private readonly IApartmentRepository _apartmentRepository;
     private readonly IOwnerRepository _ownerRepository;
     private readonly IOwnershipHistoryRepository _ownershipHistoryRepository;
-    private readonly IEventBus _eventBus;
     private readonly IUnitOfWork _unitOfWork;
 
     public TransferApartmentOwnershipCommandHandler(
         IApartmentRepository apartmentRepository,
         IOwnerRepository ownerRepository,
         IOwnershipHistoryRepository ownershipHistoryRepository,
-        IEventBus eventBus,
         IUnitOfWork unitOfWork)
     {
         _apartmentRepository = apartmentRepository;
         _ownerRepository = ownerRepository;
         _ownershipHistoryRepository = ownershipHistoryRepository;
-        _eventBus = eventBus;
         _unitOfWork = unitOfWork;
     }
 
@@ -95,17 +90,7 @@ internal sealed class TransferApartmentOwnershipCommandHandler
         apartment.AssignOwner(request.NewOwnerId);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        // Integration event - Billing module consume edəcək
-        var integrationEvent = new OwnershipTransferredIntegrationEvent(
-            Guid.NewGuid(),
-            DateTime.UtcNow,
-            request.ApartmentId,
-            previousOwnerId,
-            request.NewOwnerId,
-            transferDate);
-
-        await _eventBus.PublishAsync(integrationEvent, cancellationToken);
+        // Domain event handler will publish integration event
 
         return Result.Success();
     }

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="MediatR" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\MTK.Common.Application\MTK.Common.Application.csproj" />
+    <ProjectReference Include="..\..\..\Common\MTK.Common.Presentation\MTK.Common.Presentation.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Payments.Domain\MTK.Modules.Payments.Domain.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Payments.IntegrationEvents\MTK.Modules.Payments.IntegrationEvents.csproj" />
+    <ProjectReference Include="..\..\Buildings\MTK.Modules.Buildings.IntegrationEvents\MTK.Modules.Buildings.IntegrationEvents.csproj" />
+  </ItemGroup>
+
+</Project>

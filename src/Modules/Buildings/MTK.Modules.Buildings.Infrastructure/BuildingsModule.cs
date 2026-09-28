@@ -36,6 +36,9 @@ public static class BuildingsModule
             typeof(CreateApartmentCommand).Assembly,
             includeInternalTypes: true);
 
+        // Domain Event Handlers (for ProcessOutboxJob)
+        services.AddDomainEventHandlers();
+
         // Integration Event Handlers (for ProcessInboxJob)
         services.AddIntegrationEventHandlers();
 
@@ -72,6 +75,21 @@ public static class BuildingsModule
         services.ConfigureOptions<Inbox.ConfigureProcessInboxJob>();
 
         return services;
+    }
+
+    private static void AddDomainEventHandlers(this IServiceCollection services)
+    {
+        // Find all domain event handlers in Application assembly
+        Type[] domainEventHandlers = typeof(CreateApartmentCommand).Assembly
+            .GetTypes()
+            .Where(t => t.IsAssignableTo(typeof(MTK.Common.Application.Messaging.IDomainEventHandler)))
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .ToArray();
+
+        foreach (Type domainEventHandler in domainEventHandlers)
+        {
+            services.AddScoped(domainEventHandler);
+        }
     }
 
     private static void AddIntegrationEventHandlers(this IServiceCollection services)

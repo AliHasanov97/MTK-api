@@ -6,6 +6,8 @@ using MTK.Modules.Buildings.Infrastructure;
 using MTK.Modules.Buildings.Infrastructure.Database;
 using MTK.Modules.Identity.Infrastructure;
 using MTK.Modules.Identity.Infrastructure.Database;
+using MTK.Modules.Payments.Infrastructure;
+using MTK.Modules.Payments.Infrastructure.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,7 +84,8 @@ builder.Services.AddInfrastructure(
     serviceName: "MTK API",
     moduleConfigureConsumers: [
         IdentityModule.ConfigureConsumers,
-        BuildingsModule.ConfigureConsumers
+        BuildingsModule.ConfigureConsumers,
+        PaymentsModule.ConfigureConsumers
     ],
     databaseConnectionString: builder.Configuration.GetConnectionString("Database")!,
     configuration: builder.Configuration);
@@ -100,6 +103,7 @@ builder.Services.AddMediatR(config =>
 // Add Modules
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddBuildingsModule(builder.Configuration);
+builder.Services.AddPaymentsModule(builder.Configuration);
 
 // TODO: Register other modules here
 // builder.Services.AddBillingModule(builder.Configuration);
@@ -151,6 +155,10 @@ static async Task ApplyMigrationsAsync(IServiceProvider serviceProvider)
     // Apply Buildings module migrations
     var buildingsDbContext = scope.ServiceProvider.GetRequiredService<BuildingsDbContext>();
     await buildingsDbContext.Database.MigrateAsync();
+
+    // Apply Payments module migrations
+    var paymentsDbContext = scope.ServiceProvider.GetRequiredService<PaymentsDbContext>();
+    await paymentsDbContext.Database.MigrateAsync();
 
     // TODO: Apply other module migrations here
 }

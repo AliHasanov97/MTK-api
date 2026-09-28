@@ -1,10 +1,8 @@
 using MTK.Common.Domain.Abstractions;
-using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
 using MTK.Modules.Buildings.Application.Abstractions.Data;
 using MTK.Modules.Buildings.Domain.Apartments;
 using MTK.Modules.Buildings.Domain.Repositories;
-using MTK.Modules.Buildings.IntegrationEvents.Apartments;
 
 namespace MTK.Modules.Buildings.Application.Apartments.Commands.CreateApartment;
 
@@ -13,18 +11,15 @@ internal sealed class CreateApartmentCommandHandler
 {
     private readonly IApartmentRepository _apartmentRepository;
     private readonly IBuildingRepository _buildingRepository;
-    private readonly IEventBus _eventBus;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateApartmentCommandHandler(
         IApartmentRepository apartmentRepository,
         IBuildingRepository buildingRepository,
-        IEventBus eventBus,
         IUnitOfWork unitOfWork)
     {
         _apartmentRepository = apartmentRepository;
         _buildingRepository = buildingRepository;
-        _eventBus = eventBus;
         _unitOfWork = unitOfWork;
     }
 
@@ -65,16 +60,7 @@ internal sealed class CreateApartmentCommandHandler
         _apartmentRepository.Add(apartment);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        var integrationEvent = new ApartmentCreatedIntegrationEvent(
-            Guid.NewGuid(),
-            DateTime.UtcNow,
-            apartment.Id,
-            request.BuildingId,
-            request.ApartmentNumber,
-            request.AreaSquareMeters);
-
-        await _eventBus.PublishAsync(integrationEvent, cancellationToken);
+        // Domain event handler will publish integration event
 
         return Result.Success(apartment.Id);
     }
