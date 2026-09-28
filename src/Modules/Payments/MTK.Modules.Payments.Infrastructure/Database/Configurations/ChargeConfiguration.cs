@@ -40,6 +40,19 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
             .IsRequired()
             .HasMaxLength(50);
 
+        // Snapshot fields - calculation details at time of creation
+        builder.Property(c => c.AreaSquareMeters)
+            .HasPrecision(10, 2);
+
+        builder.Property(c => c.RateAmount)
+            .IsRequired()
+            .HasPrecision(18, 2);
+
+        builder.Property(c => c.RateType)
+            .HasConversion<string>()
+            .IsRequired()
+            .HasMaxLength(50);
+
         builder.Property(c => c.CreatedAt)
             .IsRequired();
 

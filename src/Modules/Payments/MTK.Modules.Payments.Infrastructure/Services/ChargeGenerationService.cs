@@ -59,13 +59,16 @@ internal sealed class ChargeGenerationService(
                 // Calculate charge amount: rate per m² × area
                 decimal chargeAmount = apartmentRate.Amount * apartment.AreaSquareMeters;
 
-                // Create charge
+                // Create charge with snapshot data
                 Charge charge = Charge.Create(
                     apartment.OwnerId,
                     PropertyType.Apartment,
                     apartment.PropertyId,
                     period,
-                    chargeAmount);
+                    chargeAmount,
+                    apartmentRate.Amount,           // Snapshot: rate at time of creation
+                    RateType.PerSquareMeter,        // Snapshot: rate type
+                    apartment.AreaSquareMeters);    // Snapshot: area at time of creation
 
                 chargeRepository.Add(charge);
 
@@ -115,13 +118,16 @@ internal sealed class ChargeGenerationService(
                 // For garages, use fixed rate
                 decimal chargeAmount = garageRate.Amount;
 
-                // Create charge
+                // Create charge with snapshot data
                 Charge charge = Charge.Create(
                     garage.OwnerId,
                     PropertyType.Garage,
                     garage.PropertyId,
                     period,
-                    chargeAmount);
+                    chargeAmount,
+                    garageRate.Amount,              // Snapshot: rate at time of creation
+                    RateType.FixedGarage,           // Snapshot: rate type
+                    null);                          // Snapshot: no area for garages
 
                 chargeRepository.Add(charge);
 

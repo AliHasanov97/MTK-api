@@ -1,5 +1,6 @@
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Charges.Events;
+using MTK.Modules.Payments.Domain.Rates;
 
 namespace MTK.Modules.Payments.Domain.Charges;
 
@@ -15,7 +16,20 @@ public sealed class Charge : SearchableEntity
     public decimal PaidAmount { get; private set; }
     public ChargeStatus Status { get; private set; }
 
-    public static Charge Create(Guid ownerId, PropertyType propertyType, Guid propertyId, string period, decimal amount)
+    // Snapshot: Calculation details at the time of charge creation
+    public decimal? AreaSquareMeters { get; private set; }  // For apartments only
+    public decimal RateAmount { get; private set; }         // Rate used in calculation
+    public RateType RateType { get; private set; }          // Rate type used
+
+    public static Charge Create(
+        Guid ownerId,
+        PropertyType propertyType,
+        Guid propertyId,
+        string period,
+        decimal amount,
+        decimal rateAmount,
+        RateType rateType,
+        decimal? areaSquareMeters)
     {
         var charge = new Charge
         {
@@ -25,7 +39,10 @@ public sealed class Charge : SearchableEntity
             Period = period,
             Amount = amount,
             PaidAmount = 0,
-            Status = ChargeStatus.Unpaid
+            Status = ChargeStatus.Unpaid,
+            RateAmount = rateAmount,
+            RateType = rateType,
+            AreaSquareMeters = areaSquareMeters
         };
         charge.SetCreatedAt();
         charge.RaiseDomainEvent(new ChargeCreatedDomainEvent(charge.Id, ownerId, amount, period));
