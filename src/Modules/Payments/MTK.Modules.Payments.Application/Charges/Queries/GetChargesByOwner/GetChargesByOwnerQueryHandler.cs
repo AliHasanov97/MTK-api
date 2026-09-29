@@ -29,7 +29,11 @@ internal sealed class GetChargesByOwnerQueryHandler : IQueryHandler<GetChargesBy
                 c.Amount,
                 c.PaidAmount,
                 c.Status,
-                c.CreatedAt))
+                c.CreatedAt,
+                c.Description,
+                c.AreaSquareMeters,
+                c.RateAmount,
+                c.RateType))
             .ToList();
 
         return response;

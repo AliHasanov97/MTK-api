@@ -25,7 +25,7 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
 
         builder.Property(c => c.Period)
             .IsRequired()
-            .HasMaxLength(10);
+            .HasMaxLength(50);
 
         builder.Property(c => c.Amount)
             .IsRequired()
@@ -39,6 +39,9 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
             .HasConversion<string>()
             .IsRequired()
             .HasMaxLength(50);
+
+        builder.Property(c => c.Description)
+            .HasMaxLength(500);
 
         // Snapshot fields - calculation details at time of creation
         builder.Property(c => c.AreaSquareMeters)

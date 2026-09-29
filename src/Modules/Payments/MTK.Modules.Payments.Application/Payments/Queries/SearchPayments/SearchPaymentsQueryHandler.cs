@@ -40,7 +40,9 @@ internal sealed class SearchPaymentsQueryHandler : IQueryHandler<SearchPaymentsQ
             p.Status,
             p.Reference,
             p.Notes,
-            p.CreatedAt)).ToList();
+            p.CreatedAt,
+            p.PropertyId,
+            p.PropertyType)).ToList();
 
         var response = new SearchPaymentsResponse(
             items,

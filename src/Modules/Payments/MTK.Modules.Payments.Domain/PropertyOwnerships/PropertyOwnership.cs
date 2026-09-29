@@ -16,11 +16,15 @@ public sealed class PropertyOwnership : Entity
     public Guid OwnerId { get; private set; }
     public decimal AreaSquareMeters { get; private set; }
 
+    // Only meaningful when PropertyType == Garage.
+    public GarageType? GarageType { get; private set; }
+
     public static PropertyOwnership Create(
         Guid propertyId,
         PropertyType propertyType,
         Guid ownerId,
-        decimal areaSquareMeters)
+        decimal areaSquareMeters,
+        GarageType? garageType = null)
     {
         return new PropertyOwnership
         {
@@ -28,7 +32,8 @@ public sealed class PropertyOwnership : Entity
             PropertyId = propertyId,
             PropertyType = propertyType,
             OwnerId = ownerId,
-            AreaSquareMeters = areaSquareMeters
+            AreaSquareMeters = areaSquareMeters,
+            GarageType = propertyType == PropertyType.Garage ? garageType : null
         };
     }
 
@@ -40,5 +45,10 @@ public sealed class PropertyOwnership : Entity
     public void UpdateArea(decimal areaSquareMeters)
     {
         AreaSquareMeters = areaSquareMeters;
+    }
+
+    public void UpdateGarageType(GarageType garageType)
+    {
+        GarageType = garageType;
     }
 }

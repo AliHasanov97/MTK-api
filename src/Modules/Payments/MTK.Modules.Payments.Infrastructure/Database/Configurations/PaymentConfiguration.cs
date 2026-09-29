@@ -38,6 +38,12 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(p => p.PropertyId);
+
+        builder.Property(p => p.PropertyType)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
         builder.Property(p => p.CreatedAt)
             .IsRequired();
 
@@ -62,5 +68,6 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.PaymentDate);
         builder.HasIndex(p => p.Status);
         builder.HasIndex(p => p.Reference);
+        builder.HasIndex(p => p.PropertyId);
     }
 }

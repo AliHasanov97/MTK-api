@@ -23,12 +23,33 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<Charge>> GetByPropertyIdAsync(
+        Guid propertyId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PaymentsContext.Charges
+            .Where(c => c.PropertyId == propertyId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Charge>> GetUnpaidChargesAsync(
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
         return await PaymentsContext.Charges
             .Where(c => c.OwnerId == ownerId)
+            .Where(c => c.Status != ChargeStatus.Paid)
+            .OrderBy(c => c.Period)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Charge>> GetUnpaidChargesAsync(
+        Guid ownerId,
+        Guid propertyId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PaymentsContext.Charges
+            .Where(c => c.OwnerId == ownerId && c.PropertyId == propertyId)
             .Where(c => c.Status != ChargeStatus.Paid)
             .OrderBy(c => c.Period)
             .ToListAsync(cancellationToken);

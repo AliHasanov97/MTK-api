@@ -1,4 +1,5 @@
 using MTK.Common.Domain.Abstractions;
+using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.Payments.Events;
 
 namespace MTK.Modules.Payments.Domain.Payments;
@@ -15,8 +16,25 @@ public sealed class Payment : SearchableEntity
     public string? Reference { get; private set; }
     public string? Notes { get; private set; }
 
-    public static Payment Create(Guid ownerId, decimal amount, PaymentMethod paymentMethod, DateTimeOffset paymentDate, string? reference, string? notes)
+    // Optional: when set, this payment is scoped to a single property and is only
+    // allocated against that property's unpaid charges (instead of FIFO across the
+    // owner's whole debt). Null means "general payment", FIFO across everything.
+    public Guid? PropertyId { get; private set; }
+    public PropertyType? PropertyType { get; private set; }
+
+    public static Payment Create(
+        Guid ownerId,
+        decimal amount,
+        PaymentMethod paymentMethod,
+        DateTimeOffset paymentDate,
+        string? reference,
+        string? notes,
+        Guid? propertyId = null,
+        PropertyType? propertyType = null)
     {
+        if (amount <= 0)
+            throw new ArgumentException("Payment amount must be positive");
+
         var payment = new Payment
         {
             OwnerId = ownerId,
@@ -25,7 +43,9 @@ public sealed class Payment : SearchableEntity
             PaymentDate = paymentDate,
             Status = PaymentStatus.Pending,
             Reference = reference,
-            Notes = notes
+            Notes = notes,
+            PropertyId = propertyId,
+            PropertyType = propertyType
         };
         payment.SetCreatedAt();
         return payment;
@@ -42,6 +62,7 @@ public sealed class Payment : SearchableEntity
     {
         Status = PaymentStatus.Cancelled;
         SetUpdatedAt();
+        RaiseDomainEvent(new PaymentCancelledDomainEvent(Id, OwnerId, Amount));
     }
 
     public void Delete()

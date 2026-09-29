@@ -26,6 +26,10 @@ internal sealed class PropertyOwnershipConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .HasPrecision(18, 2);
 
+        builder.Property(p => p.GarageType)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
         // Unique index on PropertyId to ensure one entry per property
         builder.HasIndex(p => p.PropertyId)
             .IsUnique();

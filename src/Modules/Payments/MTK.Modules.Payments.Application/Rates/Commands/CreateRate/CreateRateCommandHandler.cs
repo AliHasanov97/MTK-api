@@ -25,7 +25,8 @@ internal sealed class CreateRateCommandHandler : ICommandHandler<CreateRateComma
             request.RateType,
             request.Amount,
             request.EffectiveFrom,
-            request.Description);
+            request.Description,
+            request.GarageType);
 
         _rateRepository.Add(rate);
 

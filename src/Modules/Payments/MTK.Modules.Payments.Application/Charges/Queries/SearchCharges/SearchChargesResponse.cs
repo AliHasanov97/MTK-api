@@ -1,4 +1,5 @@
 using MTK.Modules.Payments.Domain.Charges;
+using MTK.Modules.Payments.Domain.Rates;
 
 namespace MTK.Modules.Payments.Application.Charges.Queries.SearchCharges;
 
@@ -17,4 +18,8 @@ public sealed record ChargeSearchResult(
     decimal Amount,
     decimal PaidAmount,
     ChargeStatus Status,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? Description,
+    decimal? AreaSquareMeters,
+    decimal RateAmount,
+    RateType RateType);

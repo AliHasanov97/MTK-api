@@ -29,6 +29,10 @@ internal sealed class RateConfiguration : IEntityTypeConfiguration<Rate>
         builder.Property(r => r.Description)
             .HasMaxLength(500);
 
+        builder.Property(r => r.GarageType)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
         builder.Property(r => r.CreatedAt)
             .IsRequired();
 
@@ -50,6 +54,7 @@ internal sealed class RateConfiguration : IEntityTypeConfiguration<Rate>
 
         // Indexes
         builder.HasIndex(r => new { r.RateType, r.EffectiveFrom });
+        builder.HasIndex(r => new { r.RateType, r.GarageType, r.EffectiveFrom });
         builder.HasIndex(r => r.EffectiveTo);
     }
 }

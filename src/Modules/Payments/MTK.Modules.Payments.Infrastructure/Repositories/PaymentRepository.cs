@@ -23,4 +23,14 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IEnumerable<Payment>> GetByPropertyIdAsync(
+        Guid propertyId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PaymentsContext.Payments
+            .Where(p => p.PropertyId == propertyId)
+            .OrderByDescending(p => p.PaymentDate)
+            .ToListAsync(cancellationToken);
+    }
 }

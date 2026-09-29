@@ -35,6 +35,13 @@ public sealed class OwnerBalance : SearchableEntity
         SetUpdatedAt();
     }
 
+    /// <summary>Undoes a previously recorded payment (used when a payment gets cancelled).</summary>
+    public void RemovePayment(decimal amount)
+    {
+        TotalPaid = Math.Max(0, TotalPaid - amount);
+        SetUpdatedAt();
+    }
+
     public void Delete()
     {
         SetDeletedAt();

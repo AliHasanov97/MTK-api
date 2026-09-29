@@ -21,4 +21,9 @@ public sealed class PaymentAllocation : Entity
         allocation.SetCreatedAt();
         return allocation;
     }
+
+    public void Delete()
+    {
+        SetDeletedAt();
+    }
 }

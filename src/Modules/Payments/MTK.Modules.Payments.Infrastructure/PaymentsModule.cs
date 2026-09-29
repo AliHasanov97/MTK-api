@@ -37,6 +37,9 @@ public static class PaymentsModule
             typeof(CreatePaymentCommand).Assembly,
             includeInternalTypes: true);
 
+        // Domain Event Handlers (for ProcessOutboxJob)
+        services.AddDomainEventHandlers();
+
         // Integration Event Handlers (for ProcessInboxJob)
         services.AddIntegrationEventHandlers();
 
@@ -61,8 +64,10 @@ public static class PaymentsModule
         services.AddScoped<IRateRepository, RateRepository>();
         services.AddScoped<IChargeRepository, ChargeRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IPaymentAllocationRepository, PaymentAllocationRepository>();
         services.AddScoped<IOwnerBalanceRepository, OwnerBalanceRepository>();
         services.AddScoped<IPropertyOwnershipRepository, PropertyOwnershipRepository>();
+        services.AddScoped<ITransactionRepository, TransactionRepository>();
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();
@@ -82,6 +87,21 @@ public static class PaymentsModule
         services.ConfigureOptions<Jobs.ConfigureMonthlyChargeGenerationJob>();
 
         return services;
+    }
+
+    private static void AddDomainEventHandlers(this IServiceCollection services)
+    {
+        // Find all domain event handlers in Application assembly
+        Type[] domainEventHandlers = typeof(CreatePaymentCommand).Assembly
+            .GetTypes()
+            .Where(t => t.IsAssignableTo(typeof(MTK.Common.Application.Messaging.IDomainEventHandler)))
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .ToArray();
+
+        foreach (Type domainEventHandler in domainEventHandlers)
+        {
+            services.AddScoped(domainEventHandler);
+        }
     }
 
     private static void AddIntegrationEventHandlers(this IServiceCollection services)

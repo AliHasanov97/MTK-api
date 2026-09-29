@@ -1,3 +1,4 @@
+using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByOwner;
@@ -11,4 +12,6 @@ public sealed record PaymentResponse(
     PaymentStatus Status,
     string? Reference,
     string? Notes,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    Guid? PropertyId,
+    PropertyType? PropertyType);

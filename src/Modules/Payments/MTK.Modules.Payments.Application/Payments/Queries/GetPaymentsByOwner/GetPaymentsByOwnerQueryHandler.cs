@@ -29,7 +29,9 @@ internal sealed class GetPaymentsByOwnerQueryHandler : IQueryHandler<GetPayments
                 p.Status,
                 p.Reference,
                 p.Notes,
-                p.CreatedAt))
+                p.CreatedAt,
+                p.PropertyId,
+                p.PropertyType))
             .ToList();
 
         return response;

@@ -13,6 +13,7 @@ using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.OwnerBalances;
 using MTK.Modules.Payments.Domain.AuditLogs;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
+using MTK.Modules.Payments.Domain.Transactions;
 
 namespace MTK.Modules.Payments.Infrastructure.Database;
 
@@ -37,6 +38,7 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork
     public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
     public DbSet<OwnerBalance> OwnerBalances { get; set; }
     public DbSet<PropertyOwnership> PropertyOwnerships { get; set; }
+    public DbSet<Transaction> Transactions { get; set; }
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     // Outbox Pattern

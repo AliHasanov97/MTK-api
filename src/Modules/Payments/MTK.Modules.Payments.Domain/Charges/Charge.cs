@@ -15,6 +15,7 @@ public sealed class Charge : SearchableEntity
     public decimal Amount { get; private set; }
     public decimal PaidAmount { get; private set; }
     public ChargeStatus Status { get; private set; }
+    public string? Description { get; private set; } // Human-readable label, mainly for manual/one-off charges
 
     // Snapshot: Calculation details at the time of charge creation
     public decimal? AreaSquareMeters { get; private set; }  // For apartments only
@@ -29,8 +30,12 @@ public sealed class Charge : SearchableEntity
         decimal amount,
         decimal rateAmount,
         RateType rateType,
-        decimal? areaSquareMeters)
+        decimal? areaSquareMeters,
+        string? description = null)
     {
+        if (amount <= 0)
+            throw new ArgumentException("Charge amount must be positive");
+
         var charge = new Charge
         {
             OwnerId = ownerId,
@@ -42,7 +47,8 @@ public sealed class Charge : SearchableEntity
             Status = ChargeStatus.Unpaid,
             RateAmount = rateAmount,
             RateType = rateType,
-            AreaSquareMeters = areaSquareMeters
+            AreaSquareMeters = areaSquareMeters,
+            Description = description
         };
         charge.SetCreatedAt();
         charge.RaiseDomainEvent(new ChargeCreatedDomainEvent(charge.Id, ownerId, amount, period));
@@ -59,6 +65,25 @@ public sealed class Charge : SearchableEntity
         Status = PaidAmount >= Amount
             ? ChargeStatus.Paid
             : ChargeStatus.PartiallyPaid;
+
+        SetUpdatedAt();
+    }
+
+    /// <summary>
+    /// Undoes a previously applied payment allocation (used when a payment gets cancelled).
+    /// </summary>
+    public void ReversePayment(decimal paymentAmount)
+    {
+        if (paymentAmount <= 0)
+            throw new ArgumentException("Payment amount must be positive");
+
+        PaidAmount = Math.Max(0, PaidAmount - paymentAmount);
+
+        Status = PaidAmount <= 0
+            ? ChargeStatus.Unpaid
+            : PaidAmount >= Amount
+                ? ChargeStatus.Paid
+                : ChargeStatus.PartiallyPaid;
 
         SetUpdatedAt();
     }

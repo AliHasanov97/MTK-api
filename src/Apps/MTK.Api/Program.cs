@@ -75,6 +75,9 @@ builder.Services.AddSwaggerGen(options =>
         }
     };
     options.AddSecurityRequirement(securityRequirement);
+
+    // Use fully qualified names to avoid schema ID collisions between modules
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
 });
 
 // ========== MODULAR MONOLITH STRUCTURE ==========

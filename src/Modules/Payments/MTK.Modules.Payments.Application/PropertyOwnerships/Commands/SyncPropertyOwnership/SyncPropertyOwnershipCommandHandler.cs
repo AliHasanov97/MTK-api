@@ -28,6 +28,11 @@ internal sealed class SyncPropertyOwnershipCommandHandler(
             {
                 propertyOwnership.UpdateArea(request.AreaSquareMeters);
             }
+
+            if (request.GarageType.HasValue)
+            {
+                propertyOwnership.UpdateGarageType(request.GarageType.Value);
+            }
         }
         else
         {
@@ -36,7 +41,8 @@ internal sealed class SyncPropertyOwnershipCommandHandler(
                 request.PropertyId,
                 request.PropertyType,
                 request.OwnerId,
-                request.AreaSquareMeters);
+                request.AreaSquareMeters,
+                request.GarageType);
 
             propertyOwnershipRepository.Add(propertyOwnership);
         }

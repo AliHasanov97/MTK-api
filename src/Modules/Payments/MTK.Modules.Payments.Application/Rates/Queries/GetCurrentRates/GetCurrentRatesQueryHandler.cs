@@ -26,7 +26,8 @@ internal sealed class GetCurrentRatesQueryHandler : IQueryHandler<GetCurrentRate
                 r.Amount,
                 r.EffectiveFrom,
                 r.EffectiveTo,
-                r.Description))
+                r.Description,
+                r.GarageType))
             .ToList();
 
         return response;

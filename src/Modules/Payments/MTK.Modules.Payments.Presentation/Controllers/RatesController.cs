@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MTK.Modules.Payments.Application.Rates.Commands.CreateRate;
 using MTK.Modules.Payments.Application.Rates.Commands.UpdateRate;
 using MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates;
+using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Rates;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
@@ -29,7 +30,8 @@ public class RatesController(ISender sender) : BaseController(sender)
             request.RateType,
             request.Amount,
             request.EffectiveFrom,
-            request.Description);
+            request.Description,
+            request.GarageType);
 
         var result = await _sender.Send(command, cancellationToken);
 
@@ -61,7 +63,8 @@ public sealed record CreateRateRequest(
     RateType RateType,
     decimal Amount,
     DateTimeOffset EffectiveFrom,
-    string? Description);
+    string? Description,
+    GarageType? GarageType = null);
 
 public sealed record UpdateRateRequest(
     decimal Amount,
