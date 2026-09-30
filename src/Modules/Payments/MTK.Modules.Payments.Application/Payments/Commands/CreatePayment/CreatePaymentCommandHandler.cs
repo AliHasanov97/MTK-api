@@ -1,6 +1,7 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Abstractions.Data;
+using MTK.Modules.Payments.Application.OwnerBalances.Services;
 using MTK.Modules.Payments.Application.Payments.Services;
 using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -11,18 +12,24 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
 {
     private readonly IPaymentRepository _paymentRepository;
     private readonly IPaymentAllocationService _paymentAllocationService;
+    private readonly IOwnerBalanceService _ownerBalanceService;
     private readonly IPropertyOwnershipRepository _propertyOwnershipRepository;
+    private readonly IChargeRepository _chargeRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreatePaymentCommandHandler(
         IPaymentRepository paymentRepository,
         IPaymentAllocationService paymentAllocationService,
+        IOwnerBalanceService ownerBalanceService,
         IPropertyOwnershipRepository propertyOwnershipRepository,
+        IChargeRepository chargeRepository,
         IUnitOfWork unitOfWork)
     {
         _paymentRepository = paymentRepository;
         _paymentAllocationService = paymentAllocationService;
+        _ownerBalanceService = ownerBalanceService;
         _propertyOwnershipRepository = propertyOwnershipRepository;
+        _chargeRepository = chargeRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -38,7 +45,28 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
                     "Payment.PropertyOwnerMismatch",
                     "Seçilmiş əmlak bu sahibə aid deyil"));
             }
+
+            // Əmlaka hədəflənmiş ödəniş yalnız həmin əmlakın qalıq borcunu ödəyə
+            // bilər — artıq (avans) yalnız sahib səviyyəli ödənişdə yaranır.
+            var propertyDebt = (await _chargeRepository.GetUnpaidChargesAsync(
+                    request.OwnerId,
+                    request.PropertyId.Value,
+                    cancellationToken))
+                .Sum(c => c.Amount - c.PaidAmount);
+
+            if (request.Amount > propertyDebt)
+            {
+                return Result.Failure<Guid>(new Error(
+                    "Payment.ExceedsPropertyDebt",
+                    $"Ödəniş əmlakın qalıq borcundan böyük ola bilməz (borc: {propertyDebt}). " +
+                    "Avans kimi ödəniş üçün əmlakı seçməyin — ümumi sahib ödənişi edin."));
+            }
         }
+
+        // Ödəniş, onun paylanması və balansın yenilənməsi bir tranzaksiyadır: yarımçıq
+        // vəziyyət (ödəniş var, paylanma yox) qala bilməz. Commit olunmasa, tranzaksiya
+        // dispose olunanda avtomatik geri qaytarılır.
+        await using var transaction = await _chargeRepository.BeginTransactionAsync(cancellationToken);
 
         var payment = Payment.Create(
             request.OwnerId,
@@ -54,17 +82,29 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Allocate payment to charges (scoped to the property when one was given)
-        await _paymentAllocationService.AllocatePaymentAsync(
+        var allocationResult = await _paymentAllocationService.AllocatePaymentAsync(
             payment.Id,
             request.OwnerId,
             request.Amount,
             request.PropertyId,
             cancellationToken);
 
+        if (allocationResult.IsFailure)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Result.Failure<Guid>(allocationResult.Error);
+        }
+
         // Raising PaymentCompletedDomainEvent here is what posts the ledger entry:
         // PaymentCompletedDomainEventHandler writes the matching transaction.
         payment.MarkAsCompleted();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Balans aqreqatdan mütləq yenidən hesablanır — artırmalı yanaşma yoxdur.
+        await _ownerBalanceService.RecalculateAsync([request.OwnerId], cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         return Result.Success(payment.Id);
     }

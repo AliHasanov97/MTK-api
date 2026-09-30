@@ -22,10 +22,11 @@ internal sealed class GetPropertyBalanceQueryHandler : IQueryHandler<GetProperty
         decimal totalDebt = charges.Sum(c => c.Amount);
         decimal totalPaid = charges.Sum(c => c.PaidAmount);
 
-        // A single charge can never be paid beyond its own Amount (PaymentAllocationService
-        // caps each allocation at the charge's remaining balance), so this is always <= 0.
+        // A single charge can never be paid beyond its own Amount — Charge.ApplyPayment
+        // throws on that and the database enforces it with a CHECK constraint — so this
+        // is always <= 0.
         // Any surplus payment becomes owner-level advance instead — see GetOwnerBalance and
-        // PaymentAllocationService.SettleChargeFromAdvanceAsync, which is what actually spends it.
+        // PaymentAllocationService.ApplyAdvanceToChargesAsync, which is what actually spends it.
         var response = new PropertyBalanceResponse(
             request.PropertyId,
             totalDebt,

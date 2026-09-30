@@ -1,5 +1,6 @@
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Payments;
+using MTK.Modules.Payments.Domain.VendorPayments;
 
 namespace MTK.Modules.Payments.Domain.Transactions;
 
@@ -14,7 +15,7 @@ public sealed class Transaction : SearchableEntity
     // Ledger categories belong to the domain, not to whoever happens to write the
     // row: the payment handlers and any reporting both key off these.
     public const string ResidentPaymentCategory = "Sakin ödənişi";
-    public const string PaymentReversalCategory = "Ödəniş ləğvi";
+    public const string VendorPaymentCategory = "Tədarükçü ödənişi";
 
     private Transaction() : base() { }
 
@@ -58,32 +59,38 @@ public sealed class Transaction : SearchableEntity
             payment.PaymentDate.ToUniversalTime());
 
     /// <summary>
-    /// Money handed back when a payment is cancelled. The original entry stays put:
-    /// a cancellation is corrected by an opposing entry, not by rewriting history.
+    /// Money paid out to a vendor — the entry a completed vendor payment posts. The
+    /// opposite direction of <see cref="ForPayment"/>: here the money leaves us.
     /// </summary>
-    public static Transaction ForPaymentReversal(Payment payment, DateTimeOffset occurredOnUtc) =>
+    public static Transaction ForVendorPayment(VendorPayment payment) =>
         Create(
             TransactionDirection.Expense,
-            PaymentReversalCategory,
+            VendorPaymentCategory,
             payment.Amount,
-            Describe(payment),
-            occurredOnUtc);
+            DescribeVendorPayment(payment),
+            payment.PaymentDate.ToUniversalTime());
 
-    // No Delete(): the ledger is append-only. A wrong entry is corrected by the
-    // opposing entry its payment's reversal posts, never by removing history.
+    // No Delete(): the ledger is append-only.
 
     // A payment entry names the method (and reference, when there is one) so the
     // ledger reads on its own instead of being joined back to the payment.
     private static string Describe(Payment payment)
     {
-        var method = payment.PaymentMethod switch
-        {
-            PaymentMethod.Cash => "Nağd",
-            PaymentMethod.BankTransfer => "Bank köçürməsi",
-            PaymentMethod.Card => "Kart",
-            _ => payment.PaymentMethod.ToString()
-        };
-
+        var method = MethodName(payment.PaymentMethod);
         return payment.Reference is null ? method : $"{method} · {payment.Reference}";
     }
+
+    private static string DescribeVendorPayment(VendorPayment payment)
+    {
+        var method = MethodName(payment.PaymentMethod);
+        return payment.Reference is null ? method : $"{method} · {payment.Reference}";
+    }
+
+    private static string MethodName(PaymentMethod method) => method switch
+    {
+        PaymentMethod.Cash => "Nağd",
+        PaymentMethod.BankTransfer => "Bank köçürməsi",
+        PaymentMethod.Card => "Kart",
+        _ => method.ToString()
+    };
 }

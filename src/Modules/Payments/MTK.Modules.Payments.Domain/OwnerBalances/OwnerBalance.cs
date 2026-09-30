@@ -2,6 +2,15 @@ using MTK.Common.Domain.Abstractions;
 
 namespace MTK.Modules.Payments.Domain.OwnerBalances;
 
+/// <summary>
+/// Sahibin balansının <b>proyeksiyası</b>. Həqiqət mənbəyi borclar (Charge) və
+/// tamamlanmış ödənişlərdir (Payment); bu cədvəl yalnız sürətli oxumaq üçündür.
+///
+/// Vacib: dəyərlər <b>heç vaxt artırılmır</b> — hər dəyişiklikdən sonra aqreqatdan
+/// mütləq yenidən hesablanır (<see cref="SetTotals"/>). Artırma (increment) yanaşması
+/// bir dənə buraxılmış çağırışda balansı həmişəlik səhv qoyurdu; mütləq yenidən
+/// hesablamada isə sürüşmə (drift) struktur olaraq mümkün deyil.
+/// </summary>
 public sealed class OwnerBalance : SearchableEntity
 {
     private OwnerBalance() : base() { }
@@ -23,22 +32,19 @@ public sealed class OwnerBalance : SearchableEntity
         return balance;
     }
 
-    public void AddCharge(decimal amount)
+    /// <summary>
+    /// Balansı aqreqatdan gələn mütləq dəyərlərlə yeniləyir. Mənfi dəyər qəbul edilmir.
+    /// </summary>
+    public void SetTotals(decimal totalDebt, decimal totalPaid)
     {
-        TotalDebt += amount;
-        SetUpdatedAt();
-    }
+        if (totalDebt < 0)
+            throw new ArgumentException("Ümumi borc mənfi ola bilməz", nameof(totalDebt));
 
-    public void AddPayment(decimal amount)
-    {
-        TotalPaid += amount;
-        SetUpdatedAt();
-    }
+        if (totalPaid < 0)
+            throw new ArgumentException("Ümumi ödəniş mənfi ola bilməz", nameof(totalPaid));
 
-    /// <summary>Undoes a previously recorded payment (used when a payment gets cancelled).</summary>
-    public void RemovePayment(decimal amount)
-    {
-        TotalPaid = Math.Max(0, TotalPaid - amount);
+        TotalDebt = totalDebt;
+        TotalPaid = totalPaid;
         SetUpdatedAt();
     }
 

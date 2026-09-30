@@ -8,9 +8,23 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
 {
     public void Configure(EntityTypeBuilder<Charge> builder)
     {
-        builder.ToTable("Charges");
+        // Invariant bazada da qorunur: borc öz məbləğindən çox ödənilə bilməz.
+        // Domendəki yoxlama (Charge.ApplyPayment) səhv kod yolunu tutur; bu isə
+        // race condition və bir-başa SQL müdaxiləsi kimi hallarda son sərhəddir.
+        builder.ToTable("Charges", table => table.HasCheckConstraint(
+            "CK_Charges_PaidAmount_Range",
+            "\"PaidAmount\" >= 0 AND \"PaidAmount\" <= \"Amount\""));
 
         builder.HasKey(c => c.Id);
+
+        // PostgreSQL-in xmin sistem sütunu optimistik concurrency token-i kimi:
+        // eyni borc eyni anda iki yerdən dəyişdirilsə (aylıq job + API ödənişi),
+        // ikinci yazma sükutla üstünə yazmır, DbUpdateConcurrencyException verir.
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
 
         builder.Property(c => c.OwnerId)
             .IsRequired();
@@ -26,6 +40,10 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
         builder.Property(c => c.Period)
             .IsRequired()
             .HasMaxLength(50);
+
+        // Borcun yaşı — ödəniş/avans FIFO sırası bununla müəyyən olunur.
+        builder.Property(c => c.IssuedOn)
+            .IsRequired();
 
         builder.Property(c => c.Amount)
             .IsRequired()
@@ -80,6 +98,7 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
         builder.HasIndex(c => c.PropertyId);
         builder.HasIndex(c => c.Period);
         builder.HasIndex(c => c.Status);
+        builder.HasIndex(c => new { c.OwnerId, c.IssuedOn });
         builder.HasIndex(c => new { c.OwnerId, c.PropertyId, c.Period })
             .IsUnique()
             .HasFilter("\"DeletedAt\" IS NULL");

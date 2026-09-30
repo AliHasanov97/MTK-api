@@ -14,6 +14,10 @@ using MTK.Modules.Payments.Domain.OwnerBalances;
 using MTK.Modules.Payments.Domain.AuditLogs;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Transactions;
+using MTK.Modules.Payments.Domain.Vendors;
+using MTK.Modules.Payments.Domain.Contracts;
+using MTK.Modules.Payments.Domain.VendorCharges;
+using MTK.Modules.Payments.Domain.VendorPayments;
 
 namespace MTK.Modules.Payments.Infrastructure.Database;
 
@@ -39,6 +43,12 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork
     public DbSet<OwnerBalance> OwnerBalances { get; set; }
     public DbSet<PropertyOwnership> PropertyOwnerships { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<Vendor> Vendors { get; set; }
+    public DbSet<Contract> Contracts { get; set; }
+    public DbSet<ContractService> ContractServices { get; set; }
+    public DbSet<ContractGoodsItem> ContractGoodsItems { get; set; }
+    public DbSet<VendorCharge> VendorCharges { get; set; }
+    public DbSet<VendorPayment> VendorPayments { get; set; }
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     // Outbox Pattern
@@ -108,7 +118,9 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork
             if (deletedAt is null)
                 continue;
 
-            deletedAt.CurrentValue = DateTime.UtcNow;
+            // DeletedAt DateTimeOffset?-dır — DateTime yazılsa, EF dəyəri geri
+            // oxuyarkən InvalidCastException verir (soft delete tamamilə sınırdı).
+            deletedAt.CurrentValue = DateTimeOffset.UtcNow;
             deletedAt.IsModified = true;
             entry.State = EntityState.Modified;
         }

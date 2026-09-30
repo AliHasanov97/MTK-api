@@ -21,5 +21,13 @@ internal sealed class CreateChargeCommandValidator : AbstractValidator<CreateCha
             .NotEmpty()
             .WithMessage("Təsvir tələb olunur")
             .MaximumLength(500);
+
+        // Verilərsə "yyyy-MM" olmalıdır: bu dəyər həm unikallıq açarıdır, həm də
+        // aylıq generasiya ilə toqquşmamalıdır. Sərbəst mətn (məs. "2026-9") eyni
+        // ay üçün ikinci borc yaradır və dövr ardıcıllığını pozur.
+        RuleFor(x => x.Period)
+            .Matches(@"^\d{4}-(0[1-9]|1[0-2])$")
+            .When(x => !string.IsNullOrWhiteSpace(x.Period))
+            .WithMessage("Dövr \"yyyy-MM\" formatında olmalıdır (məs. 2026-09)");
     }
 }

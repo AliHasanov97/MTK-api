@@ -21,4 +21,15 @@ internal sealed class OwnerBalanceRepository : SearchableRepository<OwnerBalance
         return await PaymentsContext.OwnerBalances
             .FirstOrDefaultAsync(ob => ob.OwnerId == ownerId, cancellationToken);
     }
+
+    public async Task<Dictionary<Guid, OwnerBalance>> GetByOwnerIdsAsync(
+        IReadOnlyCollection<Guid> ownerIds,
+        CancellationToken cancellationToken = default)
+    {
+        var balances = await PaymentsContext.OwnerBalances
+            .Where(ob => ownerIds.Contains(ob.OwnerId))
+            .ToListAsync(cancellationToken);
+
+        return balances.ToDictionary(b => b.OwnerId);
+    }
 }

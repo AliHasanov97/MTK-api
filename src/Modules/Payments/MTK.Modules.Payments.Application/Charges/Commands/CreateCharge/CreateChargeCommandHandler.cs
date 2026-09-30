@@ -1,9 +1,9 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Abstractions.Data;
+using MTK.Modules.Payments.Application.OwnerBalances.Services;
 using MTK.Modules.Payments.Application.Payments.Services;
 using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.OwnerBalances;
 using MTK.Modules.Payments.Domain.Rates;
 using MTK.Modules.Payments.Domain.Repositories;
 
@@ -12,22 +12,22 @@ namespace MTK.Modules.Payments.Application.Charges.Commands.CreateCharge;
 internal sealed class CreateChargeCommandHandler : ICommandHandler<CreateChargeCommand, Guid>
 {
     private readonly IChargeRepository _chargeRepository;
-    private readonly IOwnerBalanceRepository _ownerBalanceRepository;
     private readonly IPropertyOwnershipRepository _propertyOwnershipRepository;
     private readonly IPaymentAllocationService _paymentAllocationService;
+    private readonly IOwnerBalanceService _ownerBalanceService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateChargeCommandHandler(
         IChargeRepository chargeRepository,
-        IOwnerBalanceRepository ownerBalanceRepository,
         IPropertyOwnershipRepository propertyOwnershipRepository,
         IPaymentAllocationService paymentAllocationService,
+        IOwnerBalanceService ownerBalanceService,
         IUnitOfWork unitOfWork)
     {
         _chargeRepository = chargeRepository;
-        _ownerBalanceRepository = ownerBalanceRepository;
         _propertyOwnershipRepository = propertyOwnershipRepository;
         _paymentAllocationService = paymentAllocationService;
+        _ownerBalanceService = ownerBalanceService;
         _unitOfWork = unitOfWork;
     }
 
@@ -56,11 +56,18 @@ internal sealed class CreateChargeCommandHandler : ICommandHandler<CreateChargeC
                 $"Bu dövr üçün artıq haqq mövcuddur: {period}"));
         }
 
+        // Borcun yaranması, avansla bağlanması və balansın yenilənməsi bir
+        // tranzaksiyadır — yarımçıq vəziyyət qala bilməz.
+        await using var transaction = await _chargeRepository.BeginTransactionAsync(cancellationToken);
+
         var charge = Charge.Create(
             request.OwnerId,
             request.PropertyType,
             request.PropertyId,
             period,
+            // Dövr verilməyibsə borc indi yaranır; verilibsə də manual borc öz
+            // yaranma anı ilə yaşlanır (Period sıralama üçün istifadə olunmur).
+            DateTimeOffset.UtcNow,
             request.Amount,
             request.Amount,
             RateType.Manual,
@@ -68,22 +75,21 @@ internal sealed class CreateChargeCommandHandler : ICommandHandler<CreateChargeC
             description: request.Description);
 
         _chargeRepository.Add(charge);
-
-        var ownerBalance = await _ownerBalanceRepository.GetByOwnerIdAsync(request.OwnerId, cancellationToken);
-
-        if (ownerBalance is null)
-        {
-            ownerBalance = OwnerBalance.Create(request.OwnerId);
-            _ownerBalanceRepository.Add(ownerBalance);
-        }
-
-        ownerBalance.AddCharge(request.Amount);
-
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // If this owner already has advance sitting on older payments, spend it on
-        // this brand-new charge immediately instead of leaving it artificially unpaid.
-        await _paymentAllocationService.SettleChargeFromAdvanceAsync(charge.Id, request.OwnerId, cancellationToken);
+        // Sahibin əvvəlki ödənişlərindən qalan avans varsa, borc dərhal ondan bağlanır.
+        // Nəticə udulmur: uğursuzluq çağırana (və API-yə) qaytarılır.
+        var advanceResult = await _paymentAllocationService.ApplyAdvanceToChargesAsync([charge], cancellationToken);
+        if (advanceResult.IsFailure)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Result.Failure<Guid>(advanceResult.Error);
+        }
+
+        await _ownerBalanceService.RecalculateAsync([request.OwnerId], cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         return Result.Success(charge.Id);
     }

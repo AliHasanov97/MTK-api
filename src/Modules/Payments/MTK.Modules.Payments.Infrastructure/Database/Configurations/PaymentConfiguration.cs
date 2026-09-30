@@ -12,6 +12,14 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasKey(p => p.Id);
 
+        // Optimistik concurrency: eyni ödəniş eyni anda iki yerdən dəyişdirilərsə
+        // (məs. ləğv + hesabat), ikinci yazma sükutla üstünə yazmır.
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+
         builder.Property(p => p.OwnerId)
             .IsRequired();
 

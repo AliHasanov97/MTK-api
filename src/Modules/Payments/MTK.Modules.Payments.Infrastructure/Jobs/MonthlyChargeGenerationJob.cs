@@ -19,10 +19,28 @@ internal sealed class MonthlyChargeGenerationJob(
 
         using IServiceScope scope = serviceScopeFactory.CreateScope();
 
-        var chargeService = scope.ServiceProvider.GetRequiredService<IChargeGenerationService>();
         string currentPeriod = dateTimeProvider.UtcNow.ToString("yyyy-MM");
+
+        var chargeService = scope.ServiceProvider.GetRequiredService<IChargeGenerationService>();
         int chargesCreated = await chargeService.GenerateMonthlyChargesAsync(currentPeriod, context.CancellationToken);
 
         logger.LogInformation("Payments - Monthly charge generation completed. Created {ChargesCount} charges", chargesCreated);
+
+        // Tədarükçü müqavilələri üzrə cədvəl borcları — eyni dövr üçün. Xəta
+        // sakin borclarını yaradıb-törətməsin deyə ayrıca blokda saxlanılır.
+        try
+        {
+            var vendorChargeService = scope.ServiceProvider.GetRequiredService<IVendorChargeGenerationService>();
+            int vendorChargesCreated = await vendorChargeService.GenerateScheduledChargesAsync(
+                currentPeriod, context.CancellationToken);
+
+            logger.LogInformation(
+                "Payments - Vendor charge generation completed. Created {ChargesCount} charges",
+                vendorChargesCreated);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Payments - Vendor charge generation failed for period {Period}", currentPeriod);
+        }
     }
 }

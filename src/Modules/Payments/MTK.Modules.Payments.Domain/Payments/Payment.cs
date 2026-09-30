@@ -58,13 +58,6 @@ public sealed class Payment : SearchableEntity
         RaiseDomainEvent(new PaymentCompletedDomainEvent(Id, OwnerId, Amount));
     }
 
-    public void Cancel()
-    {
-        Status = PaymentStatus.Cancelled;
-        SetUpdatedAt();
-        RaiseDomainEvent(new PaymentCancelledDomainEvent(Id, OwnerId, Amount));
-    }
-
     public void Delete()
     {
         SetDeletedAt();

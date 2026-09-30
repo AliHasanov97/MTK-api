@@ -22,4 +22,6 @@ public sealed record ChargeSearchResult(
     string? Description,
     decimal? AreaSquareMeters,
     decimal RateAmount,
-    RateType RateType);
+    RateType RateType,
+    // Borcun yaşı — FIFO sırasını və "avansdan ödənilib" işarəsini UI bununla qurur.
+    DateTimeOffset IssuedOn);

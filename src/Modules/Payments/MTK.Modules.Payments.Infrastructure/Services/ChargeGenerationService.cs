@@ -1,8 +1,9 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using MTK.Modules.Payments.Application.Charges.Services;
+using MTK.Modules.Payments.Application.OwnerBalances.Services;
 using MTK.Modules.Payments.Application.Payments.Services;
 using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.OwnerBalances;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Rates;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -14,9 +15,9 @@ internal sealed class ChargeGenerationService(
     PaymentsDbContext dbContext,
     IRateRepository rateRepository,
     IChargeRepository chargeRepository,
-    IOwnerBalanceRepository ownerBalanceRepository,
     IPropertyOwnershipRepository propertyOwnershipRepository,
     IPaymentAllocationService paymentAllocationService,
+    IOwnerBalanceService ownerBalanceService,
     ILogger<ChargeGenerationService> logger) : IChargeGenerationService
 {
     public async Task<int> GenerateMonthlyChargesAsync(string period, CancellationToken cancellationToken = default)
@@ -27,10 +28,14 @@ internal sealed class ChargeGenerationService(
         Rate? apartmentRate = await rateRepository.GetCurrentRateAsync(RateType.PerSquareMeter, cancellationToken);
 
         int chargesCreated = 0;
-        // Settled against owner advance in a second pass, after the SaveChangesAsync
-        // below — keeping the Charge references (not their Ids) so this works
-        // regardless of exactly when EF assigns the key.
-        var createdCharges = new List<(Charge Charge, Guid OwnerId)>();
+
+        // Avansla bağlama ikinci keçiddə, borclar yazıldıqdan sonra aparılır. Borcların
+        // özü (referansları) saxlanılır — Id-nin EF tərəfindən nə vaxt verilməsindən
+        // asılı olmasın deyə.
+        var createdCharges = new List<Charge>();
+        var affectedOwnerIds = new HashSet<Guid>();
+
+        DateTimeOffset issuedOn = IssuedOnFromPeriod(period);
 
         // Get apartments with owners from PropertyOwnership read model
         List<PropertyOwnership> apartments = await propertyOwnershipRepository
@@ -64,26 +69,15 @@ internal sealed class ChargeGenerationService(
                     PropertyType.Apartment,
                     apartment.PropertyId,
                     period,
+                    issuedOn,
                     chargeAmount,
                     apartmentRate.Amount,           // Snapshot: rate at time of creation
                     RateType.PerSquareMeter,        // Snapshot: rate type
                     apartment.AreaSquareMeters);    // Snapshot: area at time of creation
 
                 chargeRepository.Add(charge);
-
-                // Update owner balance
-                OwnerBalance? ownerBalance = await ownerBalanceRepository.GetByOwnerIdAsync(
-                    apartment.OwnerId,
-                    cancellationToken);
-
-                if (ownerBalance is null)
-                {
-                    ownerBalance = OwnerBalance.Create(apartment.OwnerId);
-                    ownerBalanceRepository.Add(ownerBalance);
-                }
-
-                ownerBalance.AddCharge(chargeAmount);
-                createdCharges.Add((charge, apartment.OwnerId));
+                createdCharges.Add(charge);
+                affectedOwnerIds.Add(apartment.OwnerId);
 
                 chargesCreated++;
 
@@ -156,26 +150,15 @@ internal sealed class ChargeGenerationService(
                 PropertyType.Garage,
                 garage.PropertyId,
                 period,
+                issuedOn,
                 chargeAmount,
                 garageRate.Amount,              // Snapshot: rate at time of creation
                 RateType.FixedGarage,           // Snapshot: rate type
                 null);                          // Snapshot: no area for garages
 
             chargeRepository.Add(charge);
-
-            // Update owner balance
-            OwnerBalance? ownerBalance = await ownerBalanceRepository.GetByOwnerIdAsync(
-                garage.OwnerId,
-                cancellationToken);
-
-            if (ownerBalance is null)
-            {
-                ownerBalance = OwnerBalance.Create(garage.OwnerId);
-                ownerBalanceRepository.Add(ownerBalance);
-            }
-
-            ownerBalance.AddCharge(chargeAmount);
-            createdCharges.Add((charge, garage.OwnerId));
+            createdCharges.Add(charge);
+            affectedOwnerIds.Add(garage.OwnerId);
 
             chargesCreated++;
 
@@ -183,19 +166,57 @@ internal sealed class ChargeGenerationService(
                 garage.PropertyId, garage.GarageType, garage.OwnerId, chargeAmount);
         }
 
+        if (chargesCreated == 0)
+        {
+            logger.LogInformation("Monthly charge generation completed for period {Period}. No new charges", period);
+            return 0;
+        }
+
+        // Borcların yazılması, avansdan bağlanması və balansın yenilənməsi bir
+        // tranzaksiyadır: yarımçıq vəziyyətdə qala bilməz.
+        await using var transaction = await chargeRepository.BeginTransactionAsync(cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // Second pass: spend down any owner-level advance on these brand-new charges,
-        // oldest owner-payment first. Runs after the save above so every charge has its
-        // real, persisted Id.
-        foreach (var (charge, ownerId) in createdCharges)
+        // İkinci keçid: yeni borcları sahibin qalan avansından bağla. Bütün borclar bir
+        // çağırışda gedir — sahib üzrə avans bir dəfə oxunur (əvvəllər hər borc üçün
+        // ayrı oxuma + ayrı SaveChanges olurdu).
+        var advanceResult = await paymentAllocationService.ApplyAdvanceToChargesAsync(createdCharges, cancellationToken);
+
+        if (advanceResult.IsFailure)
         {
-            await paymentAllocationService.SettleChargeFromAdvanceAsync(charge.Id, ownerId, cancellationToken);
+            await transaction.RollbackAsync(cancellationToken);
+            logger.LogError(
+                "Advance settlement failed for period {Period} ({Code}: {Message}); generation rolled back",
+                period, advanceResult.Error.Code, advanceResult.Error.Message);
+            return 0;
         }
+
+        // Balans aqreqatdan mütləq yenidən hesablanır (artırmalı yanaşma yoxdur).
+        await ownerBalanceService.RecalculateAsync(affectedOwnerIds, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         logger.LogInformation("Monthly charge generation completed for period {Period}. Created {Count} charges",
             period, chargesCreated);
 
         return chargesCreated;
+    }
+
+    /// <summary>
+    /// "yyyy-MM" dövrünü borcun yaşına çevirir — dövrün ilk günü. Format tanınmasa
+    /// (gözlənilməyən dəyər) borc indi yaranmış sayılır.
+    /// </summary>
+    private static DateTimeOffset IssuedOnFromPeriod(string period)
+    {
+        return DateTimeOffset.TryParseExact(
+            period + "-01",
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+            out DateTimeOffset parsed)
+            ? parsed
+            : DateTimeOffset.UtcNow;
     }
 }

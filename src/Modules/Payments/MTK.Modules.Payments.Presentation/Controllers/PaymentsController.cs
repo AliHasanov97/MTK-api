@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Domain.Queries;
-using MTK.Modules.Payments.Application.Payments.Commands.CancelPayment;
 using MTK.Modules.Payments.Application.Payments.Commands.CreatePayment;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentAllocations;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByOwner;
@@ -91,19 +90,6 @@ public class PaymentsController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value)
-            : BadRequest(result.Error);
-    }
-
-    [HttpPost("{paymentId:guid}/cancel")]
-    public async Task<IActionResult> CancelPayment(
-        Guid paymentId,
-        CancellationToken cancellationToken)
-    {
-        var command = new CancelPaymentCommand(paymentId);
-        var result = await _sender.Send(command, cancellationToken);
-
-        return result.IsSuccess
-            ? Success("Ödəniş ləğv edildi")
             : BadRequest(result.Error);
     }
 }

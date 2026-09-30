@@ -44,7 +44,8 @@ internal sealed class SearchChargesQueryHandler : IQueryHandler<SearchChargesQue
             c.Description,
             c.AreaSquareMeters,
             c.RateAmount,
-            c.RateType)).ToList();
+            c.RateType,
+            c.IssuedOn)).ToList();
 
         var response = new SearchChargesResponse(
             items,

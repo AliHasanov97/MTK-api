@@ -1,23 +1,34 @@
 using MTK.Common.Domain.Abstractions;
+using MTK.Modules.Payments.Domain.Charges;
 
 namespace MTK.Modules.Payments.Application.Payments.Services;
 
+/// <summary>
+/// Ödənişlərin borclara paylanması. Heç bir metod <b>yadda saxlamır</b> — çağıran
+/// tərəf vahid iş çərçivəsinə sahibdir ki, borc/ödəniş dəyişikliyi ilə onların
+/// paylanması bir tranzaksiyada bitsin (əvvəllər servis özü SaveChanges çağırırdı və
+/// yarımçıq vəziyyət qalırdı).
+/// </summary>
 public interface IPaymentAllocationService
 {
     /// <summary>
-    /// Allocates a payment FIFO against the owner's oldest unpaid charges. When
-    /// <paramref name="propertyId"/> is given, only that property's charges are eligible —
-    /// the payment will not spill over onto the owner's other apartments/garages.
+    /// Ödənişi sahibin ən köhnə açıq borclarına FIFO ilə paylayır. <paramref name="propertyId"/>
+    /// verilərsə yalnız həmin əmlakın borcları uyğundur.
     /// </summary>
     Task<Result> AllocatePaymentAsync(Guid paymentId, Guid ownerId, decimal amount, Guid? propertyId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The mirror operation, run whenever a new charge is created (monthly generation or
-    /// a manual one-off): pays it down from whatever's left over from the owner's own
-    /// past payments (oldest first), regardless of which property they originally
-    /// targeted — an apartment/garage never carries its own advance (see
-    /// PropertyBalanceResponse), so any surplus sitting on an owner's older payments is
-    /// exactly what a brand-new charge should be settled from first.
+    /// Yeni yaranmış borcları sahibin əvvəlki ödənişlərindən qalan avansla bağlayır
+    /// (ən köhnə ödəniş əvvəl). Bütün borclar bir dəfə emal olunur: sahib üzrə avans
+    /// bir dəfə oxunur və yaddaşda bölünür, ona görə borc sayı nə qədər olsa da əlavə
+    /// sorğu/yazma yaranmır.
     /// </summary>
-    Task<Result> SettleChargeFromAdvanceAsync(Guid chargeId, Guid ownerId, CancellationToken cancellationToken);
+    Task<Result> ApplyAdvanceToChargesAsync(IReadOnlyCollection<Charge> charges, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sahibin qalan avansını bütün açıq borclara yenidən paylayır. Ödəniş ləğv
+    /// edildikdə çağırılır: ləğv digər ödənişlərin pulunu azad edir və o pul növbəti
+    /// borc yaranana kimi boş qalmamalıdır.
+    /// </summary>
+    Task<Result> ReallocateAdvanceAsync(Guid ownerId, CancellationToken cancellationToken);
 }

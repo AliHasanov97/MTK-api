@@ -68,10 +68,16 @@ public static class PaymentsModule
         services.AddScoped<IOwnerBalanceRepository, OwnerBalanceRepository>();
         services.AddScoped<IPropertyOwnershipRepository, PropertyOwnershipRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IVendorRepository, VendorRepository>();
+        services.AddScoped<IContractRepository, ContractRepository>();
+        services.AddScoped<IVendorChargeRepository, VendorChargeRepository>();
+        services.AddScoped<IVendorPaymentRepository, VendorPaymentRepository>();
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();
+        services.AddScoped<MTK.Modules.Payments.Application.OwnerBalances.Services.IOwnerBalanceService, MTK.Modules.Payments.Application.OwnerBalances.Services.OwnerBalanceService>();
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.ChargeGenerationService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IVendorChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.VendorChargeGenerationService>();
 
         // Outbox & Inbox Configuration
         services.Configure<OutboxOptions>(configuration.GetSection("Payments:Outbox"));

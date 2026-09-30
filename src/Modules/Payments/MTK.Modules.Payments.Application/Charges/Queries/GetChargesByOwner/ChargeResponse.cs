@@ -18,4 +18,7 @@ public sealed record ChargeResponse(
     // instead of an opaque total (e.g. "130.20 m² × 0.36 ₼/m²").
     decimal? AreaSquareMeters,
     decimal RateAmount,
-    RateType RateType);
+    RateType RateType,
+    // Borcun yaşı — ödənişin avansdan gəlib-gəlmədiyini UI bununla ayırd edir
+    // (borc yaranmazdan əvvəl alınmış pul = avans).
+    DateTimeOffset IssuedOn);
