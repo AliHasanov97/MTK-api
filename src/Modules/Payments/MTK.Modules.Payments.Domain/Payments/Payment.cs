@@ -1,14 +1,25 @@
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Charges;
+using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments.Events;
 
 namespace MTK.Modules.Payments.Domain.Payments;
 
+/// <summary>
+/// Ödəniş — həm sakindən alınan (<see cref="PartyType.Owner"/>), həm də tədarükçüyə
+/// verilən (<see cref="PartyType.Vendor"/>) pulu təmsil edir. Əvvəllər bunlar iki ayrı
+/// aqreqat idi (<c>Payment</c> və <c>VendorPayment</c>); indi tək modeldir və pulun
+/// borclara paylanması (<c>PaymentAllocation</c>) hər iki tərəf üçün eynidir.
+/// </summary>
 public sealed class Payment : SearchableEntity
 {
     private Payment() : base() { }
 
-    public Guid OwnerId { get; private set; }
+    public PartyType PartyType { get; private set; }
+
+    /// <summary>Sahibin və ya tədarükçünün Id-si (tərəfə uyğun).</summary>
+    public Guid PartyId { get; private set; }
+
     public decimal Amount { get; private set; }
     public PaymentMethod PaymentMethod { get; private set; }
     public DateTimeOffset PaymentDate { get; private set; }
@@ -16,14 +27,14 @@ public sealed class Payment : SearchableEntity
     public string? Reference { get; private set; }
     public string? Notes { get; private set; }
 
-    // Optional: when set, this payment is scoped to a single property and is only
-    // allocated against that property's unpaid charges (instead of FIFO across the
-    // owner's whole debt). Null means "general payment", FIFO across everything.
+    // Yalnız sakin ödənişləri üçün: ödəniş tək əmlaka hədəflənə bilər və o zaman
+    // yalnız həmin əmlakın açıq borclarına paylanır. Null = ümumi ödəniş (FIFO).
     public Guid? PropertyId { get; private set; }
     public PropertyType? PropertyType { get; private set; }
 
     public static Payment Create(
-        Guid ownerId,
+        PartyType partyType,
+        Guid partyId,
         decimal amount,
         PaymentMethod paymentMethod,
         DateTimeOffset paymentDate,
@@ -37,7 +48,8 @@ public sealed class Payment : SearchableEntity
 
         var payment = new Payment
         {
-            OwnerId = ownerId,
+            PartyType = partyType,
+            PartyId = partyId,
             Amount = amount,
             PaymentMethod = paymentMethod,
             PaymentDate = paymentDate,
@@ -51,15 +63,18 @@ public sealed class Payment : SearchableEntity
         return payment;
     }
 
+    /// <summary>
+    /// Ödənişi tamamlayır. Ledger qeydi bu event-in handler-ində yazılır — tərəfə
+    /// görə gəlir (sakin) və ya xərc (tədarükçü) qeydi.
+    ///
+    /// Ödəniş <b>geri qaytarılmır/ləğv edilmir</b>: tamamlanmış pul hərəkəti artıq
+    /// ledger-ə düşüb. Səhv ödəniş zərurət yaranarsa ayrı düzəliş (əks) əməliyyatı
+    /// kimi modelləşdirilməlidir, mövcud ödənişin üzərində "reversal" kimi yox.
+    /// </summary>
     public void MarkAsCompleted()
     {
         Status = PaymentStatus.Completed;
         SetUpdatedAt();
-        RaiseDomainEvent(new PaymentCompletedDomainEvent(Id, OwnerId, Amount));
-    }
-
-    public void Delete()
-    {
-        SetDeletedAt();
+        RaiseDomainEvent(new PaymentCompletedDomainEvent(Id, PartyType, PartyId, Amount));
     }
 }

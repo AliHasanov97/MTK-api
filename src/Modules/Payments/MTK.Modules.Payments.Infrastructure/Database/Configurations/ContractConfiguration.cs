@@ -72,17 +72,11 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
             .HasFilter("\"DeletedAt\" IS NULL");
 
         // Vendor ayrı aggregate-dir → FK qoyulmur, yalnız VendorId saxlanılır.
-        // Xidmətlər və mallar isə bu aggregate-in içindədir → real FK + cascade.
+        // Xidmətlər isə bu aggregate-in içindədir → real FK + cascade.
         builder
             .HasMany(c => c.Services)
             .WithOne()
             .HasForeignKey(s => s.ContractId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder
-            .HasMany(c => c.GoodsItems)
-            .WithOne()
-            .HasForeignKey(i => i.ContractId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

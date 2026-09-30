@@ -1,27 +1,20 @@
-using MTK.Modules.Payments.Domain.VendorCharges;
+using MTK.Modules.Payments.Domain.Charges;
 
 namespace MTK.Modules.Payments.Application.VendorCharges.Queries.SearchVendorCharges;
 
 public sealed record VendorChargeResponse(
     Guid Id,
-    Guid ContractId,
+    Guid? ContractId,
     Guid VendorId,
     Guid? ContractServiceId,
-    Guid? ContractGoodsItemId,
     string? Period,
-    string Description,
-    string? Reference,
-    decimal UnitPrice,
-    decimal Quantity,
+    string? Description,
     decimal Amount,
     decimal PaidAmount,
     decimal OutstandingAmount,
-    VendorChargeStatus Status,
-    VendorChargeSource Source,
+    ChargeStatus Status,
     DateTimeOffset ChargeDate,
     DateTimeOffset? DueDate,
-    string Currency,
-    string? CancellationReason,
     bool IsOverdue,
     DateTimeOffset CreatedAt);
 

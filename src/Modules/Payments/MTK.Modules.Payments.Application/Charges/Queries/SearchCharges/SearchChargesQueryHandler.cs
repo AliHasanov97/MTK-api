@@ -33,7 +33,7 @@ internal sealed class SearchChargesQueryHandler : IQueryHandler<SearchChargesQue
 
         var items = charges.Select(c => new ChargeSearchResult(
             c.Id,
-            c.OwnerId,
+            c.PartyId,
             c.PropertyType,
             c.PropertyId,
             c.Period,

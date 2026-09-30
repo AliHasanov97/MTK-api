@@ -12,16 +12,16 @@ public sealed record SearchChargesResponse(
 public sealed record ChargeSearchResult(
     Guid Id,
     Guid OwnerId,
-    PropertyType PropertyType,
-    Guid PropertyId,
-    string Period,
+    PropertyType? PropertyType,
+    Guid? PropertyId,
+    string? Period,
     decimal Amount,
     decimal PaidAmount,
     ChargeStatus Status,
     DateTimeOffset CreatedAt,
     string? Description,
     decimal? AreaSquareMeters,
-    decimal RateAmount,
-    RateType RateType,
+    decimal? RateAmount,
+    RateType? RateType,
     // Borcun yaşı — FIFO sırasını və "avansdan ödənilib" işarəsini UI bununla qurur.
     DateTimeOffset IssuedOn);

@@ -20,7 +20,12 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();
 
-        builder.Property(p => p.OwnerId)
+        builder.Property(p => p.PartyType)
+            .HasConversion<string>()
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.Property(p => p.PartyId)
             .IsRequired();
 
         builder.Property(p => p.Amount)
@@ -56,7 +61,6 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsRequired();
 
         builder.Property(p => p.UpdatedAt);
-
         builder.Property(p => p.DeletedAt);
 
         // Global soft delete filter
@@ -72,7 +76,8 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .HasMethod("GIN");
 
         // Indexes
-        builder.HasIndex(p => p.OwnerId);
+        builder.HasIndex(p => p.PartyType);
+        builder.HasIndex(p => p.PartyId);
         builder.HasIndex(p => p.PaymentDate);
         builder.HasIndex(p => p.Status);
         builder.HasIndex(p => p.Reference);

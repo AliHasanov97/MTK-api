@@ -1,14 +1,14 @@
 using MTK.Common.Domain.Abstractions;
+using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
-using MTK.Modules.Payments.Domain.VendorPayments;
 
 namespace MTK.Modules.Payments.Domain.Transactions;
 
 /// <summary>
-/// A general financial ledger entry that is NOT tied to a resident's Charge/Payment
-/// cycle — e.g. an inventory purchase, a maintenance expense, rental income from a
-/// shared space. Kept deliberately simple (no allocation/FIFO logic like Payment has)
-/// since it isn't settling anyone's debt; it just records money moving in or out.
+/// A general financial ledger entry. Completed payments post here through the
+/// domain event: an owner payment is money received (Income), a vendor payment is
+/// money paid out (Expense). Kept deliberately simple (no allocation/FIFO logic)
+/// since the debt settlement happens on the Charge/Payment side.
 /// </summary>
 public sealed class Transaction : SearchableEntity
 {
@@ -48,39 +48,30 @@ public sealed class Transaction : SearchableEntity
     }
 
     /// <summary>
-    /// Money received from a resident — the entry a completed payment posts.
+    /// The entry a completed payment posts. Money received from a resident is an
+    /// Income entry; money paid out to a vendor is an Expense entry (opposite
+    /// direction), so the unified Payment decides the side.
     /// </summary>
     public static Transaction ForPayment(Payment payment) =>
-        Create(
-            TransactionDirection.Income,
-            ResidentPaymentCategory,
-            payment.Amount,
-            Describe(payment),
-            payment.PaymentDate.ToUniversalTime());
-
-    /// <summary>
-    /// Money paid out to a vendor — the entry a completed vendor payment posts. The
-    /// opposite direction of <see cref="ForPayment"/>: here the money leaves us.
-    /// </summary>
-    public static Transaction ForVendorPayment(VendorPayment payment) =>
-        Create(
-            TransactionDirection.Expense,
-            VendorPaymentCategory,
-            payment.Amount,
-            DescribeVendorPayment(payment),
-            payment.PaymentDate.ToUniversalTime());
+        payment.PartyType == PartyType.Vendor
+            ? Create(
+                TransactionDirection.Expense,
+                VendorPaymentCategory,
+                payment.Amount,
+                Describe(payment),
+                payment.PaymentDate.ToUniversalTime())
+            : Create(
+                TransactionDirection.Income,
+                ResidentPaymentCategory,
+                payment.Amount,
+                Describe(payment),
+                payment.PaymentDate.ToUniversalTime());
 
     // No Delete(): the ledger is append-only.
 
     // A payment entry names the method (and reference, when there is one) so the
     // ledger reads on its own instead of being joined back to the payment.
     private static string Describe(Payment payment)
-    {
-        var method = MethodName(payment.PaymentMethod);
-        return payment.Reference is null ? method : $"{method} · {payment.Reference}";
-    }
-
-    private static string DescribeVendorPayment(VendorPayment payment)
     {
         var method = MethodName(payment.PaymentMethod);
         return payment.Reference is null ? method : $"{method} · {payment.Reference}";

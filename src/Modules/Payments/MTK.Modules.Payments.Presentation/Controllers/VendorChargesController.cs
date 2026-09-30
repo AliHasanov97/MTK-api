@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Modules.Payments.Application.VendorCharges.Commands.CancelVendorCharge;
-using MTK.Modules.Payments.Application.VendorCharges.Commands.RecordGoodsDelivery;
 using MTK.Modules.Payments.Application.VendorCharges.Queries.SearchVendorCharges;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
@@ -17,19 +16,6 @@ public class VendorChargesController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value)
-            : BadRequest(result.Error);
-    }
-
-    /// <summary>Mal tədarükünü (qaimə) qeydə alır — borc yaradır.</summary>
-    [HttpPost("goods-delivery")]
-    public async Task<IActionResult> RecordGoodsDelivery(
-        [FromBody] RecordGoodsDeliveryCommand command,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(command, cancellationToken);
-
-        return result.IsSuccess
-            ? Success(result.Value, "Tədarük qeydə alındı, borc yaradıldı")
             : BadRequest(result.Error);
     }
 

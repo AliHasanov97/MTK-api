@@ -19,8 +19,7 @@ public sealed record ContractResponse(
     decimal TotalAmount,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
-    IReadOnlyCollection<ContractServiceResponse> Services,
-    IReadOnlyCollection<ContractGoodsItemResponse> GoodsItems);
+    IReadOnlyCollection<ContractServiceResponse> Services);
 
 public sealed record ContractServiceResponse(
     Guid Id,
@@ -33,15 +32,5 @@ public sealed record ContractServiceResponse(
     decimal PeriodAmount,
     DateTimeOffset? ServiceStartDate,
     DateTimeOffset? ServiceEndDate,
-    int? PaymentTermDays,
-    bool IsActive);
-
-public sealed record ContractGoodsItemResponse(
-    Guid Id,
-    string Name,
-    string? Description,
-    string Unit,
-    decimal UnitPrice,
-    decimal? AgreedQuantity,
     int? PaymentTermDays,
     bool IsActive);

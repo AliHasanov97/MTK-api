@@ -1,9 +1,14 @@
 using MTK.Common.Domain.Abstractions;
-using MTK.Modules.Payments.Domain.VendorCharges;
+using MTK.Modules.Payments.Domain.Charges;
 
 namespace MTK.Modules.Payments.Domain.Repositories;
 
-public interface IVendorChargeRepository : IRepository<VendorCharge>
+/// <summary>
+/// Tədarükçüyə aid borclar üzrə görünüş. Borclar artıq tək <see cref="Charge"/>
+/// aqreqatındadır; bu repository yalnız <c>PartyType == Vendor</c> sətirləri üzərində
+/// işləyir (sakin repository-si isə Owner tərəfi üzərində).
+/// </summary>
+public interface IVendorChargeRepository : IRepository<Charge>
 {
     /// <summary>
     /// Bu xidmət üçün həmin dövrdə artıq borc yaranıbmı? Generasiya job-unun
@@ -11,10 +16,10 @@ public interface IVendorChargeRepository : IRepository<VendorCharge>
     /// </summary>
     Task<bool> ExistsForPeriodAsync(Guid contractServiceId, string period, CancellationToken cancellationToken = default);
 
-    /// <summary>Bu mal sətri üçün həmin qaimə nömrəsi ilə borc artıq yaranıbmı?</summary>
-    Task<bool> ExistsForReferenceAsync(Guid contractGoodsItemId, string reference, CancellationToken cancellationToken = default);
+    Task<List<Charge>> ListByVendorAsync(Guid vendorId, CancellationToken cancellationToken = default);
 
-    Task<List<VendorCharge>> ListByVendorAsync(Guid vendorId, CancellationToken cancellationToken = default);
+    Task<List<Charge>> ListByContractAsync(Guid contractId, CancellationToken cancellationToken = default);
 
-    Task<List<VendorCharge>> ListByContractAsync(Guid contractId, CancellationToken cancellationToken = default);
+    /// <summary>Tədarükçünün açıq borcları, FIFO sırası ilə (ödəniş paylanması üçün).</summary>
+    Task<List<Charge>> GetUnpaidChargesAsync(Guid vendorId, CancellationToken cancellationToken = default);
 }

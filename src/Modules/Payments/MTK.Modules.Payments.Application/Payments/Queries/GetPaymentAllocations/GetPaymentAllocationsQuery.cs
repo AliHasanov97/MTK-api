@@ -11,9 +11,9 @@ public sealed record GetPaymentAllocationsQuery(Guid PaymentId) : IQuery<IReadOn
 /// </summary>
 public sealed record PaymentAllocationDetailResponse(
     Guid ChargeId,
-    PropertyType PropertyType,
-    Guid PropertyId,
-    string Period,
+    PropertyType? PropertyType,
+    Guid? PropertyId,
+    string? Period,
     string? Description,
     decimal ChargeAmount,
     decimal AllocatedAmount);

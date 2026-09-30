@@ -6,17 +6,14 @@ namespace MTK.Modules.Payments.Domain.Contracts;
 /// <summary>
 /// Tədarükçü ilə bağlanan müqavilə (Aggregate Root).
 ///
-/// İki növ şərt (sətir) ola bilər və hər ikisi yalnız bu aggregate daxilindən
-/// idarə olunur:
+/// Şərtlər yalnız bu aggregate daxilindən idarə olunur:
 /// <list type="bullet">
 /// <item><see cref="ContractService"/> — dövri xidmət; cədvəl üzrə avtomatik borc yaradır.</item>
-/// <item><see cref="ContractGoodsItem"/> — mal; borc yalnız konkret tədarük (qaimə) üzrə yaranır.</item>
 /// </list>
 /// </summary>
 public sealed class Contract : SearchableEntity
 {
     private readonly List<ContractService> _services = new();
-    private readonly List<ContractGoodsItem> _goodsItems = new();
 
     private Contract() : base() { }
 
@@ -40,8 +37,6 @@ public sealed class Contract : SearchableEntity
     public string? Note { get; private set; }
 
     public IReadOnlyCollection<ContractService> Services => _services.AsReadOnly();
-
-    public IReadOnlyCollection<ContractGoodsItem> GoodsItems => _goodsItems.AsReadOnly();
 
     /// <summary>Aylıq borc yaradan aktiv xidmətlər.</summary>
     public IEnumerable<ContractService> MonthlyServices =>
@@ -175,65 +170,6 @@ public sealed class Contract : SearchableEntity
     }
 
     // ------------------------------------------------------------------
-    // Mallar — eyni qayda: yalnız Draft mərhələsində qiymət/şərt dəyişir.
-    // ------------------------------------------------------------------
-
-    public ContractGoodsItem AddGoodsItem(
-        string name,
-        string unit,
-        decimal unitPrice,
-        decimal? agreedQuantity = null,
-        int? paymentTermDays = null,
-        string? description = null)
-    {
-        EnsureEditable();
-
-        var item = ContractGoodsItem.Create(
-            Id, name, unit, unitPrice, agreedQuantity, paymentTermDays, description);
-
-        _goodsItems.Add(item);
-        SetUpdatedAt();
-
-        return item;
-    }
-
-    public void UpdateGoodsItem(
-        Guid goodsItemId,
-        string name,
-        string unit,
-        decimal unitPrice,
-        decimal? agreedQuantity = null,
-        int? paymentTermDays = null,
-        string? description = null)
-    {
-        EnsureEditable();
-
-        GoodsItem(goodsItemId).Update(name, unit, unitPrice, agreedQuantity, paymentTermDays, description);
-        SetUpdatedAt();
-    }
-
-    public void RemoveGoodsItem(Guid goodsItemId)
-    {
-        EnsureEditable();
-
-        _goodsItems.Remove(GoodsItem(goodsItemId));
-        SetUpdatedAt();
-    }
-
-    /// <summary>Mal sətrini dayandırır — müqavilə aktiv qalır, yeni tədarük üzrə borc yaranmır.</summary>
-    public void DeactivateGoodsItem(Guid goodsItemId)
-    {
-        GoodsItem(goodsItemId).Deactivate();
-        SetUpdatedAt();
-    }
-
-    public void ActivateGoodsItem(Guid goodsItemId)
-    {
-        GoodsItem(goodsItemId).Activate();
-        SetUpdatedAt();
-    }
-
-    // ------------------------------------------------------------------
     // Status keçidləri
     // ------------------------------------------------------------------
 
@@ -242,9 +178,9 @@ public sealed class Contract : SearchableEntity
         if (Status == ContractStatus.Active)
             return;
 
-        if (_services.Count == 0 && _goodsItems.Count == 0)
+        if (_services.Count == 0)
             throw new InvalidOperationException(
-                "Müqavilə aktivləşməzdən əvvəl ən azı bir şərt (xidmət və ya mal) olmalıdır");
+                "Müqavilə aktivləşməzdən əvvəl ən azı bir xidmət olmalıdır");
 
         Status = ContractStatus.Active;
         SetUpdatedAt();
@@ -290,12 +226,6 @@ public sealed class Contract : SearchableEntity
     {
         return _services.FirstOrDefault(s => s.Id == serviceId)
             ?? throw new InvalidOperationException($"Xidmət tapılmadı: {serviceId}");
-    }
-
-    private ContractGoodsItem GoodsItem(Guid goodsItemId)
-    {
-        return _goodsItems.FirstOrDefault(i => i.Id == goodsItemId)
-            ?? throw new InvalidOperationException($"Mal sətri tapılmadı: {goodsItemId}");
     }
 
     private void EnsureEditable()

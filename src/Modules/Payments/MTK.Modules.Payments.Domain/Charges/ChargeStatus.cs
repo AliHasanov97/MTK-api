@@ -4,5 +4,11 @@ public enum ChargeStatus
 {
     Unpaid,
     PartiallyPaid,
-    Paid
+    Paid,
+
+    /// <summary>
+    /// Səhv yaranmış borc ləğv edilib (silinmir — tarixçə qalır, sadəcə ödəniş
+    /// tələb etmir). Əvvəllər yalnız tədarükçü borcunda mövcud idi.
+    /// </summary>
+    Cancelled
 }

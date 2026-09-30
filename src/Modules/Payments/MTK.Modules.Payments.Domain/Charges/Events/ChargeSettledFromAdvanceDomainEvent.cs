@@ -11,6 +11,6 @@ namespace MTK.Modules.Payments.Domain.Charges.Events;
 /// </summary>
 public sealed record ChargeSettledFromAdvanceDomainEvent(
     Guid ChargeId,
-    Guid OwnerId,
+    Guid PartyId,
     Guid PaymentId,
     decimal Amount) : DomainEvent;

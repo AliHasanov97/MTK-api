@@ -7,9 +7,9 @@ internal sealed class CreateVendorPaymentCommandValidator : AbstractValidator<Cr
 {
     public CreateVendorPaymentCommandValidator()
     {
-        RuleFor(x => x.VendorChargeId)
+        RuleFor(x => x.VendorId)
             .NotEmpty()
-            .WithMessage("Borc seçilməyib");
+            .WithMessage("Tədarükçü seçilməyib");
 
         RuleFor(x => x.Amount)
             .GreaterThan(0)

@@ -33,7 +33,7 @@ internal sealed class SearchPaymentsQueryHandler : IQueryHandler<SearchPaymentsQ
 
         var items = payments.Select(p => new PaymentSearchResult(
             p.Id,
-            p.OwnerId,
+            p.PartyId,
             p.Amount,
             p.PaymentMethod,
             p.PaymentDate,

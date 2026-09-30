@@ -1,11 +1,17 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Domain.Queries;
 using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Payments.Domain.Charges;
+using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Repositories;
 using MTK.Modules.Payments.Infrastructure.Database;
 
 namespace MTK.Modules.Payments.Infrastructure.Repositories;
 
+/// <summary>
+/// Sakin borcları üzrə repository. <see cref="Charge"/> artıq hər iki tərəfi
+/// saxlayır; buna görə bütün sorğular <c>PartyType == Owner</c> ilə məhdudlaşdırılır.
+/// </summary>
 internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRepository
 {
     private PaymentsDbContext PaymentsContext => (PaymentsDbContext)Context;
@@ -14,12 +20,21 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
     {
     }
 
+    // Axtarış/toplu sorğular avtomatik olaraq yalnız sakin borclarını qaytarsın.
+    protected override IQueryable<Charge> ApplyFiltersAndSort(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria)
+    {
+        return base.ApplyFiltersAndSort(filters, sortCriteria)
+            .Where(c => c.PartyType == PartyType.Owner);
+    }
+
     public async Task<IEnumerable<Charge>> GetByOwnerIdAsync(
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
         return await PaymentsContext.Charges
-            .Where(c => c.OwnerId == ownerId)
+            .Where(c => c.PartyType == PartyType.Owner && c.PartyId == ownerId)
             .OrderBy(c => c.IssuedOn)
             .ThenBy(c => c.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -39,15 +54,13 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
     /// <summary>
     /// Ödəniş/avans hansı borca əvvəl tətbiq olunacağını bu sıra müəyyən edir:
     /// ən köhnə borc (IssuedOn) → yaranma anı → əmlak tipi → Id.
-    ///
-    /// Son üç meyar yalnız tam eyni yaşlı borclar üçündür (eyni generasiya
-    /// yürüşündə yarananlar kimi) — sıra deterministik olsun deyə.
     /// </summary>
     public async Task<IEnumerable<Charge>> GetUnpaidChargesAsync(
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
-        return await OrderedUnpaid(PaymentsContext.Charges.Where(c => c.OwnerId == ownerId))
+        return await OrderedUnpaid(
+                PaymentsContext.Charges.Where(c => c.PartyType == PartyType.Owner && c.PartyId == ownerId))
             .ToListAsync(cancellationToken);
     }
 
@@ -57,7 +70,18 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
         CancellationToken cancellationToken = default)
     {
         return await OrderedUnpaid(
-                PaymentsContext.Charges.Where(c => c.OwnerId == ownerId && c.PropertyId == propertyId))
+                PaymentsContext.Charges.Where(c =>
+                    c.PartyType == PartyType.Owner && c.PartyId == ownerId && c.PropertyId == propertyId))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Charge>> GetUnpaidChargesByPartyAsync(
+        PartyType partyType,
+        Guid partyId,
+        CancellationToken cancellationToken = default)
+    {
+        return await OrderedUnpaid(
+                PaymentsContext.Charges.Where(c => c.PartyType == partyType && c.PartyId == partyId))
             .ToListAsync(cancellationToken);
     }
 
@@ -68,7 +92,12 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
         CancellationToken cancellationToken = default)
     {
         return await PaymentsContext.Charges
-            .AnyAsync(c => c.OwnerId == ownerId && c.PropertyId == propertyId && c.Period == period, cancellationToken);
+            .AnyAsync(c =>
+                c.PartyType == PartyType.Owner &&
+                c.PartyId == ownerId &&
+                c.PropertyId == propertyId &&
+                c.Period == period,
+                cancellationToken);
     }
 
     public async Task<Dictionary<Guid, decimal>> GetTotalAmountByOwnerIdsAsync(
@@ -81,8 +110,8 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
         }
 
         var totals = await PaymentsContext.Charges
-            .Where(c => ownerIds.Contains(c.OwnerId))
-            .GroupBy(c => c.OwnerId)
+            .Where(c => c.PartyType == PartyType.Owner && ownerIds.Contains(c.PartyId))
+            .GroupBy(c => c.PartyId)
             .Select(g => new { OwnerId = g.Key, Total = g.Sum(c => c.Amount) })
             .ToListAsync(cancellationToken);
 
@@ -92,7 +121,7 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
     private static IOrderedQueryable<Charge> OrderedUnpaid(IQueryable<Charge> query)
     {
         return query
-            .Where(c => c.Status != ChargeStatus.Paid)
+            .Where(c => c.Status != ChargeStatus.Paid && c.Status != ChargeStatus.Cancelled)
             .OrderBy(c => c.IssuedOn)
             .ThenBy(c => c.CreatedAt)
             .ThenBy(c => c.PropertyType)

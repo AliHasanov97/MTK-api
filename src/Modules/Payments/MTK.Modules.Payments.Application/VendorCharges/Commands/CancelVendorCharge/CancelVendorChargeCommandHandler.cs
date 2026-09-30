@@ -31,7 +31,7 @@ internal sealed class CancelVendorChargeCommandHandler : ICommandHandler<CancelV
 
         try
         {
-            charge.Cancel(request.Reason);
+            charge.Cancel();
         }
         catch (InvalidOperationException ex)
         {

@@ -1,5 +1,6 @@
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Charges;
+using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.Repositories;
 
@@ -12,15 +13,17 @@ internal sealed class PaymentAllocationService(
 {
     public async Task<Result> AllocatePaymentAsync(
         Guid paymentId,
-        Guid ownerId,
+        PartyType partyType,
+        Guid partyId,
         decimal amount,
         Guid? propertyId,
         CancellationToken cancellationToken)
     {
-        // Açıq borclar ən köhnədən sıralanmış gəlir (ChargeRepository.OrderedUnpaid).
-        var charges = propertyId.HasValue
-            ? await chargeRepository.GetUnpaidChargesAsync(ownerId, propertyId.Value, cancellationToken)
-            : await chargeRepository.GetUnpaidChargesAsync(ownerId, cancellationToken);
+        // Açıq borclar ən köhnədən sıralanmış gəlir. Əmlaka hədəfləmə yalnız sakin
+        // tərəfində mümkündür; tədarükçüdə həmişə tərəfin bütün açıq borclarına FIFO.
+        var charges = partyType == PartyType.Owner && propertyId.HasValue
+            ? await chargeRepository.GetUnpaidChargesAsync(partyId, propertyId.Value, cancellationToken)
+            : await chargeRepository.GetUnpaidChargesByPartyAsync(partyType, partyId, cancellationToken);
 
         decimal remainingAmount = amount;
 
@@ -50,40 +53,21 @@ internal sealed class PaymentAllocationService(
         IReadOnlyCollection<Charge> charges,
         CancellationToken cancellationToken)
     {
-        var openChargesByOwner = charges
+        var openChargesByParty = charges
             .Where(charge => charge.OutstandingAmount > 0)
-            .GroupBy(charge => charge.OwnerId);
+            .GroupBy(charge => (charge.PartyType, charge.PartyId));
 
-        foreach (var ownerCharges in openChargesByOwner)
+        foreach (var partyCharges in openChargesByParty)
         {
-            // Sahib üzrə avans bir dəfə oxunur; bölgü tam yaddaşda aparılır.
-            var advance = await LoadAdvanceAsync(ownerCharges.Key, cancellationToken);
+            // Tərəf üzrə avans bir dəfə oxunur; bölgü tam yaddaşda aparılır.
+            var advance = await LoadAdvanceAsync(partyCharges.Key.PartyType, partyCharges.Key.PartyId, cancellationToken);
             if (advance.Count == 0)
             {
                 continue;
             }
 
-            ApplyAdvance(advance, OrderByDebtAge(ownerCharges));
+            ApplyAdvance(advance, OrderByDebtAge(partyCharges));
         }
-
-        return Result.Success();
-    }
-
-    public async Task<Result> ReallocateAdvanceAsync(Guid ownerId, CancellationToken cancellationToken)
-    {
-        var charges = (await chargeRepository.GetUnpaidChargesAsync(ownerId, cancellationToken)).ToList();
-        if (charges.Count == 0)
-        {
-            return Result.Success();
-        }
-
-        var advance = await LoadAdvanceAsync(ownerId, cancellationToken);
-        if (advance.Count == 0)
-        {
-            return Result.Success();
-        }
-
-        ApplyAdvance(advance, charges);
 
         return Result.Success();
     }
@@ -104,18 +88,15 @@ internal sealed class PaymentAllocationService(
     }
 
     /// <summary>
-    /// Sahibin xərclənməmiş pulu: hər tamamlanmış ödənişdən ona artıq bağlanmış
+    /// Tərəfin xərclənməmiş pulu: hər tamamlanmış ödənişdən ona artıq bağlanmış
     /// paylanmalar çıxıldıqdan sonra qalan hissə, ən köhnə ödəniş əvvəl.
-    ///
-    /// Pul hansı əmlaka hədəfləndiyini "xatırlamır": bağlanmamış qaldıqdan sonra o,
-    /// sadəcə sahib səviyyəli avansdır — avans yalnız belə yaranır, çünki əmlaka
-    /// hədəflənmiş ödəniş həmin əmlakın qalıq borcundan çox ola bilmir.
     /// </summary>
     private async Task<List<(Payment Payment, decimal Available)>> LoadAdvanceAsync(
-        Guid ownerId,
+        PartyType partyType,
+        Guid partyId,
         CancellationToken cancellationToken)
     {
-        var payments = (await paymentRepository.GetByOwnerIdAsync(ownerId, cancellationToken))
+        var payments = (await paymentRepository.GetByPartyIdAsync(partyType, partyId, cancellationToken))
             .Where(payment => payment.Status == PaymentStatus.Completed)
             .OrderBy(payment => payment.PaymentDate)
             .ToList();

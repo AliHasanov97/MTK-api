@@ -22,7 +22,7 @@ internal sealed class GetPaymentsByOwnerQueryHandler : IQueryHandler<GetPayments
         var response = payments
             .Select(p => new PaymentResponse(
                 p.Id,
-                p.OwnerId,
+                p.PartyId,
                 p.Amount,
                 p.PaymentMethod,
                 p.PaymentDate,

@@ -24,7 +24,7 @@ internal sealed class GetPaymentsByPropertyQueryHandler
         var response = payments
             .Select(p => new PaymentResponse(
                 p.Id,
-                p.OwnerId,
+                p.PartyId,
                 p.Amount,
                 p.PaymentMethod,
                 p.PaymentDate,

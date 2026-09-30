@@ -1,72 +1,80 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Abstractions.Data;
+using MTK.Modules.Payments.Application.Payments.Services;
+using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Repositories;
 
 namespace MTK.Modules.Payments.Application.VendorPayments.Commands.CreateVendorPayment;
 
 internal sealed class CreateVendorPaymentCommandHandler : ICommandHandler<CreateVendorPaymentCommand, Guid>
 {
-    private readonly IVendorPaymentRepository _vendorPaymentRepository;
-    private readonly IVendorChargeRepository _vendorChargeRepository;
+    private readonly IPaymentRepository _paymentRepository;
+    private readonly IVendorRepository _vendorRepository;
+    private readonly IPaymentAllocationService _paymentAllocationService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateVendorPaymentCommandHandler(
-        IVendorPaymentRepository vendorPaymentRepository,
-        IVendorChargeRepository vendorChargeRepository,
+        IPaymentRepository paymentRepository,
+        IVendorRepository vendorRepository,
+        IPaymentAllocationService paymentAllocationService,
         IUnitOfWork unitOfWork)
     {
-        _vendorPaymentRepository = vendorPaymentRepository;
-        _vendorChargeRepository = vendorChargeRepository;
+        _paymentRepository = paymentRepository;
+        _vendorRepository = vendorRepository;
+        _paymentAllocationService = paymentAllocationService;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(CreateVendorPaymentCommand request, CancellationToken cancellationToken)
     {
-        var charge = await _vendorChargeRepository.GetByIdAsync(request.VendorChargeId, cancellationToken);
+        var vendor = await _vendorRepository.GetByIdDefaultAsync(request.VendorId, cancellationToken);
 
-        if (charge is null)
+        if (vendor is null)
         {
             return Result.Failure<Guid>(new Error(
-                "VendorCharge.NotFound",
-                $"Tədarükçü borcu tapılmadı: {request.VendorChargeId}"));
+                "Vendor.NotFound",
+                $"Tədarükçü tapılmadı: {request.VendorId}"));
         }
 
-        if (charge.Status == Domain.VendorCharges.VendorChargeStatus.Cancelled)
-        {
-            return Result.Failure<Guid>(new Error(
-                "VendorCharge.Cancelled",
-                "Ləğv edilmiş borca ödəniş edilə bilməz"));
-        }
+        // Ödəniş, onun paylanması və ledger qeydi bir tranzaksiyadır: yarımçıq
+        // vəziyyət (ödəniş var, paylanma yox) qala bilməz.
+        await using var transaction = await _paymentRepository.BeginTransactionAsync(cancellationToken);
 
-        if (request.Amount > charge.OutstandingAmount)
-        {
-            return Result.Failure<Guid>(new Error(
-                "VendorPayment.ExceedsOutstanding",
-                $"Ödəniş qalıq borcdan böyükdür (qalıq: {charge.OutstandingAmount})"));
-        }
-
-        var payment = Domain.VendorPayments.VendorPayment.Create(
-            charge.VendorId,
-            charge.Id,
+        var payment = Domain.Payments.Payment.Create(
+            PartyType.Vendor,
+            request.VendorId,
             request.Amount,
             request.PaymentMethod,
             request.PaymentDate,
             request.Reference,
             request.Notes);
 
-        _vendorPaymentRepository.Add(payment);
-
-        // Borc dərhal bağlanır (qismən də ola bilər) — ödəniş və borc eyni
-        // tranzaksiyada yadda saxlanılır.
-        charge.ApplyPayment(request.Amount);
-
+        _paymentRepository.Add(payment);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Sakin ödənişi ilə eyni FIFO/avans mexanizmi — tədarükçünün bütün açıq
+        // borclarına ən köhnədən paylanır.
+        var allocationResult = await _paymentAllocationService.AllocatePaymentAsync(
+            payment.Id,
+            PartyType.Vendor,
+            request.VendorId,
+            request.Amount,
+            propertyId: null,
+            cancellationToken);
+
+        if (allocationResult.IsFailure)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return Result.Failure<Guid>(allocationResult.Error);
+        }
 
         // Ledger qeydi event-in handler-ində yazılır — pul hərəkəti borcun
         // bağlanması ilə bir yerdə qalsın deyə.
         payment.MarkAsCompleted();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         return Result.Success(payment.Id);
     }

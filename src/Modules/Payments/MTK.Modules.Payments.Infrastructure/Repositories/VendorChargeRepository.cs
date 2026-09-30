@@ -1,17 +1,32 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Domain.Queries;
 using MTK.Common.Infrastructure.Database;
+using MTK.Modules.Payments.Domain.Charges;
+using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Repositories;
-using MTK.Modules.Payments.Domain.VendorCharges;
 using MTK.Modules.Payments.Infrastructure.Database;
 
 namespace MTK.Modules.Payments.Infrastructure.Repositories;
 
-internal sealed class VendorChargeRepository : SearchableRepository<VendorCharge>, IVendorChargeRepository
+/// <summary>
+/// Tədarükçü borcları üzrə repository. Borclar tək <see cref="Charge"/> aqreqatında
+/// olduğu üçün bütün sorğular <c>PartyType == Vendor</c> ilə məhdudlaşdırılır.
+/// </summary>
+internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVendorChargeRepository
 {
     private PaymentsDbContext PaymentsContext => (PaymentsDbContext)Context;
 
     public VendorChargeRepository(PaymentsDbContext dbContext) : base(dbContext)
     {
+    }
+
+    // Axtarış/toplu sorğular avtomatik olaraq yalnız tədarükçü borclarını qaytarsın.
+    protected override IQueryable<Charge> ApplyFiltersAndSort(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria)
+    {
+        return base.ApplyFiltersAndSort(filters, sortCriteria)
+            .Where(c => c.PartyType == PartyType.Vendor);
     }
 
     public Task<bool> ExistsForPeriodAsync(
@@ -20,44 +35,48 @@ internal sealed class VendorChargeRepository : SearchableRepository<VendorCharge
         CancellationToken cancellationToken = default)
     {
         // Ləğv edilmiş borc yenidən hesablana bilsin deyə Cancelled nəzərə alınmır.
-        return PaymentsContext.VendorCharges
+        return PaymentsContext.Charges
             .AnyAsync(c =>
+                c.PartyType == PartyType.Vendor &&
                 c.ContractServiceId == contractServiceId &&
                 c.Period == period &&
-                c.Status != VendorChargeStatus.Cancelled,
+                c.Status != ChargeStatus.Cancelled,
                 cancellationToken);
     }
 
-    public Task<bool> ExistsForReferenceAsync(
-        Guid contractGoodsItemId,
-        string reference,
-        CancellationToken cancellationToken = default)
-    {
-        return PaymentsContext.VendorCharges
-            .AnyAsync(c =>
-                c.ContractGoodsItemId == contractGoodsItemId &&
-                c.Reference == reference &&
-                c.Status != VendorChargeStatus.Cancelled,
-                cancellationToken);
-    }
-
-    public Task<List<VendorCharge>> ListByVendorAsync(
+    public Task<List<Charge>> ListByVendorAsync(
         Guid vendorId,
         CancellationToken cancellationToken = default)
     {
-        return PaymentsContext.VendorCharges
-            .Where(c => c.VendorId == vendorId)
-            .OrderByDescending(c => c.ChargeDate)
+        return PaymentsContext.Charges
+            .Where(c => c.PartyType == PartyType.Vendor && c.PartyId == vendorId)
+            .OrderByDescending(c => c.IssuedOn)
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<VendorCharge>> ListByContractAsync(
+    public Task<List<Charge>> ListByContractAsync(
         Guid contractId,
         CancellationToken cancellationToken = default)
     {
-        return PaymentsContext.VendorCharges
-            .Where(c => c.ContractId == contractId)
-            .OrderByDescending(c => c.ChargeDate)
+        return PaymentsContext.Charges
+            .Where(c => c.PartyType == PartyType.Vendor && c.ContractId == contractId)
+            .OrderByDescending(c => c.IssuedOn)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<List<Charge>> GetUnpaidChargesAsync(
+        Guid vendorId,
+        CancellationToken cancellationToken = default)
+    {
+        return PaymentsContext.Charges
+            .Where(c =>
+                c.PartyType == PartyType.Vendor &&
+                c.PartyId == vendorId &&
+                c.Status != ChargeStatus.Paid &&
+                c.Status != ChargeStatus.Cancelled)
+            .OrderBy(c => c.IssuedOn)
+            .ThenBy(c => c.CreatedAt)
+            .ThenBy(c => c.Id)
             .ToListAsync(cancellationToken);
     }
 }

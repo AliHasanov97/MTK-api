@@ -4,11 +4,12 @@ using MTK.Modules.Payments.Domain.Payments;
 namespace MTK.Modules.Payments.Application.VendorPayments.Commands.CreateVendorPayment;
 
 /// <summary>
-/// Tədarükçüyə ödəniş edir: borcu qismən/tam bağlayır (ApplyPayment) və
-/// tamamlandıqda ledger-ə xərc qeydi yazılır (domain event → handler).
+/// Tədarükçüyə ödəniş edir. Sakin ödənişi ilə eyni məntiq: ödəniş tədarükçünün açıq
+/// borclarına ən köhnədən (FIFO) paylanır, artıq qalıq isə avans kimi qalır və
+/// növbəti borca tətbiq olunur. Tamamlandıqda ledger-ə xərc qeydi yazılır.
 /// </summary>
 public sealed record CreateVendorPaymentCommand(
-    Guid VendorChargeId,
+    Guid VendorId,
     decimal Amount,
     PaymentMethod PaymentMethod,
     DateTimeOffset PaymentDate,

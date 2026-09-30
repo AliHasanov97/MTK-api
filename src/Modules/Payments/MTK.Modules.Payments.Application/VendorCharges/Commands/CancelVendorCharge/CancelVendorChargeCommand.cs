@@ -4,8 +4,6 @@ namespace MTK.Modules.Payments.Application.VendorCharges.Commands.CancelVendorCh
 
 /// <summary>
 /// Səhv yaranmış borcu ləğv edir (silinmir — tarixçə qalır). Ödənilmiş borc
-/// ləğv edilə bilməz: əvvəlcə ödənişləri ləğv edilməlidir.
+/// ləğv edilə bilməz.
 /// </summary>
-public sealed record CancelVendorChargeCommand(
-    Guid ChargeId,
-    string? Reason = null) : ICommand;
+public sealed record CancelVendorChargeCommand(Guid ChargeId) : ICommand;

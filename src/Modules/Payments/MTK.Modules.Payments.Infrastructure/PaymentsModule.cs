@@ -71,7 +71,6 @@ public static class PaymentsModule
         services.AddScoped<IVendorRepository, VendorRepository>();
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IVendorChargeRepository, VendorChargeRepository>();
-        services.AddScoped<IVendorPaymentRepository, VendorPaymentRepository>();
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();

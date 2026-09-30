@@ -22,7 +22,7 @@ internal sealed class GetChargesByOwnerQueryHandler : IQueryHandler<GetChargesBy
         var response = charges
             .Select(c => new ChargeResponse(
                 c.Id,
-                c.OwnerId,
+                c.PartyId,
                 c.PropertyType,
                 c.PropertyId,
                 c.Period,

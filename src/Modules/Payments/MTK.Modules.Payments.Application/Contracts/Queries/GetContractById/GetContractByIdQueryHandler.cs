@@ -48,18 +48,6 @@ internal sealed class GetContractByIdQueryHandler : IQueryHandler<GetContractByI
                 s.IsActive))
             .ToList();
 
-        var goodsItems = contract.GoodsItems
-            .Select(i => new ContractGoodsItemResponse(
-                i.Id,
-                i.Name,
-                i.Description,
-                i.Unit,
-                i.UnitPrice,
-                i.AgreedQuantity,
-                i.PaymentTermDays,
-                i.IsActive))
-            .ToList();
-
         var response = new ContractResponse(
             contract.Id,
             contract.Number,
@@ -77,8 +65,7 @@ internal sealed class GetContractByIdQueryHandler : IQueryHandler<GetContractByI
             services.Sum(s => s.PeriodAmount),
             contract.CreatedAt,
             contract.UpdatedAt,
-            services,
-            goodsItems);
+            services);
 
         return response;
     }

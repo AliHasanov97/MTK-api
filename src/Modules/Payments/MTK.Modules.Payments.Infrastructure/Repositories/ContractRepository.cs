@@ -18,7 +18,6 @@ internal sealed class ContractRepository : SearchableRepository<Contract>, ICont
     {
         return PaymentsContext.Contracts
             .Include(c => c.Services)
-            .Include(c => c.GoodsItems)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 

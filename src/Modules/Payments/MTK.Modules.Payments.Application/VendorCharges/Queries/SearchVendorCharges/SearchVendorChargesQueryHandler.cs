@@ -41,26 +41,19 @@ internal sealed class SearchVendorChargesQueryHandler
             request.PageSize ?? 10);
     }
 
-    internal static VendorChargeResponse ToResponse(Domain.VendorCharges.VendorCharge c) => new(
+    internal static VendorChargeResponse ToResponse(Domain.Charges.Charge c) => new(
         c.Id,
         c.ContractId,
-        c.VendorId,
+        c.PartyId,
         c.ContractServiceId,
-        c.ContractGoodsItemId,
         c.Period,
         c.Description,
-        c.Reference,
-        c.UnitPrice,
-        c.Quantity,
         c.Amount,
         c.PaidAmount,
         c.OutstandingAmount,
         c.Status,
-        c.Source,
-        c.ChargeDate,
+        c.IssuedOn,
         c.DueDate,
-        c.Currency,
-        c.CancellationReason,
         c.IsOverdue,
         c.CreatedAt);
 }

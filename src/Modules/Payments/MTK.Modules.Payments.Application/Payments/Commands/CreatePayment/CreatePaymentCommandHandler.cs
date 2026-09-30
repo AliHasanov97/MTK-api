@@ -3,6 +3,7 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Abstractions.Data;
 using MTK.Modules.Payments.Application.OwnerBalances.Services;
 using MTK.Modules.Payments.Application.Payments.Services;
+using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.Repositories;
 
@@ -69,6 +70,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
         await using var transaction = await _chargeRepository.BeginTransactionAsync(cancellationToken);
 
         var payment = Payment.Create(
+            PartyType.Owner,
             request.OwnerId,
             request.Amount,
             request.PaymentMethod,
@@ -84,6 +86,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
         // Allocate payment to charges (scoped to the property when one was given)
         var allocationResult = await _paymentAllocationService.AllocatePaymentAsync(
             payment.Id,
+            PartyType.Owner,
             request.OwnerId,
             request.Amount,
             request.PropertyId,
