@@ -8,14 +8,14 @@ internal sealed class OwnerBalanceService(
     IPaymentRepository paymentRepository,
     IOwnerBalanceRepository ownerBalanceRepository) : IOwnerBalanceService
 {
-    public async Task RecalculateAsync(
+    public async Task<IReadOnlyDictionary<Guid, OwnerBalance>> RecalculateAsync(
         IReadOnlyCollection<Guid> ownerIds,
         CancellationToken cancellationToken = default)
     {
         var ids = ownerIds.Where(id => id != Guid.Empty).Distinct().ToList();
         if (ids.Count == 0)
         {
-            return;
+            return new Dictionary<Guid, OwnerBalance>();
         }
 
         // İki toplu sorğu — sahib başına ayrı-ayrı getməsin deyə.
@@ -32,6 +32,7 @@ internal sealed class OwnerBalanceService(
             {
                 balance = OwnerBalance.Create(ownerId);
                 ownerBalanceRepository.Add(balance);
+                balances[ownerId] = balance;
             }
             else if (balance.TotalDebt == totalDebt && balance.TotalPaid == totalPaid)
             {
@@ -41,5 +42,7 @@ internal sealed class OwnerBalanceService(
 
             balance.SetTotals(totalDebt, totalPaid);
         }
+
+        return balances;
     }
 }

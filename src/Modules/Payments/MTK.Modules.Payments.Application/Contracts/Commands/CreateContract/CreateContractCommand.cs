@@ -8,5 +8,4 @@ public sealed record CreateContractCommand(
     DateTimeOffset StartDate,
     DateTimeOffset EndDate,
     Guid? CreatedByUserId = null,
-    string? Note = null,
-    string Currency = "AZN") : ICommand<Guid>;
+    string? Note = null) : ICommand<Guid>;

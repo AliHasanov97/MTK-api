@@ -19,10 +19,6 @@ internal sealed class AddContractServiceCommandValidator : AbstractValidator<Add
             .GreaterThanOrEqualTo(0)
             .WithMessage("Vahid qiymət mənfi ola bilməz");
 
-        RuleFor(x => x.Quantity)
-            .GreaterThan(0)
-            .WithMessage("Miqdar 0-dan böyük olmalıdır");
-
         RuleFor(x => x.BillingPeriod)
             .IsInEnum()
             .WithMessage("Hesablaşma dövrü düzgün deyil");

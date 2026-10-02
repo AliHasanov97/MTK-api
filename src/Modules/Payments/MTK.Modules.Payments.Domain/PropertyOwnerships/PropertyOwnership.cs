@@ -19,12 +19,18 @@ public sealed class PropertyOwnership : Entity
     // Only meaningful when PropertyType == Garage.
     public GarageType? GarageType { get; private set; }
 
+    // The apartment/garage number as Buildings names it (e.g. "290") — carried
+    // only for display (a ledger description naming "Mənzil 290" without a
+    // cross-module lookup); never used for matching/lookup, PropertyId is.
+    public string? PropertyNumber { get; private set; }
+
     public static PropertyOwnership Create(
         Guid propertyId,
         PropertyType propertyType,
         Guid ownerId,
         decimal areaSquareMeters,
-        GarageType? garageType = null)
+        GarageType? garageType = null,
+        string? propertyNumber = null)
     {
         return new PropertyOwnership
         {
@@ -33,7 +39,8 @@ public sealed class PropertyOwnership : Entity
             PropertyType = propertyType,
             OwnerId = ownerId,
             AreaSquareMeters = areaSquareMeters,
-            GarageType = propertyType == PropertyType.Garage ? garageType : null
+            GarageType = propertyType == PropertyType.Garage ? garageType : null,
+            PropertyNumber = propertyNumber
         };
     }
 
@@ -50,5 +57,10 @@ public sealed class PropertyOwnership : Entity
     public void UpdateGarageType(GarageType garageType)
     {
         GarageType = garageType;
+    }
+
+    public void UpdatePropertyNumber(string propertyNumber)
+    {
+        PropertyNumber = propertyNumber;
     }
 }

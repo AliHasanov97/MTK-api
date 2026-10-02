@@ -20,6 +20,9 @@ public sealed class OwnerBalance : SearchableEntity
     public decimal TotalPaid { get; private set; }
     public decimal CurrentBalance => TotalPaid - TotalDebt;
 
+    /// <summary>Qalıq borc — mənfi balansın müsbət hissəsi, heç vaxt mənfi olmur.</summary>
+    public decimal CurrentDebt => Math.Max(0, -CurrentBalance);
+
     public static OwnerBalance Create(Guid ownerId)
     {
         var balance = new OwnerBalance

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Modules.Payments.Application.CompanyBalances.Queries.GetCompanyBalance;
 using MTK.Modules.Payments.Application.OwnerBalances.Commands.RecalculateOwnerBalance;
 using MTK.Modules.Payments.Application.OwnerBalances.Queries.GetOwnerBalance;
 using MTK.Modules.Payments.Application.OwnerBalances.Queries.GetPropertyBalance;
@@ -8,6 +9,17 @@ namespace MTK.Modules.Payments.Presentation.Controllers;
 
 public class BalancesController(ISender sender) : BaseController(sender)
 {
+    /// <summary>Şirkətin ümumi (bütün tarix üzrə) cari balansı — Transaction jurnalından proyeksiya.</summary>
+    [HttpGet("company")]
+    public async Task<IActionResult> GetCompanyBalance(CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetCompanyBalanceQuery(), cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value)
+            : BadRequest(result.Error);
+    }
+
     [HttpGet("owner/{ownerId:guid}")]
     public async Task<IActionResult> GetOwnerBalance(
         Guid ownerId,

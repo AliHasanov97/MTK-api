@@ -41,7 +41,8 @@ internal sealed class PaymentAllocationService(
             }
 
             charge.ApplyPayment(allocateAmount);
-            paymentAllocationRepository.Add(PaymentAllocation.Create(paymentId, charge.Id, allocateAmount));
+            paymentAllocationRepository.Add(PaymentAllocation.Create(
+                paymentId, charge.Id, allocateAmount, charge.OutstandingAmount, isFromAdvance: false));
 
             remainingAmount -= allocateAmount;
         }
@@ -146,7 +147,8 @@ internal sealed class PaymentAllocationService(
                 }
 
                 charge.ApplyAdvanceFrom(payment.Id, applyAmount);
-                paymentAllocationRepository.Add(PaymentAllocation.Create(payment.Id, charge.Id, applyAmount));
+                paymentAllocationRepository.Add(PaymentAllocation.Create(
+                    payment.Id, charge.Id, applyAmount, charge.OutstandingAmount, isFromAdvance: true));
 
                 remaining -= applyAmount;
                 available -= applyAmount;

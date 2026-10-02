@@ -12,8 +12,8 @@ namespace MTK.Modules.Payments.Domain.Contracts;
 ///
 /// Dövr məlumatı burada saxlanılır ki, borc generasiyası müqavilədən asılı
 /// olmadan xidmət səviyyəsində işləyə bilsin: aktiv xidmətin
-/// <see cref="UnitPrice"/> × <see cref="Quantity"/> məbləği <see cref="BillingPeriod"/>
-/// dövrü üzrə borc kimi yazılır.
+/// <see cref="UnitPrice"/> məbləği <see cref="BillingPeriod"/> dövrü üzrə
+/// borc kimi yazılır.
 /// </summary>
 public sealed class ContractService : Entity
 {
@@ -23,14 +23,8 @@ public sealed class ContractService : Entity
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
 
-    /// <summary>Ölçü vahidi — "ay" (texniki xidmət), "illik", "ədəd".</summary>
-    public string Unit { get; private set; } = string.Empty;
-
-    /// <summary>Vahid qiymət (məs. bir lift üçün aylıq 50 AZN).</summary>
+    /// <summary>Qiymət (məs. aylıq 50 AZN). Birdəfəlik xidmətlərdə naməlum ola bilər (0).</summary>
     public decimal UnitPrice { get; private set; }
-
-    /// <summary>Miqdar (məs. 3 lift). Default 1.</summary>
-    public decimal Quantity { get; private set; }
 
     public BillingPeriod BillingPeriod { get; private set; }
 
@@ -46,8 +40,8 @@ public sealed class ContractService : Entity
     /// <summary>Tək xidməti dayandırmaq üçün (müqavilə aktiv qalır).</summary>
     public bool IsActive { get; private set; }
 
-    /// <summary>Dövr üzrə məbləğ: UnitPrice × Quantity.</summary>
-    public decimal PeriodAmount => UnitPrice * Quantity;
+    /// <summary>Dövr üzrə məbləğ.</summary>
+    public decimal PeriodAmount => UnitPrice;
 
     /// <summary>Bu xidmət avtomatik borc yaradırmı (birdəfəlik xidmətlər istisna).</summary>
     public bool AutoCharge => BillingPeriod != BillingPeriod.OneTime;
@@ -57,14 +51,12 @@ public sealed class ContractService : Entity
         string name,
         decimal unitPrice,
         BillingPeriod billingPeriod,
-        decimal quantity = 1,
-        string unit = "ay",
         string? description = null,
         DateTimeOffset? serviceStartDate = null,
         DateTimeOffset? serviceEndDate = null,
         int? paymentTermDays = null)
     {
-        Validate(name, unit, unitPrice, quantity, paymentTermDays, serviceStartDate, serviceEndDate);
+        Validate(name, unitPrice, paymentTermDays, serviceStartDate, serviceEndDate);
 
         // Id qəsdən təyin edilmir: EF onu özü generasiya edir. Açar əvvəlcədən
         // təyin olunsa, EF bu sətri müqavilənin kolleksiyasından kəşf edəndə onu
@@ -74,9 +66,7 @@ public sealed class ContractService : Entity
             ContractId = contractId,
             Name = name.Trim(),
             Description = description,
-            Unit = unit.Trim(),
             UnitPrice = unitPrice,
-            Quantity = quantity,
             BillingPeriod = billingPeriod,
             ServiceStartDate = serviceStartDate,
             ServiceEndDate = serviceEndDate,
@@ -92,20 +82,16 @@ public sealed class ContractService : Entity
         string name,
         decimal unitPrice,
         BillingPeriod billingPeriod,
-        decimal quantity,
-        string unit,
         string? description,
         DateTimeOffset? serviceStartDate,
         DateTimeOffset? serviceEndDate,
         int? paymentTermDays)
     {
-        Validate(name, unit, unitPrice, quantity, paymentTermDays, serviceStartDate, serviceEndDate);
+        Validate(name, unitPrice, paymentTermDays, serviceStartDate, serviceEndDate);
 
         Name = name.Trim();
         Description = description;
-        Unit = unit.Trim();
         UnitPrice = unitPrice;
-        Quantity = quantity;
         BillingPeriod = billingPeriod;
         ServiceStartDate = serviceStartDate;
         ServiceEndDate = serviceEndDate;
@@ -147,14 +133,19 @@ public sealed class ContractService : Entity
         var from = (ServiceStartDate ?? contractStart).UtcDateTime.Date;
         var to = (ServiceEndDate ?? contractEnd).UtcDateTime.Date;
 
-        // Dövr xidmətin (və müqavilənin) qüvvədə olduğu aralığa düşməlidir.
-        if (periodStart < from || periodStart > to)
-            return false;
-
-        // Rüblük/illik xidmətlər yalnız uyğun aylarda hesablanır: rübün/ilin
-        // başlanğıc ayı xidmətin başladığı ayın üzərinə düşür. İllik sığorta
-        // beləcə hər il öz ildönümü ayında hesablanır.
+        // Hər iki tərəf AY səviyyəsində ölçülür, gün səviyyəsində yox — xidmətin/
+        // müqavilənin başladığı/bitdiyi günün özü əhəmiyyətsizdir, yalnız ayı önəmlidir.
         var monthsSinceStart = (periodStart.Year - from.Year) * 12 + (periodStart.Month - from.Month);
+        var totalMonths = (to.Year - from.Year) * 12 + (to.Month - from.Month);
+
+        // Dövr xidmətin başladığı aydan əvvəl ola bilməz, VƏ bitdiyi aya "çatmamış"
+        // olmalıdır — fence-post: 12 aylıq (Sentyabr→Sentyabr) rüblük müqavilədə
+        // düz 4 hesablanma olmalıdır (ay 0, 3, 6, 9), 5-ci (ay 12) artıq sayılmır,
+        // çünki o, elə müqavilənin bağlandığı anın özüdür — yeni rübün başlanğıcı
+        // deyil. Bitmə AYININ özü ("to"-nun ayı) bərabər olanda da buraxılır,
+        // əvvəlki versiyada bu sərhəd daxil edilib 5-ci haqq səhvən yaranırdı.
+        if (monthsSinceStart < 0 || monthsSinceStart >= totalMonths)
+            return false;
 
         return BillingPeriod switch
         {
@@ -167,21 +158,15 @@ public sealed class ContractService : Entity
 
     private static void Validate(
         string name,
-        string unit,
         decimal unitPrice,
-        decimal quantity,
         int? paymentTermDays,
         DateTimeOffset? serviceStartDate,
         DateTimeOffset? serviceEndDate)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Xidmətin adı mütləqdir", nameof(name));
-        if (string.IsNullOrWhiteSpace(unit))
-            throw new ArgumentException("Ölçü vahidi mütləqdir", nameof(unit));
         if (unitPrice < 0)
-            throw new ArgumentException("Vahid qiymət mənfi ola bilməz", nameof(unitPrice));
-        if (quantity <= 0)
-            throw new ArgumentException("Miqdar müsbət olmalıdır", nameof(quantity));
+            throw new ArgumentException("Qiymət mənfi ola bilməz", nameof(unitPrice));
         if (paymentTermDays is < 0)
             throw new ArgumentException("Ödəniş müddəti mənfi ola bilməz", nameof(paymentTermDays));
         if (serviceStartDate is not null && serviceEndDate is not null && serviceEndDate < serviceStartDate)

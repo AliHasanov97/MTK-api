@@ -41,7 +41,8 @@ internal sealed class ApartmentOwnerAssignedDomainEventHandler : DomainEventHand
             apartment.Id,
             domainEvent.NewOwnerId,
             domainEvent.PreviousOwnerId,
-            apartment.AreaSquareMeters);
+            apartment.AreaSquareMeters,
+            apartment.ApartmentNumber);
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

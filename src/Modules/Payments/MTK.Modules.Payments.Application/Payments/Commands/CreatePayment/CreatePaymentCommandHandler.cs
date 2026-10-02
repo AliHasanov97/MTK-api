@@ -53,7 +53,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
                     request.OwnerId,
                     request.PropertyId.Value,
                     cancellationToken))
-                .Sum(c => c.Amount - c.PaidAmount);
+                .Sum(c => c.OutstandingAmount);
 
             if (request.Amount > propertyDebt)
             {
@@ -74,7 +74,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
             request.OwnerId,
             request.Amount,
             request.PaymentMethod,
-            request.PaymentDate,
+            DateTimeOffset.UtcNow,
             request.Reference,
             request.Notes,
             request.PropertyId,
@@ -101,6 +101,11 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
         // Raising PaymentCompletedDomainEvent here is what posts the ledger entry:
         // PaymentCompletedDomainEventHandler writes the matching transaction.
         payment.MarkAsCompleted();
+        // Allocation's charge.ApplyPayment mutations (and each allocation's own
+        // RemainingDebtAfterPayment, set in-memory in PaymentAllocationService from
+        // charge.OutstandingAmount) must be persisted before RecalculateAsync's
+        // fresh queries below can see them — same two-phase-save reasoning as
+        // CompanyBalanceService.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Balans aqreqatdan mütləq yenidən hesablanır — artırmalı yanaşma yoxdur.

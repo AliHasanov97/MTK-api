@@ -86,7 +86,6 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
     }
 
     public async Task<bool> ChargeExistsForPeriodAsync(
-        Guid ownerId,
         Guid propertyId,
         string period,
         CancellationToken cancellationToken = default)
@@ -94,10 +93,41 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
         return await PaymentsContext.Charges
             .AnyAsync(c =>
                 c.PartyType == PartyType.Owner &&
-                c.PartyId == ownerId &&
                 c.PropertyId == propertyId &&
                 c.Period == period,
                 cancellationToken);
+    }
+
+    public async Task<IEnumerable<Charge>> GetOwnerChargesByYearAsync(
+        int year,
+        CancellationToken cancellationToken = default)
+    {
+        var prefix = $"{year}-";
+        return await PaymentsContext.Charges
+            .Where(c => c.PartyType == PartyType.Owner && c.Period != null && c.Period.StartsWith(prefix))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Dictionary<Guid, decimal>> GetOutstandingAmountByPropertyIdsAsync(
+        IReadOnlyCollection<Guid> propertyIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (propertyIds.Count == 0)
+        {
+            return new Dictionary<Guid, decimal>();
+        }
+
+        var totals = await PaymentsContext.Charges
+            .Where(c =>
+                c.PartyType == PartyType.Owner &&
+                c.PropertyId != null &&
+                propertyIds.Contains(c.PropertyId!.Value) &&
+                c.Status != ChargeStatus.Cancelled)
+            .GroupBy(c => c.PropertyId!.Value)
+            .Select(g => new { PropertyId = g.Key, Outstanding = g.Sum(c => c.Amount - c.PaidAmount) })
+            .ToListAsync(cancellationToken);
+
+        return totals.ToDictionary(t => t.PropertyId, t => t.Outstanding);
     }
 
     public async Task<Dictionary<Guid, decimal>> GetTotalAmountByOwnerIdsAsync(

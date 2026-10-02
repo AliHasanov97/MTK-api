@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Modules.Buildings.Application.Garages.Commands.AssignOwnerToGarage;
 using MTK.Modules.Buildings.Application.Garages.Commands.CreateGarage;
 using MTK.Modules.Buildings.Application.Garages.Commands.DeleteGarage;
@@ -70,6 +71,7 @@ public class GaragesController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateGarage(
         [FromBody] CreateGarageCommand command,
         CancellationToken cancellationToken)
@@ -82,6 +84,7 @@ public class GaragesController(ISender sender) : BaseController(sender)
     }
 
     [HttpPatch("{id:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> UpdateGarage(
         Guid id,
         [FromBody] UpdateGarageCommand command,
@@ -97,6 +100,7 @@ public class GaragesController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{id:guid}/assign-owner")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> AssignOwner(
         Guid id,
         [FromBody] AssignOwnerToGarageCommand command,
@@ -112,6 +116,7 @@ public class GaragesController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{id:guid}/remove-owner")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> RemoveOwner(
         Guid id,
         CancellationToken cancellationToken)
@@ -126,6 +131,7 @@ public class GaragesController(ISender sender) : BaseController(sender)
     }
 
     [HttpDelete("{id:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> DeleteGarage(
         Guid id,
         CancellationToken cancellationToken)

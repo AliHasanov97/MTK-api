@@ -29,7 +29,8 @@ internal sealed class ApartmentCreatedIntegrationEventHandler(
                 integrationEvent.ApartmentId,
                 PropertyType.Apartment,
                 propertyOwnership.OwnerId,
-                integrationEvent.AreaSquareMeters);
+                integrationEvent.AreaSquareMeters,
+                PropertyNumber: integrationEvent.ApartmentNumber);
 
             Result result = await sender.Send(command, cancellationToken);
 

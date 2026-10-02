@@ -125,8 +125,41 @@ public sealed class Charge : SearchableEntity
             ContractId = contract.Id,
             ContractServiceId = service.Id,
             Period = period,
-            Description = $"{service.Name} — {period} ({service.Quantity} {service.Unit})",
+            Description = $"{service.Name} — {period}",
             Amount = service.PeriodAmount,
+            PaidAmount = 0,
+            Status = ChargeStatus.Unpaid,
+            IssuedOn = chargeDate,
+            DueDate = service.PaymentTermDays is { } termDays ? chargeDate.AddDays(termDays) : null
+        };
+
+        charge.SetCreatedAt();
+        return charge;
+    }
+
+    /// <summary>
+    /// Müqavilə üzrə <b>birdəfəlik</b> xidmətdən (BillingPeriod.OneTime) yaranan tək
+    /// dəfəlik tədarükçü borcu (məs. təmir, servis çağırışı) — admin konkret xidməti
+    /// seçib indi xərc daxil edəndə yaranır, aylıq cədvəl generasiyasından fərqli
+    /// olaraq <see cref="Period"/> daşımır (dövri deyil).
+    /// </summary>
+    public static Charge ForOneTimeService(
+        Contract contract,
+        ContractService service,
+        decimal amount,
+        DateTimeOffset chargeDate)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Charge amount must be positive", nameof(amount));
+
+        var charge = new Charge
+        {
+            PartyType = PartyType.Vendor,
+            PartyId = contract.VendorId,
+            ContractId = contract.Id,
+            ContractServiceId = service.Id,
+            Description = service.Name,
+            Amount = amount,
             PaidAmount = 0,
             Status = ChargeStatus.Unpaid,
             IssuedOn = chargeDate,

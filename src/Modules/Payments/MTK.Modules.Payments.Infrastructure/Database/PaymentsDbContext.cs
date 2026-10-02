@@ -11,6 +11,7 @@ using MTK.Modules.Payments.Domain.Rates;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.OwnerBalances;
+using MTK.Modules.Payments.Domain.CompanyBalances;
 using MTK.Modules.Payments.Domain.AuditLogs;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Transactions;
@@ -39,6 +40,7 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork
     public DbSet<Payment> Payments { get; set; }
     public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
     public DbSet<OwnerBalance> OwnerBalances { get; set; }
+    public DbSet<CompanyBalance> CompanyBalances { get; set; }
     public DbSet<PropertyOwnership> PropertyOwnerships { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Vendor> Vendors { get; set; }

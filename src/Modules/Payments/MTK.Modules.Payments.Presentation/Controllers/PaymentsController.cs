@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Common.Domain.Queries;
 using MTK.Modules.Payments.Application.Payments.Commands.CreatePayment;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentAllocations;
@@ -59,6 +60,7 @@ public class PaymentsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager, Roles.Accountant)]
     public async Task<IActionResult> CreatePayment(
         [FromBody] CreatePaymentRequest request,
         CancellationToken cancellationToken)
@@ -67,7 +69,6 @@ public class PaymentsController(ISender sender) : BaseController(sender)
             request.OwnerId,
             request.Amount,
             request.PaymentMethod,
-            request.PaymentDate,
             request.Reference,
             request.Notes,
             request.PropertyId,
@@ -105,7 +106,6 @@ public sealed record CreatePaymentRequest(
     Guid OwnerId,
     decimal Amount,
     PaymentMethod PaymentMethod,
-    DateTimeOffset PaymentDate,
     string? Reference,
     string? Notes,
     Guid? PropertyId = null,

@@ -13,15 +13,21 @@ public sealed class GarageOwnerChangedIntegrationEvent : IntegrationEvent
         DateTime occurredOnUtc,
         Guid garageId,
         Guid newOwnerId,
-        Guid? previousOwnerId)
+        Guid? previousOwnerId,
+        string garageNumber,
+        string garageType)
         : base(integrationEventId, occurredOnUtc)
     {
         GarageId = garageId;
         NewOwnerId = newOwnerId;
         PreviousOwnerId = previousOwnerId;
+        GarageNumber = garageNumber;
+        GarageType = garageType;
     }
 
     public Guid GarageId { get; }
     public Guid NewOwnerId { get; }
     public Guid? PreviousOwnerId { get; }
+    public string GarageNumber { get; }
+    public string GarageType { get; }
 }

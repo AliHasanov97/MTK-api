@@ -32,12 +32,6 @@ internal sealed class OwnershipHistoryConfiguration : IEntityTypeConfiguration<O
         builder.Property(oh => oh.TransferDate)
             .IsRequired();
 
-        builder.Property(oh => oh.SalePrice)
-            .HasPrecision(18, 2);
-
-        builder.Property(oh => oh.Notes)
-            .HasMaxLength(1000);
-
         builder.Property(oh => oh.CreatedAt)
             .IsRequired();
 
@@ -48,7 +42,7 @@ internal sealed class OwnershipHistoryConfiguration : IEntityTypeConfiguration<O
             .HasGeneratedTsVectorColumn(
                 oh => oh.SearchVector,
                 "english",
-                oh => new { oh.PreviousOwnerName, oh.NewOwnerName, oh.Notes })
+                oh => new { oh.PreviousOwnerName, oh.NewOwnerName })
             .HasIndex(oh => oh.SearchVector)
             .HasMethod("GIN");
 

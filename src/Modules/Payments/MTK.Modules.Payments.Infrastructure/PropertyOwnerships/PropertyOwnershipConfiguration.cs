@@ -30,6 +30,9 @@ internal sealed class PropertyOwnershipConfiguration : IEntityTypeConfiguration<
             .HasConversion<string>()
             .HasMaxLength(50);
 
+        builder.Property(p => p.PropertyNumber)
+            .HasMaxLength(50);
+
         // Unique index on PropertyId to ensure one entry per property
         builder.HasIndex(p => p.PropertyId)
             .IsUnique();

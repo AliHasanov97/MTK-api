@@ -7,11 +7,12 @@ namespace MTK.Modules.Payments.Application.VendorPayments.Commands.CreateVendorP
 /// Tədarükçüyə ödəniş edir. Sakin ödənişi ilə eyni məntiq: ödəniş tədarükçünün açıq
 /// borclarına ən köhnədən (FIFO) paylanır, artıq qalıq isə avans kimi qalır və
 /// növbəti borca tətbiq olunur. Tamamlandıqda ledger-ə xərc qeydi yazılır.
+///
+/// No client-supplied PaymentDate — the handler stamps it with DateTimeOffset.UtcNow.
 /// </summary>
 public sealed record CreateVendorPaymentCommand(
     Guid VendorId,
     decimal Amount,
     PaymentMethod PaymentMethod,
-    DateTimeOffset PaymentDate,
     string? Reference = null,
     string? Notes = null) : ICommand<Guid>;

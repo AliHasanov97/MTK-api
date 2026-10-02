@@ -14,16 +14,5 @@ internal sealed class TransferApartmentOwnershipCommandValidator
         RuleFor(x => x.NewOwnerId)
             .NotEmpty()
             .WithMessage("Yeni sahib ID-si boş ola bilməz");
-
-        RuleFor(x => x.TransferDate)
-            .NotEmpty()
-            .WithMessage("Transfer tarixi boş ola bilməz")
-            .Must(date => date >= DateTime.UtcNow.Date)
-            .WithMessage("Transfer tarixi keçmiş ola bilməz");
-
-        RuleFor(x => x.SalePrice)
-            .GreaterThan(0)
-            .When(x => x.SalePrice.HasValue)
-            .WithMessage("Satış qiyməti müsbət olmalıdır");
     }
 }

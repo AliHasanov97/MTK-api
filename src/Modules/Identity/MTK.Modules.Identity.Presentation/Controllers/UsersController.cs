@@ -29,7 +29,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    [RequireAnyRole(Permissions.UsersView, Permissions.UsersManage)]
+    [RequireAnyRole(Roles.Admin)]
     public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken)
     {
         var query = new GetAllUsersQuery();
@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("search")]
-    [RequireAnyRole(Permissions.UsersView, Permissions.UsersManage,Permissions.UsersCreate)]
+    [RequireAnyRole(Roles.Admin)]
     public async Task<IActionResult> SearchUsers([FromBody] SearchUsersRequest request, CancellationToken cancellationToken)
     {
         var query = new SearchUsersQuery(
@@ -80,7 +80,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("register")]
-    [RequireAnyRole(Permissions.UsersCreate)]
+    [RequireAnyRole(Roles.Admin)]
     public async Task<IActionResult> Register([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
     {
         var command = new RegisterUserCommand(
@@ -102,7 +102,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id:guid}")]
-    [RequireAnyRole(Permissions.UsersUpdate, Permissions.UsersManage)]
+    [RequireAnyRole(Roles.Admin)]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateUserCommand(
@@ -122,7 +122,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [RequireAnyRole(Permissions.UsersDelete, Permissions.UsersManage)]
+    [RequireAnyRole(Roles.Admin)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteUserCommand(id);
@@ -167,7 +167,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{userId:guid}/roles")]
-    [RequireAnyRole(Permissions.RolesManage)]
+    [RequireAnyRole(Roles.Admin)]
     public async Task<IActionResult> RemoveRolesFromUser(Guid userId, [FromBody] RemoveRolesRequest request, CancellationToken cancellationToken)
     {
         var command = new RemoveRolesFromUserCommand(userId, request.RoleNames);

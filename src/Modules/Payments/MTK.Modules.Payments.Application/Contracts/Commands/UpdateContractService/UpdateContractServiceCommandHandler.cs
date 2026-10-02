@@ -34,8 +34,6 @@ internal sealed class UpdateContractServiceCommandHandler : ICommandHandler<Upda
             request.Name,
             request.UnitPrice,
             request.BillingPeriod,
-            request.Quantity,
-            request.Unit,
             request.Description,
             request.ServiceStartDate,
             request.ServiceEndDate,

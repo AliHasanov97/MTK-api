@@ -47,8 +47,7 @@ internal sealed class CreateContractCommandHandler : ICommandHandler<CreateContr
             request.StartDate,
             request.EndDate,
             request.CreatedByUserId,
-            request.Note,
-            request.Currency);
+            request.Note);
 
         _contractRepository.Add(contract);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

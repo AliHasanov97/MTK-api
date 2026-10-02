@@ -41,8 +41,6 @@ public sealed class OwnershipHistory : SearchableEntity
 
     // Transfer məlumatları
     public DateTime TransferDate { get; private set; }
-    public decimal? SalePrice { get; private set; }
-    public string? Notes { get; private set; }
 
     // Navigation
     public Apartment Apartment { get; private set; } = null!;
@@ -55,9 +53,7 @@ public sealed class OwnershipHistory : SearchableEntity
         string? previousOwnerName,
         Guid newOwnerId,
         string newOwnerName,
-        DateTime transferDate,
-        decimal? salePrice = null,
-        string? notes = null)
+        DateTime transferDate)
     {
         var history = new OwnershipHistory(
             Guid.NewGuid(),
@@ -67,9 +63,7 @@ public sealed class OwnershipHistory : SearchableEntity
             transferDate)
         {
             PreviousOwnerName = previousOwnerName,
-            NewOwnerName = newOwnerName,
-            SalePrice = salePrice,
-            Notes = notes
+            NewOwnerName = newOwnerName
         };
 
         history.SetCreatedAt();
@@ -90,9 +84,7 @@ public sealed class OwnershipHistory : SearchableEntity
         Guid apartmentId,
         Guid newOwnerId,
         string newOwnerName,
-        DateTime transferDate,
-        decimal? salePrice = null,
-        string? notes = null)
+        DateTime transferDate)
     {
         return Create(
             apartmentId,
@@ -100,8 +92,6 @@ public sealed class OwnershipHistory : SearchableEntity
             null,
             newOwnerId,
             newOwnerName,
-            transferDate,
-            salePrice,
-            notes);
+            transferDate);
     }
 }

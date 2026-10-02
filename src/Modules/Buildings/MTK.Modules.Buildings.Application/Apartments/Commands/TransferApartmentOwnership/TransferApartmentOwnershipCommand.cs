@@ -10,13 +10,14 @@ namespace MTK.Modules.Buildings.Application.Apartments.Commands.TransferApartmen
 /// 2. Transfer həmişə ayın 1-dən başlayır
 /// 3. OwnershipHistory yaradılır
 /// 4. Integration event publish edilir
+///
+/// No client-supplied TransferDate/SalePrice/Notes: a transfer always takes
+/// effect now (the handler stamps it with DateTime.UtcNow, then snaps to the
+/// 1st of that month as before) — sale price and notes aren't tracked here.
 /// </summary>
 public sealed class TransferApartmentOwnershipCommand : ICommand
 {
     public Guid NewOwnerId { get; set; }
-    public DateTime TransferDate { get; set; }
-    public decimal? SalePrice { get; set; }
-    public string? Notes { get; set; }
 
     [JsonIgnore]
     public Guid ApartmentId { get; set; }

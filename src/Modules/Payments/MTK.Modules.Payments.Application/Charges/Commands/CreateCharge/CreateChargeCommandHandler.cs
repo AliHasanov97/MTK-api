@@ -47,7 +47,7 @@ internal sealed class CreateChargeCommandHandler : ICommandHandler<CreateChargeC
         string period = request.Period ?? $"MANUAL-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..40];
 
         bool alreadyExists = await _chargeRepository.ChargeExistsForPeriodAsync(
-            request.OwnerId, request.PropertyId, period, cancellationToken);
+            request.PropertyId, period, cancellationToken);
 
         if (alreadyExists)
         {

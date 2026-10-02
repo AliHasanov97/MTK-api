@@ -4,6 +4,7 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Garages;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
 using MTK.Modules.Payments.Domain.Charges;
+using PaymentsGarageType = MTK.Modules.Payments.Domain.PropertyOwnerships.GarageType;
 
 namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
@@ -14,11 +15,17 @@ internal sealed class GarageOwnerChangedIntegrationEventHandler(ISender sender)
         GarageOwnerChangedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken = default)
     {
+        PaymentsGarageType? garageType = Enum.TryParse<PaymentsGarageType>(integrationEvent.GarageType, ignoreCase: true, out var parsed)
+            ? parsed
+            : null;
+
         var command = new SyncPropertyOwnershipCommand(
             integrationEvent.GarageId,
             PropertyType.Garage,
             integrationEvent.NewOwnerId,
-            0); // Garages use fixed rate, not area-based
+            0, // Garages use fixed rate, not area-based
+            garageType,
+            PropertyNumber: integrationEvent.GarageNumber);
 
         Result result = await sender.Send(command, cancellationToken);
 
