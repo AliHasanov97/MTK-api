@@ -1,15 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using MTK.Common.Application.Authorization;
 using MTK.Common.Domain.Queries;
 using MTK.Modules.Payments.Application.Charges.Commands.CreateCharge;
-using MTK.Modules.Payments.Application.Charges.Commands.CreateOneTimeServiceExpense;
-using MTK.Modules.Payments.Application.Charges.Queries.GetAnnualPaymentReport;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargeAllocations;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargesByOwner;
 using MTK.Modules.Payments.Application.Charges.Queries.SearchCharges;
 using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
