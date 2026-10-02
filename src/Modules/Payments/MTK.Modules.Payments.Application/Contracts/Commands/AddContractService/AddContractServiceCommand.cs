@@ -12,8 +12,6 @@ public sealed record AddContractServiceCommand(
     string Name,
     decimal UnitPrice,
     BillingPeriod BillingPeriod = BillingPeriod.Monthly,
-    decimal Quantity = 1,
-    string Unit = "ay",
     string? Description = null,
     DateTimeOffset? ServiceStartDate = null,
     DateTimeOffset? ServiceEndDate = null,

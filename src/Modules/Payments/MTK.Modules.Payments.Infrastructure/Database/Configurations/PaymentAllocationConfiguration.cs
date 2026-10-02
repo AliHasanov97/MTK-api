@@ -22,6 +22,13 @@ internal sealed class PaymentAllocationConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .HasPrecision(18, 2);
 
+        builder.Property(pa => pa.RemainingDebtAfterPayment)
+            .IsRequired()
+            .HasPrecision(18, 2);
+
+        builder.Property(pa => pa.IsFromAdvance)
+            .IsRequired();
+
         builder.Property(pa => pa.CreatedAt)
             .IsRequired();
 

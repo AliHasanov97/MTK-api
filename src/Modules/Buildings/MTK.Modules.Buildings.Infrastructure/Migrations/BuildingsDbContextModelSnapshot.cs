@@ -436,10 +436,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
                     b.Property<Guid?>("PreviousOwnerId")
                         .HasColumnType("uuid");
 
@@ -447,16 +443,12 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<decimal?>("SalePrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<NpgsqlTsVector>("SearchVector")
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("tsvector")
                         .HasAnnotation("Npgsql:TsVectorConfig", "english")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "PreviousOwnerName", "NewOwnerName", "Notes" });
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "PreviousOwnerName", "NewOwnerName" });
 
                     b.Property<DateTime>("TransferDate")
                         .HasColumnType("timestamp with time zone");

@@ -32,10 +32,6 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(c => c.Currency)
-            .IsRequired()
-            .HasMaxLength(3);
-
         builder.Property(c => c.Note)
             .HasMaxLength(1000);
 

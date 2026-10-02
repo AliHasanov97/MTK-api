@@ -15,13 +15,10 @@ internal sealed class CreateVendorPaymentCommandValidator : AbstractValidator<Cr
             .GreaterThan(0)
             .WithMessage("Ödəniş məbləği müsbət olmalıdır");
 
+        // Hazırda yalnız nağd ödəniş qəbul edilir — bank/kart hələ dəstəklənmir.
         RuleFor(x => x.PaymentMethod)
-            .IsInEnum()
-            .WithMessage("Ödəniş üsulu düzgün deyil");
-
-        RuleFor(x => x.Reference)
-            .MaximumLength(200)
-            .WithMessage("Sənəd nömrəsi çox uzundur");
+            .Equal(PaymentMethod.Cash)
+            .WithMessage("Yalnız nağd ödəniş qəbul edilir");
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000)

@@ -1,4 +1,5 @@
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Application.Authorization;
 using MTK.Common.Application.Messaging;
 using MTK.Modules.Buildings.Application.Abstractions.Data;
 using MTK.Modules.Buildings.Domain.Owners;
@@ -27,8 +28,8 @@ internal sealed class UpdateOwnerRoleCommandHandler : ICommandHandler<UpdateOwne
             request.UserId,
             cancellationToken);
 
-        // User -> ApartmentOwner: Owner yarat
-        if (request.NewRole == "ApartmentOwner" && owner is null)
+        // User -> owner: Owner yarat
+        if (request.NewRole == Roles.Owner && owner is null)
         {
             var newOwner = Owner.Create(
                 request.UserId,
@@ -39,8 +40,8 @@ internal sealed class UpdateOwnerRoleCommandHandler : ICommandHandler<UpdateOwne
 
             _ownerRepository.Add(newOwner);
         }
-        // ApartmentOwner -> User: Owner deaktiv et
-        else if (request.OldRole == "ApartmentOwner" && owner is not null)
+        // owner -> User: Owner deaktiv et
+        else if (request.OldRole == Roles.Owner && owner is not null)
         {
             owner.Deactivate();
         }

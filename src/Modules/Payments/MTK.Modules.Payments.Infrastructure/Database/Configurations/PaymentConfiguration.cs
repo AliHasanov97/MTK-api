@@ -45,9 +45,6 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(p => p.Reference)
-            .HasMaxLength(200);
-
         builder.Property(p => p.Notes)
             .HasMaxLength(1000);
 
@@ -71,7 +68,7 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .HasGeneratedTsVectorColumn(
                 p => p.SearchVector,
                 "english",
-                p => new { p.Reference, p.Notes })
+                p => new { p.Notes })
             .HasIndex(p => p.SearchVector)
             .HasMethod("GIN");
 
@@ -80,7 +77,6 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.PartyId);
         builder.HasIndex(p => p.PaymentDate);
         builder.HasIndex(p => p.Status);
-        builder.HasIndex(p => p.Reference);
         builder.HasIndex(p => p.PropertyId);
     }
 }

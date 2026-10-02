@@ -31,9 +31,6 @@ public sealed class Contract : SearchableEntity
 
     public ContractStatus Status { get; private set; }
 
-    /// <summary>ISO 4217 kodu. Default "AZN".</summary>
-    public string Currency { get; private set; } = "AZN";
-
     public string? Note { get; private set; }
 
     public IReadOnlyCollection<ContractService> Services => _services.AsReadOnly();
@@ -56,8 +53,7 @@ public sealed class Contract : SearchableEntity
         DateTimeOffset startDate,
         DateTimeOffset endDate,
         Guid? createdByUserId = null,
-        string? note = null,
-        string currency = "AZN")
+        string? note = null)
     {
         if (string.IsNullOrWhiteSpace(number))
             throw new ArgumentException("Müqavilə nömrəsi mütləqdir", nameof(number));
@@ -73,7 +69,6 @@ public sealed class Contract : SearchableEntity
             StartDate = startDate,
             EndDate = endDate,
             Status = ContractStatus.Draft,
-            Currency = currency,
             Note = note
         };
 
@@ -105,8 +100,6 @@ public sealed class Contract : SearchableEntity
         string name,
         decimal unitPrice,
         BillingPeriod billingPeriod = BillingPeriod.Monthly,
-        decimal quantity = 1,
-        string unit = "ay",
         string? description = null,
         DateTimeOffset? serviceStartDate = null,
         DateTimeOffset? serviceEndDate = null,
@@ -115,7 +108,7 @@ public sealed class Contract : SearchableEntity
         EnsureEditable();
 
         var service = ContractService.Create(
-            Id, name, unitPrice, billingPeriod, quantity, unit, description,
+            Id, name, unitPrice, billingPeriod, description,
             serviceStartDate, serviceEndDate, paymentTermDays);
 
         _services.Add(service);
@@ -129,8 +122,6 @@ public sealed class Contract : SearchableEntity
         string name,
         decimal unitPrice,
         BillingPeriod billingPeriod,
-        decimal quantity,
-        string unit,
         string? description = null,
         DateTimeOffset? serviceStartDate = null,
         DateTimeOffset? serviceEndDate = null,
@@ -139,7 +130,7 @@ public sealed class Contract : SearchableEntity
         EnsureEditable();
 
         Service(serviceId).Update(
-            name, unitPrice, billingPeriod, quantity, unit, description,
+            name, unitPrice, billingPeriod, description,
             serviceStartDate, serviceEndDate, paymentTermDays);
 
         SetUpdatedAt();

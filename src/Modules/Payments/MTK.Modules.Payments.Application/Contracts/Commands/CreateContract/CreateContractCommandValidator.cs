@@ -25,11 +25,6 @@ internal sealed class CreateContractCommandValidator : AbstractValidator<CreateC
             .GreaterThanOrEqualTo(x => x.StartDate)
             .WithMessage("Bitmə tarixi başlanğıc tarixindən əvvəl ola bilməz");
 
-        RuleFor(x => x.Currency)
-            .NotEmpty()
-            .Length(3)
-            .WithMessage("Valyuta ISO 4217 kodu olmalıdır (məs. AZN)");
-
         RuleFor(x => x.Note)
             .MaximumLength(1000);
     }

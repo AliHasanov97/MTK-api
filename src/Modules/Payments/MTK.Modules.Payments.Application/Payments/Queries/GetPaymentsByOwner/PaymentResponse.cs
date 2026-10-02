@@ -10,7 +10,6 @@ public sealed record PaymentResponse(
     PaymentMethod PaymentMethod,
     DateTimeOffset PaymentDate,
     PaymentStatus Status,
-    string? Reference,
     string? Notes,
     DateTimeOffset CreatedAt,
     Guid? PropertyId,

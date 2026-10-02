@@ -33,8 +33,6 @@ internal sealed class AddContractServiceCommandHandler : ICommandHandler<AddCont
             request.Name,
             request.UnitPrice,
             request.BillingPeriod,
-            request.Quantity,
-            request.Unit,
             request.Description,
             request.ServiceStartDate,
             request.ServiceEndDate,

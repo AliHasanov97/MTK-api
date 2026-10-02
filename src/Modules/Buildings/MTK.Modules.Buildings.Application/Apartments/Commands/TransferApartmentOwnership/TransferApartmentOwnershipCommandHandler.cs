@@ -64,13 +64,9 @@ internal sealed class TransferApartmentOwnershipCommandHandler
             previousOwnerName = previousOwner?.FullName;
         }
 
-        // Transfer date ayın 1-nə düzəlt
-        var transferDate = new DateTime(
-            request.TransferDate.Year,
-            request.TransferDate.Month,
-            1,
-            0, 0, 0,
-            DateTimeKind.Utc);
+        // Transfer tarixi həmişə indidir, ayın 1-nə düzəldilir.
+        var now = DateTime.UtcNow;
+        var transferDate = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // OwnershipHistory yarat
         var ownershipHistory = OwnershipHistory.Create(
@@ -79,9 +75,7 @@ internal sealed class TransferApartmentOwnershipCommandHandler
             previousOwnerName,
             request.NewOwnerId,
             newOwner.FullName,
-            transferDate,
-            request.SalePrice,
-            request.Notes);
+            transferDate);
 
         _ownershipHistoryRepository.Add(ownershipHistory);
 

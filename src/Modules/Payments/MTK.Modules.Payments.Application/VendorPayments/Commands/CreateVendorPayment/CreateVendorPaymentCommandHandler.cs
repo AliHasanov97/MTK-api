@@ -11,17 +11,20 @@ internal sealed class CreateVendorPaymentCommandHandler : ICommandHandler<Create
 {
     private readonly IPaymentRepository _paymentRepository;
     private readonly IVendorRepository _vendorRepository;
+    private readonly IChargeRepository _chargeRepository;
     private readonly IPaymentAllocationService _paymentAllocationService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateVendorPaymentCommandHandler(
         IPaymentRepository paymentRepository,
         IVendorRepository vendorRepository,
+        IChargeRepository chargeRepository,
         IPaymentAllocationService paymentAllocationService,
         IUnitOfWork unitOfWork)
     {
         _paymentRepository = paymentRepository;
         _vendorRepository = vendorRepository;
+        _chargeRepository = chargeRepository;
         _paymentAllocationService = paymentAllocationService;
         _unitOfWork = unitOfWork;
     }
@@ -37,6 +40,19 @@ internal sealed class CreateVendorPaymentCommandHandler : ICommandHandler<Create
                 $"Tədarükçü tapılmadı: {request.VendorId}"));
         }
 
+        // Sakin ödənişindən fərqli olaraq tədarükçüyə avans icazə verilmir —
+        // ödəniş yalnız mövcud açıq borcu ödəyə bilər, artığı rədd olunur.
+        var outstandingDebt = (await _chargeRepository.GetUnpaidChargesByPartyAsync(
+                PartyType.Vendor, request.VendorId, cancellationToken))
+            .Sum(c => c.OutstandingAmount);
+
+        if (request.Amount > outstandingDebt)
+        {
+            return Result.Failure<Guid>(new Error(
+                "VendorPayment.ExceedsDebt",
+                $"Ödəniş tədarükçünün qalıq borcundan böyük ola bilməz (borc: {outstandingDebt})."));
+        }
+
         // Ödəniş, onun paylanması və ledger qeydi bir tranzaksiyadır: yarımçıq
         // vəziyyət (ödəniş var, paylanma yox) qala bilməz.
         await using var transaction = await _paymentRepository.BeginTransactionAsync(cancellationToken);
@@ -46,8 +62,7 @@ internal sealed class CreateVendorPaymentCommandHandler : ICommandHandler<Create
             request.VendorId,
             request.Amount,
             request.PaymentMethod,
-            request.PaymentDate,
-            request.Reference,
+            DateTimeOffset.UtcNow,
             request.Notes);
 
         _paymentRepository.Add(payment);

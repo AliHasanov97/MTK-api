@@ -42,9 +42,9 @@ internal sealed class GetChargeAllocationsQueryHandler
                     payment.Id,
                     a.Amount,
                     payment.PaymentDate,
-                    payment.PaymentMethod.ToString(),
                     payment.Status.ToString(),
-                    payment.Reference);
+                    a.RemainingDebtAfterPayment,
+                    a.IsFromAdvance);
             })
             .OrderBy(a => a.PaymentDate)
             .ToList();

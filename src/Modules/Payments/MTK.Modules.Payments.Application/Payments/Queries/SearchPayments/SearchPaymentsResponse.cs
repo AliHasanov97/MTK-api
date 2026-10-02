@@ -16,7 +16,6 @@ public sealed record PaymentSearchResult(
     PaymentMethod PaymentMethod,
     DateTimeOffset PaymentDate,
     PaymentStatus Status,
-    string? Reference,
     string? Notes,
     DateTimeOffset CreatedAt,
     Guid? PropertyId,

@@ -1,9 +1,9 @@
 namespace MTK.Modules.Identity.Application.AuditLogs.SearchAuditLogs;
 
 public sealed record SearchAuditLogsResponse(
-    List<AuditLogDto> AuditLogs,
+    IReadOnlyCollection<AuditLogDto> AuditLogs,
     int TotalCount,
-    int PageNumber,
+    int Page,
     int PageSize);
 
 public sealed record AuditLogDto(
@@ -14,4 +14,4 @@ public sealed record AuditLogDto(
     string? OldValues,
     string? NewValues,
     Guid? UserId,
-    DateTimeOffset Timestamp);
+    DateTime Timestamp);

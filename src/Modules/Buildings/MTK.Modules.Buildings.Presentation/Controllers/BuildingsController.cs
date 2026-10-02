@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Modules.Buildings.Application.Buildings.Commands.CreateBuilding;
 using MTK.Modules.Buildings.Application.Buildings.Queries.GetAllBuildings;
 using MTK.Modules.Buildings.Application.Buildings.Queries.GetBuildingById;
@@ -30,6 +31,7 @@ public class BuildingsController(ISender sender) : BaseController(sender)
 
     [Produces<Guid>]
     [HttpPost]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateBuilding(
         [FromBody] CreateBuildingCommand command,
         CancellationToken cancellationToken)

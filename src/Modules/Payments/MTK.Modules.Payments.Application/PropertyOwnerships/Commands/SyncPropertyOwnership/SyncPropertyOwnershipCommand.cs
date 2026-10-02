@@ -9,4 +9,5 @@ public sealed record SyncPropertyOwnershipCommand(
     PropertyType PropertyType,
     Guid OwnerId,
     decimal AreaSquareMeters,
-    GarageType? GarageType = null) : ICommand;
+    GarageType? GarageType = null,
+    string? PropertyNumber = null) : ICommand;

@@ -48,7 +48,6 @@ internal sealed class ChargeGenerationService(
             {
                 // Check if charge already exists for this period
                 bool chargeExists = await chargeRepository.ChargeExistsForPeriodAsync(
-                    apartment.OwnerId,
                     apartment.PropertyId,
                     period,
                     cancellationToken);
@@ -130,7 +129,6 @@ internal sealed class ChargeGenerationService(
 
             // Check if charge already exists for this period
             bool chargeExists = await chargeRepository.ChargeExistsForPeriodAsync(
-                garage.OwnerId,
                 garage.PropertyId,
                 period,
                 cancellationToken);

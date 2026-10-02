@@ -48,7 +48,6 @@ internal sealed class SearchContractsQueryHandler : IQueryHandler<SearchContract
             c.StartDate,
             c.EndDate,
             c.Status,
-            c.Currency,
             c.IsExpired,
             c.Note,
             c.CreatedAt)).ToList();

@@ -65,6 +65,7 @@ internal sealed class OwnerRepository : SearchableRepository<Owner>, IOwnerRepos
     {
         return await BuildingsContext.Owners
             .Include(o => o.OwnedApartments)
+                .ThenInclude(a => a.Building)
             .Include(o => o.OwnedGarages)
             .FirstOrDefaultAsync(o => o.UserId == userId, cancellationToken);
     }

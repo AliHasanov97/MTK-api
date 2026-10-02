@@ -24,7 +24,6 @@ public sealed class Payment : SearchableEntity
     public PaymentMethod PaymentMethod { get; private set; }
     public DateTimeOffset PaymentDate { get; private set; }
     public PaymentStatus Status { get; private set; }
-    public string? Reference { get; private set; }
     public string? Notes { get; private set; }
 
     // Yalnız sakin ödənişləri üçün: ödəniş tək əmlaka hədəflənə bilər və o zaman
@@ -38,7 +37,6 @@ public sealed class Payment : SearchableEntity
         decimal amount,
         PaymentMethod paymentMethod,
         DateTimeOffset paymentDate,
-        string? reference,
         string? notes,
         Guid? propertyId = null,
         PropertyType? propertyType = null)
@@ -54,7 +52,6 @@ public sealed class Payment : SearchableEntity
             PaymentMethod = paymentMethod,
             PaymentDate = paymentDate,
             Status = PaymentStatus.Pending,
-            Reference = reference,
             Notes = notes,
             PropertyId = propertyId,
             PropertyType = propertyType

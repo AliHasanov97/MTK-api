@@ -8,6 +8,8 @@ public sealed record ChargeAllocationResponse(
     Guid PaymentId,
     decimal AllocatedAmount,
     DateTimeOffset PaymentDate,
-    string PaymentMethod,
     string PaymentStatus,
-    string? Reference);
+    // Bu haqqın öz qalıq borcu bu konkret paylanma tətbiq olunandan dərhal sonra.
+    decimal RemainingDebtAfterPayment,
+    // true — əvvəlki avansdan bağlanıb; false — elə bu ödənişin özündən birbaşa.
+    bool IsFromAdvance);

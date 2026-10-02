@@ -38,7 +38,6 @@ internal sealed class SearchPaymentsQueryHandler : IQueryHandler<SearchPaymentsQ
             p.PaymentMethod,
             p.PaymentDate,
             p.Status,
-            p.Reference,
             p.Notes,
             p.CreatedAt,
             p.PropertyId,

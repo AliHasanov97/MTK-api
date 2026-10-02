@@ -29,7 +29,6 @@ internal sealed class GetPaymentsByPropertyQueryHandler
                 p.PaymentMethod,
                 p.PaymentDate,
                 p.Status,
-                p.Reference,
                 p.Notes,
                 p.CreatedAt,
                 p.PropertyId,

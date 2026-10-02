@@ -46,7 +46,8 @@ internal sealed class GetPaymentAllocationsQueryHandler
                     charge.Period,
                     charge.Description,
                     charge.Amount,
-                    a.Amount);
+                    a.Amount,
+                    a.RemainingDebtAfterPayment);
             })
             .ToList();
 

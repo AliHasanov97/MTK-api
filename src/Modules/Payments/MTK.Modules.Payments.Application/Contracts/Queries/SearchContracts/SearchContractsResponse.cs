@@ -20,7 +20,6 @@ public sealed record ContractListItem(
     DateTimeOffset StartDate,
     DateTimeOffset EndDate,
     ContractStatus Status,
-    string Currency,
     bool IsExpired,
     string? Note,
     DateTimeOffset CreatedAt);

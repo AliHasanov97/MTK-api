@@ -8,6 +8,10 @@ public sealed record GetPaymentAllocationsQuery(Guid PaymentId) : IQuery<IReadOn
 /// <summary>
 /// One line of "this payment covered this charge, for this much" — lets the UI
 /// answer "what did this 60 AZN actually pay for?" when a payment is expanded.
+///
+/// <see cref="RemainingDebtAfterPayment"/> is this specific charge's own remaining
+/// balance right after this allocation was applied — see
+/// <see cref="Payments.PaymentAllocation.RemainingDebtAfterPayment"/>.
 /// </summary>
 public sealed record PaymentAllocationDetailResponse(
     Guid ChargeId,
@@ -16,4 +20,5 @@ public sealed record PaymentAllocationDetailResponse(
     string? Period,
     string? Description,
     decimal ChargeAmount,
-    decimal AllocatedAmount);
+    decimal AllocatedAmount,
+    decimal RemainingDebtAfterPayment);

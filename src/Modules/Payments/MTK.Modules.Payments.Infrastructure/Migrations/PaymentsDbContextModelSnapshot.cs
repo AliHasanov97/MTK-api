@@ -300,6 +300,34 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.CompanyBalances.CompanyBalance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("TotalExpense")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("TotalIncome")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CompanyBalances", "payments");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Contracts.Contract", b =>
                 {
                     b.Property<Guid>("Id")
@@ -311,11 +339,6 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -409,19 +432,11 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<int?>("PaymentTermDays")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<DateTimeOffset?>("ServiceEndDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset?>("ServiceStartDate")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(18, 2)
@@ -523,16 +538,12 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Reference")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<NpgsqlTsVector>("SearchVector")
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("tsvector")
                         .HasAnnotation("Npgsql:TsVectorConfig", "english")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Reference", "Notes" });
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Notes" });
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -557,8 +568,6 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.HasIndex("PaymentDate");
 
                     b.HasIndex("PropertyId");
-
-                    b.HasIndex("Reference");
 
                     b.HasIndex("SearchVector");
 
@@ -588,8 +597,15 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsFromAdvance")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("PaymentId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("RemainingDebtAfterPayment")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -628,6 +644,10 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("PropertyNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("PropertyType")
                         .HasColumnType("integer");

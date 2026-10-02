@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Common.Domain.Queries;
 using MTK.Modules.Buildings.Application.Apartments.Commands.AssignOwnerToApartment;
 using MTK.Modules.Buildings.Application.Apartments.Commands.CreateApartment;
@@ -57,6 +58,7 @@ public class ApartmentsController(ISender sender) : BaseController(sender)
 
     [Produces<Guid>]
     [HttpPost]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateApartment(
         [FromBody] CreateApartmentCommand command,
         CancellationToken cancellationToken)
@@ -75,6 +77,7 @@ public class ApartmentsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPatch("{id:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> UpdateApartment(
         Guid id,
         [FromBody] UpdateApartmentCommand command,
@@ -88,6 +91,7 @@ public class ApartmentsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{id:guid}/assign-owner")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> AssignOwner(
         Guid id,
         [FromBody] AssignOwnerToApartmentCommand command,
@@ -101,6 +105,7 @@ public class ApartmentsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{id:guid}/transfer-ownership")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> TransferOwnership(
         Guid id,
         [FromBody] TransferApartmentOwnershipCommand command,

@@ -13,23 +13,25 @@ internal sealed class SearchAuditLogsQueryHandler : IQueryHandler<SearchAuditLog
         _auditLogRepository = auditLogRepository;
     }
 
-    public async Task<Result<SearchAuditLogsResponse>> Handle(SearchAuditLogsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<SearchAuditLogsResponse>> Handle(
+        SearchAuditLogsQuery request,
+        CancellationToken cancellationToken)
     {
-        var filter = new AuditLogFilter
-        {
-            EntityType = request.EntityType,
-            EntityId = request.EntityId,
-            Action = request.Action,
-            UserId = request.UserId,
-            DateFrom = request.DateFrom,
-            DateTo = request.DateTo,
-            PageNumber = request.PageNumber,
-            PageSize = request.PageSize
-        };
+        var auditLogs = await _auditLogRepository.SearchAsync(
+            request.Filters,
+            request.SortCriteria,
+            request.SearchTerm,
+            request.Page,
+            request.PageSize,
+            cancellationToken);
 
-        var auditLogs = await _auditLogRepository.SearchAsync(filter, cancellationToken);
+        var totalCount = await _auditLogRepository.CountAsync(
+            request.Filters,
+            request.SortCriteria,
+            request.SearchTerm,
+            cancellationToken);
 
-        var auditLogDtos = auditLogs.Select(al => new AuditLogDto(
+        var items = auditLogs.Select(al => new AuditLogDto(
             al.Id,
             al.EntityType,
             al.EntityId,
@@ -37,18 +39,14 @@ internal sealed class SearchAuditLogsQueryHandler : IQueryHandler<SearchAuditLog
             al.OldValues,
             al.NewValues,
             al.UserId,
-            al.Timestamp)).ToList();
-
-        // For simplicity, using the count of returned results as total count
-        // In production, you'd want a separate count query
-        var totalCount = auditLogDtos.Count;
+            al.Timestamp.ToUniversalTime().Date)).ToList();
 
         var response = new SearchAuditLogsResponse(
-            auditLogDtos,
+            items,
             totalCount,
-            request.PageNumber,
-            request.PageSize);
+            request.Page ?? 1,
+            request.PageSize ?? 10);
 
-        return Result.Success(response);
+        return response;
     }
 }

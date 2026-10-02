@@ -1,7 +1,9 @@
+using MTK.Common.Domain.Abstractions;
+
 namespace MTK.Modules.Identity.Domain.AuditLogs;
 
-public interface IAuditLogRepository
+public interface IAuditLogRepository : IRepository<AuditLog>
+
 {
-    Task<IReadOnlyList<AuditLog>> SearchAsync(AuditLogFilter filter, CancellationToken cancellationToken = default);
-    void Add(AuditLog auditLog);
+ 
 }

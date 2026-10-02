@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using MTK.Common.Application.Authorization;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.Application.Owners.Commands.CreateOwner;
@@ -9,7 +10,7 @@ namespace MTK.Modules.Buildings.Presentation.IntegrationEventHandlers.Users;
 
 /// <summary>
 /// Identity modulunda User yaradıldıqda Buildings modulunda Owner yaradır
-/// Ancaq ApartmentOwner rolu olan istifadəçilər üçün Owner yaradılır
+/// Ancaq owner rolu olan istifadəçilər üçün Owner yaradılır
 /// </summary>
 public sealed class UserCreatedIntegrationEventHandler(ISender sender)
     : IntegrationEventHandler<UserCreatedIntegrationEvent>
@@ -18,8 +19,8 @@ public sealed class UserCreatedIntegrationEventHandler(ISender sender)
         UserCreatedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken = default)
     {
-        // Yalnız ApartmentOwner rolu olan istifadəçilər üçün Owner yaradırıq
-        if (!integrationEvent.HasRole("ApartmentOwner"))
+        // Yalnız owner rolu olan istifadəçilər üçün Owner yaradırıq
+        if (!integrationEvent.HasRole(Roles.Owner))
         {
             return Result.Success();
         }

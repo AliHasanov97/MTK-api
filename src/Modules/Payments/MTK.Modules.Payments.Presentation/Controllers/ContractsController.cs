@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Modules.Payments.Application.Contracts.Commands.AddContractService;
 using MTK.Modules.Payments.Application.Contracts.Commands.ChangeContractStatus;
 using MTK.Modules.Payments.Application.Contracts.Commands.CreateContract;
@@ -39,6 +40,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateContract(
         [FromBody] CreateContractCommand command,
         CancellationToken cancellationToken)
@@ -51,6 +53,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPut("{contractId:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> UpdateContract(
         Guid contractId,
         [FromBody] UpdateContractCommand command,
@@ -65,6 +68,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{contractId:guid}/services")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> AddContractService(
         Guid contractId,
         [FromBody] AddContractServiceCommand command,
@@ -78,6 +82,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPut("{contractId:guid}/services/{serviceId:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> UpdateContractService(
         Guid contractId,
         Guid serviceId,
@@ -94,6 +99,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpDelete("{contractId:guid}/services/{serviceId:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> RemoveContractService(
         Guid contractId,
         Guid serviceId,
@@ -109,6 +115,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPut("{contractId:guid}/services/{serviceId:guid}/status")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> SetContractServiceStatus(
         Guid contractId,
         Guid serviceId,
@@ -125,6 +132,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{contractId:guid}/activate")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> ActivateContract(
         Guid contractId,
         CancellationToken cancellationToken)
@@ -137,6 +145,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{contractId:guid}/suspend")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> SuspendContract(
         Guid contractId,
         [FromBody] SuspendContractCommand command,
@@ -150,6 +159,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost("{contractId:guid}/terminate")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> TerminateContract(
         Guid contractId,
         [FromBody] TerminateContractCommand command,
@@ -163,6 +173,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpDelete("{contractId:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> DeleteContract(
         Guid contractId,
         CancellationToken cancellationToken)

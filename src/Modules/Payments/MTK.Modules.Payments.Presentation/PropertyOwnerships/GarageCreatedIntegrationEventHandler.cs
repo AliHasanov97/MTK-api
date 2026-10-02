@@ -27,7 +27,8 @@ internal sealed class GarageCreatedIntegrationEventHandler(ISender sender)
                 PropertyType.Garage,
                 integrationEvent.OwnerId.Value,
                 0, // Garages use fixed rate, not area-based
-                garageType);
+                garageType,
+                PropertyNumber: integrationEvent.GarageNumber);
 
             Result result = await sender.Send(command, cancellationToken);
 

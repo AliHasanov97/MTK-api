@@ -26,10 +26,6 @@ internal sealed class ContractServiceConfiguration : IEntityTypeConfiguration<Co
             .IsRequired()
             .HasPrecision(18, 2);
 
-        builder.Property(s => s.Quantity)
-            .IsRequired()
-            .HasPrecision(18, 2);
-
         builder.Property(s => s.BillingPeriod)
             .HasConversion<string>()
             .IsRequired()

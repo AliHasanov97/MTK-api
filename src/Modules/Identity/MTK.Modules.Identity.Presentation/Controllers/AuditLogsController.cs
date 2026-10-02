@@ -1,53 +1,41 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Domain.Queries;
 using MTK.Modules.Identity.Application.AuditLogs.SearchAuditLogs;
 
 namespace MTK.Modules.Identity.Presentation.Controllers;
 
 [ApiController]
 [Route("api/identity/auditlogs")]
-public class AuditLogsController : ControllerBase
+public class AuditLogsController(ISender sender) : ControllerBase
 {
-    private readonly ISender _sender;
-
-    public AuditLogsController(ISender sender)
-    {
-        _sender = sender;
-    }
-
     [HttpPost("search")]
     [Authorize]
-    public async Task<IActionResult> SearchAuditLogs([FromBody] SearchAuditLogsRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SearchAuditLogs([FromBody] SearchAuditLogsRequest request,
+        CancellationToken cancellationToken)
     {
         var query = new SearchAuditLogsQuery(
-            request.EntityType,
-            request.EntityId,
-            request.Action,
-            request.UserId,
-            request.DateFrom,
-            request.DateTo,
-            request.PageNumber,
+            request.Filters,
+            request.SortCriteria,
+            request.SearchTerm,
+            request.Page,
             request.PageSize);
 
-        var result = await _sender.Send(query, cancellationToken);
+        var result = await sender.Send(query, cancellationToken);
 
         if (result.IsFailure)
         {
-            return BadRequest(new { error = result.Error.Message });
+            return BadRequest(result.Error);
         }
 
-        return Ok(result.Value);
+        return Ok(new { data = result.Value, message = "Uğurla icra edildi" });
     }
 }
 
-// Request DTO
 public sealed record SearchAuditLogsRequest(
-    string? EntityType,
-    Guid? EntityId,
-    string? Action,
-    Guid? UserId,
-    DateTime? DateFrom,
-    DateTime? DateTo,
-    int PageNumber = 1,
-    int PageSize = 10);
+    List<QueryFilter>? Filters,
+    SortCriteria? SortCriteria,
+    string? SearchTerm,
+    int? Page,
+    int? PageSize);

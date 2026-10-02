@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Modules.Payments.Application.Rates.Commands.CreateRate;
 using MTK.Modules.Payments.Application.Rates.Commands.UpdateRate;
 using MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates;
@@ -22,6 +23,7 @@ public class RatesController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateRate(
         [FromBody] CreateRateRequest request,
         CancellationToken cancellationToken)
@@ -41,6 +43,7 @@ public class RatesController(ISender sender) : BaseController(sender)
     }
 
     [HttpPut("{rateId:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> UpdateRate(
         Guid rateId,
         [FromBody] UpdateRateRequest request,

@@ -40,7 +40,9 @@ internal sealed class GarageOwnerAssignedDomainEventHandler : DomainEventHandler
             DateTime.UtcNow,
             garage.Id,
             domainEvent.NewOwnerId,
-            domainEvent.PreviousOwnerId);
+            domainEvent.PreviousOwnerId,
+            garage.GarageNumber,
+            garage.Type.ToString());
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }
