@@ -15,7 +15,8 @@ public sealed class UserUpdatedIntegrationEvent : IntegrationEvent
         string firstName,
         string lastName,
         string email,
-        string phoneNumber)
+        string phoneNumber,
+        string? identityId = null)
         : base(integrationEventId, occurredOnUtc)
     {
         UserId = userId;
@@ -23,6 +24,7 @@ public sealed class UserUpdatedIntegrationEvent : IntegrationEvent
         LastName = lastName;
         Email = email;
         PhoneNumber = phoneNumber;
+        IdentityId = identityId;
     }
 
     public Guid UserId { get; }
@@ -30,4 +32,5 @@ public sealed class UserUpdatedIntegrationEvent : IntegrationEvent
     public string LastName { get; }
     public string Email { get; }
     public string PhoneNumber { get; }
+    public string? IdentityId { get; }
 }

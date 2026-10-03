@@ -39,6 +39,8 @@ public sealed class InsertOutboxMessagesInterceptor : SaveChangesInterceptor
     {
         _logger.LogInformation("InsertOutboxMessages - Starting to extract domain events");
 
+        Guid? actorUserId = (context as IHasAuditActor)?.CurrentActorUserId;
+
         var entries = context.ChangeTracker.Entries<Entity>().ToList();
         _logger.LogInformation("Found {Count} Entity entries in ChangeTracker", entries.Count);
 
@@ -78,7 +80,8 @@ public sealed class InsertOutboxMessagesInterceptor : SaveChangesInterceptor
                 Id = domainEvent.Id,
                 Type = domainEvent.GetType().Name,
                 Content = JsonConvert.SerializeObject(domainEvent, SerializerSettings.Instance),
-                OccurredOnUtc = domainEvent.OccurredOnUtc
+                OccurredOnUtc = domainEvent.OccurredOnUtc,
+                TriggeredByUserId = actorUserId
             })
             .ToList();
 

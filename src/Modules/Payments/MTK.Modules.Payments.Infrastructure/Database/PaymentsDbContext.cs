@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Text.Json;
+using MTK.Common.Application.Auditing;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Identity.Application.Abstractions;
 using MTK.Common.Infrastructure.Inbox;
@@ -17,23 +18,29 @@ using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Transactions;
 using MTK.Modules.Payments.Domain.Vendors;
 using MTK.Modules.Payments.Domain.Contracts;
+using MTK.Modules.Payments.Domain.Users;
 
 namespace MTK.Modules.Payments.Infrastructure.Database;
 
-public sealed class PaymentsDbContext : DbContext, IUnitOfWork
+public sealed class PaymentsDbContext : DbContext, IUnitOfWork, IHasAuditActor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserContext _userContext;
+    private readonly IAuditActorAccessor _auditActorAccessor;
 
     public PaymentsDbContext(
         DbContextOptions<PaymentsDbContext> options,
         IHttpContextAccessor httpContextAccessor,
-        IUserContext userContext)
+        IUserContext userContext,
+        IAuditActorAccessor auditActorAccessor)
         : base(options)
     {
         _httpContextAccessor = httpContextAccessor;
         _userContext = userContext;
+        _auditActorAccessor = auditActorAccessor;
     }
+
+    public Guid? CurrentActorUserId { get; private set; }
 
     public DbSet<Rate> Rates { get; set; }
     public DbSet<Charge> Charges { get; set; }
@@ -47,6 +54,7 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork
     public DbSet<Contract> Contracts { get; set; }
     public DbSet<ContractService> ContractServices { get; set; }
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<User> Users => Set<User>();
 
     // Outbox Pattern
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
@@ -76,9 +84,11 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork
         ChangeTracker.DetectChanges();
         ConvertDeletesToSoftDeletes();
 
-        Guid? actorUserId = _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true
-            ? _userContext.UserId
-            : null;
+        Guid? actorUserId = _auditActorAccessor.ActorUserId
+            ?? (_httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true
+                ? _userContext.UserId
+                : null);
+        CurrentActorUserId = actorUserId;
 
         var auditEntries = ChangeTracker.Entries<Entity>()
             .Where(entry => entry.Entity is not AuditLog)

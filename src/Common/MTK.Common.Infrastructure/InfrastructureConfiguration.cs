@@ -4,9 +4,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using MTK.Common.Application.Auditing;
 using MTK.Common.Application.Data;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
+using MTK.Common.Infrastructure.Auditing;
 using MTK.Common.Infrastructure.Database;
 using MTK.Common.Infrastructure.EventBus;
 using MTK.Common.Infrastructure.Messaging;
@@ -35,6 +37,9 @@ public static class InfrastructureConfiguration
 
         // Interceptors
         services.AddScoped<InsertOutboxMessagesInterceptor>();
+
+        // Audit actor override for background (outbox-driven) domain event handlers
+        services.AddScoped<IAuditActorAccessor, AuditActorAccessor>();
 
         // PostgreSQL Connection with Pooling
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(databaseConnectionString);

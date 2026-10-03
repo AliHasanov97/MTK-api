@@ -87,6 +87,9 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                     b.Property<DateTimeOffset?>("ProcessedOnUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("TriggeredByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("text");

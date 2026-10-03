@@ -14,6 +14,8 @@ public sealed record GetPaymentAllocationsQuery(Guid PaymentId) : IQuery<IReadOn
 /// <see cref="Payments.PaymentAllocation.RemainingDebtAfterPayment"/>.
 /// </summary>
 public sealed record PaymentAllocationDetailResponse(
+    // PaymentAllocation-un öz Id-si — AuditLogs-da "kim icra edib"-i axtarmaq üçün.
+    Guid Id,
     Guid ChargeId,
     PropertyType? PropertyType,
     Guid? PropertyId,

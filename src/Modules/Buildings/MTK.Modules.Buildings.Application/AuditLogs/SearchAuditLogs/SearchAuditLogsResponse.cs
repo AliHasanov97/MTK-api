@@ -1,3 +1,5 @@
+using MTK.Common.Presentation.Responses;
+
 namespace MTK.Modules.Buildings.Application.AuditLogs.SearchAuditLogs;
 
 public sealed record SearchAuditLogsResponse(
@@ -13,5 +15,7 @@ public sealed record AuditLogDto(
     string Action,
     string? OldValues,
     string? NewValues,
-    Guid? UserId,
+    // Bu modulun öz User snapshot-undan (Identity-dən sync) — Id+ad, frontend-də
+    // ayrıca sorğu getmədən birbaşa göstərmək üçün.
+    ResponseObjectWithName? User,
     DateTime Timestamp);

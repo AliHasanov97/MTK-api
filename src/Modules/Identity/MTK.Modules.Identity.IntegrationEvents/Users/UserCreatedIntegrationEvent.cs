@@ -16,7 +16,8 @@ public sealed class UserCreatedIntegrationEvent : IntegrationEvent
         string lastName,
         string email,
         string phoneNumber,
-        string[] roleNames)
+        string[] roleNames,
+        string? identityId = null)
         : base(integrationEventId, occurredOnUtc)
     {
         UserId = userId;
@@ -25,6 +26,7 @@ public sealed class UserCreatedIntegrationEvent : IntegrationEvent
         Email = email;
         PhoneNumber = phoneNumber;
         RoleNames = roleNames ?? Array.Empty<string>();
+        IdentityId = identityId;
     }
 
     public Guid UserId { get; }
@@ -33,6 +35,9 @@ public sealed class UserCreatedIntegrationEvent : IntegrationEvent
     public string Email { get; }
     public string PhoneNumber { get; }
     public string[] RoleNames { get; }
+
+    /// <summary>Keycloak-dakı subject id-si (User.IdentityId) — digər modullar öz snapshot-larında saxlasın deyə.</summary>
+    public string? IdentityId { get; }
 
     /// <summary>
     /// Helper method to check if user has a specific role

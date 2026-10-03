@@ -44,7 +44,8 @@ internal sealed class UserCreatedDomainEventHandler : DomainEventHandler<UserCre
             user.LastName,
             user.Email,
             user.PhoneNumber ?? string.Empty,
-            domainEvent.RoleNames);
+            domainEvent.RoleNames,
+            user.IdentityId);
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

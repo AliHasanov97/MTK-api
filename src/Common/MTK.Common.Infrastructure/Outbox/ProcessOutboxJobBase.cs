@@ -3,6 +3,7 @@ using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MTK.Common.Application.Auditing;
 using MTK.Common.Application.Data;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
@@ -78,6 +79,9 @@ public abstract class ProcessOutboxJobBase(
 
                     using IServiceScope scope = serviceScopeFactory.CreateScope();
 
+                    scope.ServiceProvider.GetRequiredService<IAuditActorAccessor>()
+                        .SetActorUserId(outboxMessage.TriggeredByUserId);
+
                     IEnumerable<IDomainEventHandler> handlers = GetHandlers(
                         domainEvent.GetType(),
                         scope.ServiceProvider,
@@ -147,7 +151,8 @@ public abstract class ProcessOutboxJobBase(
             $"""
              SELECT
                 "Id" AS {nameof(OutboxMessageResponse.Id)},
-                "Content" AS {nameof(OutboxMessageResponse.Content)}
+                "Content" AS {nameof(OutboxMessageResponse.Content)},
+                "TriggeredByUserId" AS {nameof(OutboxMessageResponse.TriggeredByUserId)}
              FROM {Schema}.outbox_messages
              WHERE "ProcessedOnUtc" IS NULL
              ORDER BY "OccurredOnUtc"
@@ -213,5 +218,5 @@ public abstract class ProcessOutboxJobBase(
         return handlers;
     }
 
-    private sealed record OutboxMessageResponse(Guid Id, string Content);
+    private sealed record OutboxMessageResponse(Guid Id, string Content, Guid? TriggeredByUserId);
 }

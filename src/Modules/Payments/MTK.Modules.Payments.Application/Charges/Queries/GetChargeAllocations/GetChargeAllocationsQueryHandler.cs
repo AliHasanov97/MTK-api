@@ -39,6 +39,7 @@ internal sealed class GetChargeAllocationsQueryHandler
             {
                 var payment = paymentsById[a.PaymentId];
                 return new ChargeAllocationResponse(
+                    a.Id,
                     payment.Id,
                     a.Amount,
                     payment.PaymentDate,

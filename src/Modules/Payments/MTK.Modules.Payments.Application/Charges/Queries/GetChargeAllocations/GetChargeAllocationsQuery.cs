@@ -5,6 +5,8 @@ namespace MTK.Modules.Payments.Application.Charges.Queries.GetChargeAllocations;
 public sealed record GetChargeAllocationsQuery(Guid ChargeId) : IQuery<IReadOnlyCollection<ChargeAllocationResponse>>;
 
 public sealed record ChargeAllocationResponse(
+    // PaymentAllocation-un öz Id-si — AuditLogs-da "kim icra edib"-i axtarmaq üçün.
+    Guid Id,
     Guid PaymentId,
     decimal AllocatedAmount,
     DateTimeOffset PaymentDate,

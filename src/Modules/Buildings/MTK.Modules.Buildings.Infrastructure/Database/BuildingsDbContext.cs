@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Text.Json;
+using MTK.Common.Application.Auditing;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Identity.Application.Abstractions;
 using MTK.Common.Infrastructure.Inbox;
@@ -13,23 +14,29 @@ using MTK.Modules.Buildings.Domain.Garages;
 using MTK.Modules.Buildings.Domain.Owners;
 using MTK.Modules.Buildings.Domain.OwnershipHistories;
 using MTK.Modules.Buildings.Domain.AuditLogs;
+using MTK.Modules.Buildings.Domain.Users;
 
 namespace MTK.Modules.Buildings.Infrastructure.Database;
 
-public sealed class BuildingsDbContext : DbContext, IUnitOfWork
+public sealed class BuildingsDbContext : DbContext, IUnitOfWork, IHasAuditActor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserContext _userContext;
+    private readonly IAuditActorAccessor _auditActorAccessor;
 
     public BuildingsDbContext(
         DbContextOptions<BuildingsDbContext> options,
         IHttpContextAccessor httpContextAccessor,
-        IUserContext userContext)
+        IUserContext userContext,
+        IAuditActorAccessor auditActorAccessor)
         : base(options)
     {
         _httpContextAccessor = httpContextAccessor;
         _userContext = userContext;
+        _auditActorAccessor = auditActorAccessor;
     }
+
+    public Guid? CurrentActorUserId { get; private set; }
 
     public DbSet<Building> Buildings { get; set; }
     public DbSet<Apartment> Apartments { get; set; }
@@ -37,6 +44,7 @@ public sealed class BuildingsDbContext : DbContext, IUnitOfWork
     public DbSet<Garage> Garages { get; set; }
     public DbSet<OwnershipHistory> OwnershipHistories { get; set; }
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<User> Users => Set<User>();
 
     // Outbox Pattern
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
@@ -66,9 +74,11 @@ public sealed class BuildingsDbContext : DbContext, IUnitOfWork
         ChangeTracker.DetectChanges();
         ConvertDeletesToSoftDeletes();
 
-        Guid? actorUserId = _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true
-            ? _userContext.UserId
-            : null;
+        Guid? actorUserId = _auditActorAccessor.ActorUserId
+            ?? (_httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true
+                ? _userContext.UserId
+                : null);
+        CurrentActorUserId = actorUserId;
 
         var auditEntries = ChangeTracker.Entries<Entity>()
             .Where(entry => entry.Entity is not AuditLog)

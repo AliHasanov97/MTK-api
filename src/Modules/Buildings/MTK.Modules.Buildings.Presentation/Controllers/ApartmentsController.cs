@@ -9,6 +9,7 @@ using MTK.Modules.Buildings.Application.Apartments.Commands.UpdateApartment;
 using MTK.Modules.Buildings.Application.Apartments.Queries.GetApartmentById;
 using MTK.Modules.Buildings.Application.Apartments.Queries.GetApartmentsByBuilding;
 using MTK.Modules.Buildings.Application.Apartments.Queries.SearchApartments;
+using MTK.Modules.Buildings.Application.OwnershipHistories.Queries.GetOwnershipHistoryByApartment;
 
 namespace MTK.Modules.Buildings.Presentation.Controllers;
 
@@ -42,6 +43,16 @@ public class ApartmentsController(ISender sender) : BaseController(sender)
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+    }
+
+    [Produces<List<OwnershipHistoryResponse>>]
+    [HttpGet("{id:guid}/ownership-history")]
+    public async Task<IActionResult> GetOwnershipHistory(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetOwnershipHistoryByApartmentQuery(id);
+        var result = await _sender.Send(query, cancellationToken);
+
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
     }
 
     [Produces<List<ApartmentResponse>>]

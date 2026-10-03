@@ -17,6 +17,7 @@ using MTK.Modules.Payments.Infrastructure.Repositories;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
 using MTK.Modules.Buildings.IntegrationEvents.Garages;
 using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
+using MTK.Modules.Identity.IntegrationEvents.Users;
 using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
 
 namespace MTK.Modules.Payments.Infrastructure;
@@ -73,6 +74,7 @@ public static class PaymentsModule
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IVendorChargeRepository, VendorChargeRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();
@@ -137,5 +139,11 @@ public static class PaymentsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<GarageOwnerChangedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<GarageOwnerRemovedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<OwnershipTransferredIntegrationEvent>>();
+
+        // Register integration event consumers from Identity module — used to keep
+        // this module's own User snapshot (AuditLog.UserId -> readable name) in sync.
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserUpdatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserDeletedIntegrationEvent>>();
     }
 }

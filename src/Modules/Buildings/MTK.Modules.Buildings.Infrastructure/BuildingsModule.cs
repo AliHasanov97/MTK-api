@@ -66,6 +66,7 @@ public static class BuildingsModule
         services.AddScoped<IGarageRepository, GarageRepository>();
         services.AddScoped<IOwnershipHistoryRepository, OwnershipHistoryRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         // Outbox & Inbox Configuration
         services.Configure<OutboxOptions>(configuration.GetSection("Buildings:Outbox"));
@@ -114,5 +115,6 @@ public static class BuildingsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserRoleChangedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserDeletedIntegrationEvent>>();
     }
 }

@@ -19,6 +19,8 @@
     <ProjectReference Include="..\MTK.Modules.Payments.Application\MTK.Modules.Payments.Application.csproj" />
     <ProjectReference Include="..\MTK.Modules.Payments.IntegrationEvents\MTK.Modules.Payments.IntegrationEvents.csproj" />
     <ProjectReference Include="..\..\Buildings\MTK.Modules.Buildings.IntegrationEvents\MTK.Modules.Buildings.IntegrationEvents.csproj" />
+
+    <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
   </ItemGroup>
 
 </Project>

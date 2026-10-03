@@ -1,5 +1,6 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
+using MTK.Common.Presentation.Responses;
 using MTK.Modules.Payments.Domain.Repositories;
 
 namespace MTK.Modules.Payments.Application.AuditLogs.SearchAuditLogs;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Payments.Application.AuditLogs.SearchAuditLogs;
 internal sealed class SearchAuditLogsQueryHandler : IQueryHandler<SearchAuditLogsQuery, SearchAuditLogsResponse>
 {
     private readonly IAuditLogRepository _auditLogRepository;
+    private readonly IUserRepository _userRepository;
 
-    public SearchAuditLogsQueryHandler(IAuditLogRepository auditLogRepository)
+    public SearchAuditLogsQueryHandler(IAuditLogRepository auditLogRepository, IUserRepository userRepository)
     {
         _auditLogRepository = auditLogRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<Result<SearchAuditLogsResponse>> Handle(
@@ -31,6 +34,13 @@ internal sealed class SearchAuditLogsQueryHandler : IQueryHandler<SearchAuditLog
             request.SearchTerm,
             cancellationToken);
 
+        // UserId -> ad: bu modulun öz User snapshot-undan (Identity-dən sync edilmiş),
+        // frontend-in UserId-ni ayrıca sorğu ilə ada çevirməsinə ehtiyac qalmasın deyə.
+        var userIds = auditLogs.Where(al => al.UserId.HasValue).Select(al => al.UserId!.Value).Distinct().ToList();
+        var usersById = userIds.Count > 0
+            ? (await _userRepository.ListFromIdsAsync(userIds, cancellationToken)).ToDictionary(u => u.Id)
+            : [];
+
         var items = auditLogs.Select(al => new AuditLogDto(
             al.Id,
             al.EntityType,
@@ -38,7 +48,9 @@ internal sealed class SearchAuditLogsQueryHandler : IQueryHandler<SearchAuditLog
             al.Action,
             al.OldValues,
             al.NewValues,
-            al.UserId,
+            al.UserId.HasValue && usersById.TryGetValue(al.UserId.Value, out var user)
+                ? ResponseObjectWithName.Create(user.Id, user.FullName)
+                : null,
             al.Timestamp)).ToList();
 
         var response = new SearchAuditLogsResponse(

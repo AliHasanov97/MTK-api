@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MTK.Common.Application.Auditing;
 using MTK.Common.Infrastructure.Inbox;
 using MTK.Common.Infrastructure.Outbox;
 using IUnitOfWork = MTK.Modules.Identity.Application.Abstractions.Data.IUnitOfWork;
@@ -11,17 +12,22 @@ using MTK.Common.Domain.Abstractions;
 
 namespace MTK.Modules.Identity.Infrastructure.Database;
 
-public sealed class IdentityDbContext : DbContext, IUnitOfWork
+public sealed class IdentityDbContext : DbContext, IUnitOfWork, IHasAuditActor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IAuditActorAccessor _auditActorAccessor;
 
     public IdentityDbContext(
         DbContextOptions<IdentityDbContext> options,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IAuditActorAccessor auditActorAccessor)
         : base(options)
     {
         _httpContextAccessor = httpContextAccessor;
+        _auditActorAccessor = auditActorAccessor;
     }
+
+    public Guid? CurrentActorUserId { get; private set; }
 
     public DbSet<User> Users => Set<User>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -56,17 +62,22 @@ public sealed class IdentityDbContext : DbContext, IUnitOfWork
     {
         ChangeTracker.DetectChanges();
 
-        var principal = _httpContextAccessor.HttpContext?.User;
-        var identityId = principal?.Identity?.IsAuthenticated == true
-            ? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            : null;
-        Guid? actorUserId = identityId is null
-            ? null
-            : await Users.IgnoreQueryFilters()
-                .AsNoTracking()
-                .Where(user => user.IdentityId == identityId)
-                .Select(user => (Guid?)user.Id)
-                .SingleOrDefaultAsync(cancellationToken);
+        Guid? actorUserId = _auditActorAccessor.ActorUserId;
+        if (actorUserId is null)
+        {
+            var principal = _httpContextAccessor.HttpContext?.User;
+            var identityId = principal?.Identity?.IsAuthenticated == true
+                ? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                : null;
+            actorUserId = identityId is null
+                ? null
+                : await Users.IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .Where(user => user.IdentityId == identityId)
+                    .Select(user => (Guid?)user.Id)
+                    .SingleOrDefaultAsync(cancellationToken);
+        }
+        CurrentActorUserId = actorUserId;
 
         var auditEntries = ChangeTracker.Entries<Entity>()
             .Where(entry => entry.Entity is not AuditLog)
