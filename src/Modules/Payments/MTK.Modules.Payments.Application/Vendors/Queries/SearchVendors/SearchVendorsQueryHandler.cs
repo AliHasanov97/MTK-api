@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Payments.Application.Vendors.Queries.SearchVendors;
 internal sealed class SearchVendorsQueryHandler : IQueryHandler<SearchVendorsQuery, SearchVendorsResponse>
 {
     private readonly IVendorRepository _vendorRepository;
+    private readonly IMapper _mapper;
 
-    public SearchVendorsQueryHandler(IVendorRepository vendorRepository)
+    public SearchVendorsQueryHandler(IVendorRepository vendorRepository, IMapper mapper)
     {
         _vendorRepository = vendorRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<SearchVendorsResponse>> Handle(
@@ -31,17 +34,7 @@ internal sealed class SearchVendorsQueryHandler : IQueryHandler<SearchVendorsQue
             request.SearchTerm,
             cancellationToken);
 
-        var items = vendors.Select(v => new VendorSearchResult(
-            v.Id,
-            v.Name,
-            v.VendorType,
-            v.Voen,
-            v.Director,
-            v.Email,
-            v.Phone,
-            v.Address,
-            v.IsActive,
-            v.CreatedAt)).ToList();
+        var items = _mapper.Map<IReadOnlyCollection<VendorSearchResult>>(vendors);
 
         var response = new SearchVendorsResponse(
             items,

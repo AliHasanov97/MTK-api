@@ -25,12 +25,8 @@ public class RolesController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateRealmRole([FromBody] CreateRealmRoleRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateRealmRole([FromBody] CreateRealmRoleCommand command, CancellationToken cancellationToken)
     {
-        var command = new CreateRealmRoleCommand(
-            request.Name,
-            request.Description);
-
         var result = await _sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -88,15 +84,8 @@ public class RolesController : ControllerBase
 
     [HttpPost("search")]
     [Authorize]
-    public async Task<IActionResult> SearchRoles([FromBody] SearchRolesRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SearchRoles([FromBody] SearchRolesQuery query, CancellationToken cancellationToken)
     {
-        var query = new SearchRolesQuery(
-            request.SearchTerm,
-            request.PageNumber,
-            request.PageSize,
-            request.SortBy,
-            request.SortDirection);
-
         var result = await _sender.Send(query, cancellationToken);
 
         if (result.IsFailure)
@@ -124,14 +113,9 @@ public class RolesController : ControllerBase
 
     [HttpPatch("{oldRoleName}")]
     [Authorize]
-    public async Task<IActionResult> UpdateRole(string oldRoleName, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateRole(string oldRoleName, [FromBody] UpdateRoleCommand command, CancellationToken cancellationToken)
     {
-        var command = new UpdateRoleCommand(
-            oldRoleName,
-            request.Name,
-            request.Description);
-
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(command with { OldRoleName = oldRoleName }, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -156,19 +140,3 @@ public class RolesController : ControllerBase
         return NoContent();
     }
 }
-
-// Request DTOs
-public sealed record CreateRealmRoleRequest(
-    string Name,
-    string? Description);
-
-public sealed record UpdateRoleRequest(
-    string Name,
-    string? Description);
-
-public sealed record SearchRolesRequest(
-    string? SearchTerm,
-    int PageNumber = 1,
-    int PageSize = 10,
-    string? SortBy = null,
-    string? SortDirection = null);

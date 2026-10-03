@@ -45,15 +45,8 @@ public class GroupsController : ControllerBase
 
     [HttpPost("search")]
     [Authorize]
-    public async Task<IActionResult> SearchGroups([FromBody] SearchGroupsRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SearchGroups([FromBody] SearchGroupsQuery query, CancellationToken cancellationToken)
     {
-        var query = new SearchGroupsQuery(
-            request.SearchTerm,
-            request.PageNumber,
-            request.PageSize,
-            request.SortBy,
-            request.SortDirection);
-
         var result = await _sender.Send(query, cancellationToken);
 
         if (result.IsFailure)
@@ -81,13 +74,8 @@ public class GroupsController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateGroup([FromBody] CreateGroupCommand command, CancellationToken cancellationToken)
     {
-        var command = new CreateGroupCommand(
-            request.Name,
-            request.Description,
-            request.ParentGroupId);
-
         var result = await _sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -100,15 +88,9 @@ public class GroupsController : ControllerBase
 
     [HttpPatch("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> UpdateGroup(Guid id, [FromBody] UpdateGroupRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateGroup(Guid id, [FromBody] UpdateGroupCommand command, CancellationToken cancellationToken)
     {
-        var command = new UpdateGroupCommand(
-            id,
-            request.Name,
-            request.Description,
-            request.ParentGroupId);
-
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(command with { Id = id }, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -165,12 +147,8 @@ public class GroupsController : ControllerBase
 
     [HttpPost("roles")]
     [Authorize]
-    public async Task<IActionResult> AssignRolesToGroup([FromBody] AssignRolesToGroupRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> AssignRolesToGroup([FromBody] AssignRolesToGroupCommand command, CancellationToken cancellationToken)
     {
-        var command = new AssignRolesToGroupCommand(
-            request.GroupId,
-            request.RoleNames);
-
         var result = await _sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -183,13 +161,9 @@ public class GroupsController : ControllerBase
 
     [HttpDelete("{groupId:guid}/roles")]
     [Authorize]
-    public async Task<IActionResult> RemoveRolesFromGroup(Guid groupId, [FromBody] RemoveRolesFromGroupRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> RemoveRolesFromGroup(Guid groupId, [FromBody] RemoveRolesFromGroupCommand command, CancellationToken cancellationToken)
     {
-        var command = new RemoveRolesFromGroupCommand(
-            groupId,
-            request.RoleNames);
-
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(command with { GroupId = groupId }, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -244,27 +218,3 @@ public class GroupsController : ControllerBase
         return Ok(result.Value);
     }
 }
-
-// Request DTOs
-public sealed record CreateGroupRequest(
-    string Name,
-    string? Description,
-    Guid? ParentGroupId);
-
-public sealed record UpdateGroupRequest(
-    string Name,
-    string? Description,
-    Guid? ParentGroupId);
-
-public sealed record SearchGroupsRequest(
-    string? SearchTerm,
-    int PageNumber = 1,
-    int PageSize = 10,
-    string? SortBy = null,
-    string? SortDirection = null);
-
-public sealed record AssignRolesToGroupRequest(
-    Guid GroupId,
-    List<string> RoleNames);
-
-public sealed record RemoveRolesFromGroupRequest(List<string> RoleNames);

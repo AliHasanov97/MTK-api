@@ -18,7 +18,7 @@ internal sealed class UpdateRoleCommandHandler : ICommandHandler<UpdateRoleComma
         // Update role directly in Keycloak
         await _authenticationService.UpdateRealmRoleAsync(
             request.OldRoleName,
-            request.NewRoleName,
+            request.Name,
             request.Description ?? string.Empty,
             cancellationToken);
 

@@ -2,10 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MTK.Common.Application.Behaviors;
 using MTK.Common.Infrastructure;
+using MTK.Modules.Buildings.Application;
 using MTK.Modules.Buildings.Infrastructure;
 using MTK.Modules.Buildings.Infrastructure.Database;
+using MTK.Modules.Identity.Application;
 using MTK.Modules.Identity.Infrastructure;
 using MTK.Modules.Identity.Infrastructure.Database;
+using MTK.Modules.Payments.Application;
 using MTK.Modules.Payments.Infrastructure;
 using MTK.Modules.Payments.Infrastructure.Database;
 
@@ -24,7 +27,10 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            // Not CORS-safelisted by default — without this, the browser's fetch()
+            // can read the file body of an export response but not its filename.
+            .WithExposedHeaders("Content-Disposition");
     });
 });
 
@@ -103,6 +109,15 @@ builder.Services.AddMediatR(config =>
     config.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 
+// AutoMapper must be registered exactly once here, scanning every module's Profile
+// classes together — calling AddAutoMapper per-module would build a separate
+// MapperConfiguration each time and the last call would silently win over the rest.
+builder.Services.AddAutoMapper(
+    cfg => { },
+    typeof(PaymentsMappingProfile).Assembly,
+    typeof(BuildingsMappingProfile).Assembly,
+    typeof(IdentityMappingProfile).Assembly);
+
 // Add Modules
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddBuildingsModule(builder.Configuration);
@@ -117,6 +132,12 @@ builder.Services.AddPaymentsModule(builder.Configuration);
 // builder.Services.AddVotingModule(builder.Configuration);
 
 var app = builder.Build();
+
+// Fail fast on any invalid AutoMapper configuration (e.g. a renamed/computed
+// destination member wired with ForMember instead of ForCtorParam on a record
+// with no parameterless constructor) at startup, instead of on the first request
+// that happens to hit that particular mapping.
+app.Services.GetRequiredService<AutoMapper.IConfigurationProvider>().AssertConfigurationIsValid();
 
 // ========== AUTO MIGRATION ==========
 // Automatically apply pending migrations on startup

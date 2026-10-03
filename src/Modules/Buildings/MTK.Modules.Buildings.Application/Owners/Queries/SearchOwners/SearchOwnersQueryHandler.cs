@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.Domain.Repositories;
@@ -8,10 +9,12 @@ internal sealed class SearchOwnersQueryHandler
     : IQueryHandler<SearchOwnersQuery, SearchOwnersResponse>
 {
     private readonly IOwnerRepository _ownerRepository;
+    private readonly IMapper _mapper;
 
-    public SearchOwnersQueryHandler(IOwnerRepository ownerRepository)
+    public SearchOwnersQueryHandler(IOwnerRepository ownerRepository, IMapper mapper)
     {
         _ownerRepository = ownerRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<SearchOwnersResponse>> Handle(
@@ -32,13 +35,7 @@ internal sealed class SearchOwnersQueryHandler
             request.SearchTerm,
             cancellationToken);
 
-        var items = owners.Select(owner => new OwnerListItem(
-            owner.Id,
-            owner.UserId,
-            owner.FullName,
-            owner.Email,
-            owner.PhoneNumber,
-            owner.IsActive)).ToList();
+        var items = _mapper.Map<List<OwnerListItem>>(owners);
 
         var response = new SearchOwnersResponse(
             items,

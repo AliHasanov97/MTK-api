@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Payments.Application.CompanyBalances.Queries.GetCompanyBal
 internal sealed class GetCompanyBalanceQueryHandler : IQueryHandler<GetCompanyBalanceQuery, CompanyBalanceResponse>
 {
     private readonly ICompanyBalanceRepository _companyBalanceRepository;
+    private readonly IMapper _mapper;
 
-    public GetCompanyBalanceQueryHandler(ICompanyBalanceRepository companyBalanceRepository)
+    public GetCompanyBalanceQueryHandler(ICompanyBalanceRepository companyBalanceRepository, IMapper mapper)
     {
         _companyBalanceRepository = companyBalanceRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<CompanyBalanceResponse>> Handle(
@@ -26,9 +29,6 @@ internal sealed class GetCompanyBalanceQueryHandler : IQueryHandler<GetCompanyBa
             return Result.Success(new CompanyBalanceResponse(0, 0, 0));
         }
 
-        return Result.Success(new CompanyBalanceResponse(
-            balance.TotalIncome,
-            balance.TotalExpense,
-            balance.CurrentBalance));
+        return Result.Success(_mapper.Map<CompanyBalanceResponse>(balance));
     }
 }

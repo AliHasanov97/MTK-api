@@ -18,12 +18,8 @@ public class ProfileController : ControllerBase
 
     [HttpPatch("change-info")]
     [Authorize]
-    public async Task<IActionResult> ChangeUserInfo([FromBody] ChangeUserInfoRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ChangeUserInfo([FromBody] ChangeUserInfoCommand command, CancellationToken cancellationToken)
     {
-        var command = new ChangeUserInfoCommand(
-            request.Password,
-            request.PhoneNumber);
-
         var result = await _sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -34,8 +30,3 @@ public class ProfileController : ControllerBase
         return NoContent();
     }
 }
-
-// Request DTO
-public sealed record ChangeUserInfoRequest(
-    string? Password,
-    string? PhoneNumber);

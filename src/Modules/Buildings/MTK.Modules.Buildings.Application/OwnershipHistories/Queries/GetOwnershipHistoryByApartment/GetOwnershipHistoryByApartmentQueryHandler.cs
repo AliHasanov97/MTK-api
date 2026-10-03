@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.Domain.Repositories;
@@ -8,10 +9,14 @@ internal sealed class GetOwnershipHistoryByApartmentQueryHandler
     : IQueryHandler<GetOwnershipHistoryByApartmentQuery, IReadOnlyCollection<OwnershipHistoryResponse>>
 {
     private readonly IOwnershipHistoryRepository _ownershipHistoryRepository;
+    private readonly IMapper _mapper;
 
-    public GetOwnershipHistoryByApartmentQueryHandler(IOwnershipHistoryRepository ownershipHistoryRepository)
+    public GetOwnershipHistoryByApartmentQueryHandler(
+        IOwnershipHistoryRepository ownershipHistoryRepository,
+        IMapper mapper)
     {
         _ownershipHistoryRepository = ownershipHistoryRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyCollection<OwnershipHistoryResponse>>> Handle(
@@ -20,17 +25,8 @@ internal sealed class GetOwnershipHistoryByApartmentQueryHandler
     {
         var histories = await _ownershipHistoryRepository.GetByApartmentIdAsync(request.ApartmentId, cancellationToken);
 
-        var response = histories
-            .Select(h => new OwnershipHistoryResponse(
-                h.Id,
-                h.PreviousOwnerId,
-                h.PreviousOwnerName,
-                h.NewOwnerId,
-                h.NewOwnerName,
-                h.TransferDate))
-            .OrderBy(h => h.TransferDate)
-            .ToList();
+        var ordered = histories.OrderBy(h => h.TransferDate).ToList();
 
-        return response;
+        return _mapper.Map<List<OwnershipHistoryResponse>>(ordered);
     }
 }

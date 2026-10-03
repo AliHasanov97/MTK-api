@@ -35,16 +35,9 @@ public class OwnersController(ISender sender) : BaseController(sender)
     [Produces<SearchOwnersResponse>]
     [HttpPost("search")]
     public async Task<IActionResult> SearchOwners(
-        [FromBody] SearchOwnersRequest request,
+        [FromBody] SearchOwnersQuery query,
         CancellationToken cancellationToken)
     {
-        var query = new SearchOwnersQuery(
-            request.Filters,
-            request.SortCriteria,
-            request.SearchTerm,
-            request.Page,
-            request.PageSize);
-
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess
@@ -59,16 +52,9 @@ public class OwnersController(ISender sender) : BaseController(sender)
     [HttpPost("passive")]
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreatePassiveOwner(
-        [FromBody] CreatePassiveOwnerRequest request,
+        [FromBody] CreatePassiveOwnerCommand command,
         CancellationToken cancellationToken)
     {
-        var command = new CreatePassiveOwnerCommand(
-            request.FirstName,
-            request.LastName,
-            request.PhoneNumber,
-            request.Email,
-            request.Notes);
-
         var result = await _sender.Send(command, cancellationToken);
 
         return result.IsSuccess
@@ -83,24 +69,13 @@ public class OwnersController(ISender sender) : BaseController(sender)
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> LinkOwnerToUser(
         Guid id,
-        [FromBody] LinkOwnerToUserRequest request,
+        [FromBody] LinkOwnerToUserCommand command,
         CancellationToken cancellationToken)
     {
-        var command = new LinkOwnerToUserCommand(id, request.UserId);
-
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(command with { OwnerId = id }, cancellationToken);
 
         return result.IsSuccess
             ? Success("Sahib hesaba uğurla bağlandı")
             : BadRequest(result.Error);
     }
 }
-
-public sealed record CreatePassiveOwnerRequest(
-    string FirstName,
-    string LastName,
-    string PhoneNumber,
-    string Email,
-    string? Notes = null);
-
-public sealed record LinkOwnerToUserRequest(Guid UserId);

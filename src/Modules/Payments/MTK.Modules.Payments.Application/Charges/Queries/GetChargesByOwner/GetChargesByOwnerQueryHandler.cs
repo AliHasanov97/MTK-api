@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Payments.Application.Charges.Queries.GetChargesByOwner;
 internal sealed class GetChargesByOwnerQueryHandler : IQueryHandler<GetChargesByOwnerQuery, IReadOnlyCollection<ChargeResponse>>
 {
     private readonly IChargeRepository _chargeRepository;
+    private readonly IMapper _mapper;
 
-    public GetChargesByOwnerQueryHandler(IChargeRepository chargeRepository)
+    public GetChargesByOwnerQueryHandler(IChargeRepository chargeRepository, IMapper mapper)
     {
         _chargeRepository = chargeRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyCollection<ChargeResponse>>> Handle(
@@ -19,24 +22,6 @@ internal sealed class GetChargesByOwnerQueryHandler : IQueryHandler<GetChargesBy
     {
         var charges = await _chargeRepository.GetByOwnerIdAsync(request.OwnerId, cancellationToken);
 
-        var response = charges
-            .Select(c => new ChargeResponse(
-                c.Id,
-                c.PartyId,
-                c.PropertyType,
-                c.PropertyId,
-                c.Period,
-                c.Amount,
-                c.PaidAmount,
-                c.Status,
-                c.CreatedAt,
-                c.Description,
-                c.AreaSquareMeters,
-                c.RateAmount,
-                c.RateType,
-                c.IssuedOn))
-            .ToList();
-
-        return response;
+        return _mapper.Map<List<ChargeResponse>>(charges);
     }
 }

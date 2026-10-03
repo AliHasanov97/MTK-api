@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
-using MTK.Common.Domain.Queries;
 using MTK.Modules.Buildings.Application.Apartments.Commands.AssignOwnerToApartment;
 using MTK.Modules.Buildings.Application.Apartments.Commands.CreateApartment;
 using MTK.Modules.Buildings.Application.Apartments.Commands.TransferApartmentOwnership;
@@ -18,16 +17,9 @@ public class ApartmentsController(ISender sender) : BaseController(sender)
     [Produces<SearchApartmentsResponse>]
     [HttpPost("search")]
     public async Task<IActionResult> SearchApartments(
-        [FromBody] SearchApartmentsRequest request,
+        [FromBody] SearchApartmentsQuery query,
         CancellationToken cancellationToken)
     {
-        var query = new SearchApartmentsQuery(
-            request.Filters,
-            request.SortCriteria,
-            request.SearchTerm,
-            request.Page,
-            request.PageSize);
-
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess

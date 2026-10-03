@@ -53,16 +53,9 @@ public class GaragesController(ISender sender) : BaseController(sender)
     [Produces<SearchGaragesResponse>]
     [HttpPost("search")]
     public async Task<IActionResult> SearchGarages(
-        [FromBody] SearchGaragesRequest request,
+        [FromBody] SearchGaragesQuery query,
         CancellationToken cancellationToken)
     {
-        var query = new SearchGaragesQuery(
-            request.Filters,
-            request.SortCriteria,
-            request.SearchTerm,
-            request.Page,
-            request.PageSize);
-
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess

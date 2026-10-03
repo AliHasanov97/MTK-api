@@ -4,5 +4,5 @@ namespace MTK.Modules.Identity.Application.Roles.UpdateRole;
 
 public sealed record UpdateRoleCommand(
     string OldRoleName,
-    string NewRoleName,
+    string Name,
     string? Description) : ICommand;

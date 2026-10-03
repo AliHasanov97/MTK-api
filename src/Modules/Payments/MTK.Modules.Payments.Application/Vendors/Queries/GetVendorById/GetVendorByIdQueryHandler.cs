@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Payments.Application.Vendors.Queries.GetVendorById;
 internal sealed class GetVendorByIdQueryHandler : IQueryHandler<GetVendorByIdQuery, VendorResponse>
 {
     private readonly IVendorRepository _vendorRepository;
+    private readonly IMapper _mapper;
 
-    public GetVendorByIdQueryHandler(IVendorRepository vendorRepository)
+    public GetVendorByIdQueryHandler(IVendorRepository vendorRepository, IMapper mapper)
     {
         _vendorRepository = vendorRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<VendorResponse>> Handle(
@@ -26,18 +29,6 @@ internal sealed class GetVendorByIdQueryHandler : IQueryHandler<GetVendorByIdQue
                 $"Tədarükçü tapılmadı: {request.VendorId}"));
         }
 
-        return new VendorResponse(
-            vendor.Id,
-            vendor.Name,
-            vendor.VendorType,
-            vendor.Voen,
-            vendor.Director,
-            vendor.Email,
-            vendor.Phone,
-            vendor.Address,
-            vendor.Note,
-            vendor.IsActive,
-            vendor.CreatedAt,
-            vendor.UpdatedAt);
+        return _mapper.Map<VendorResponse>(vendor);
     }
 }

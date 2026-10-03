@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Identity.Domain.Users;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Identity.Application.Users.SearchUsers;
 internal sealed class SearchUsersQueryHandler : IQueryHandler<SearchUsersQuery, SearchUsersResponse>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
 
-    public SearchUsersQueryHandler(IUserRepository userRepository)
+    public SearchUsersQueryHandler(IUserRepository userRepository, IMapper mapper)
     {
         _userRepository = userRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<SearchUsersResponse>> Handle(SearchUsersQuery request, CancellationToken cancellationToken)
@@ -34,17 +37,10 @@ internal sealed class SearchUsersQueryHandler : IQueryHandler<SearchUsersQuery, 
         int totalCount = allUsers.Count();
 
         // Apply pagination
-        var paginatedUsers = allUsers
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(u => new UserSearchResult(
-                u.Id,
-                u.Email,
-                u.FirstName,
-                u.LastName,
-                u.PhoneNumber,
-                u.Status.ToString()))
-            .ToList();
+        var paginatedUsers = _mapper.Map<List<UserSearchResult>>(
+            allUsers
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize));
 
         var response = new SearchUsersResponse(
             paginatedUsers,

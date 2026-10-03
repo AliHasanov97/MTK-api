@@ -9,6 +9,9 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.12.0" />
     <PackageVersion Include="MediatR" Version="14.2.0" />
     <PackageVersion Include="MediatR.Contracts" Version="2.0.1" />
+    <!-- 13.0.1 had a known DoS advisory (GHSA-rvv3-g6hj-g44x / CVE-2026-32933,
+         uncontrolled recursion on deeply nested graphs); 16.2.0 is the latest patched release. -->
+    <PackageVersion Include="AutoMapper" Version="16.2.0" />
 
     <!-- Infrastructure -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
@@ -47,5 +50,9 @@
 
     <!-- Options -->
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+
+    <!-- Document generation -->
+    <PackageVersion Include="QuestPDF" Version="2025.7.4" />
+    <PackageVersion Include="ClosedXML" Version="0.104.2" />
   </ItemGroup>
 </Project>

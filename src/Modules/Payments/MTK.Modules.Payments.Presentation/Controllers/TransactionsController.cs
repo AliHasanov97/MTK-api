@@ -1,11 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
-using MTK.Common.Domain.Queries;
 using MTK.Modules.Payments.Application.Transactions.Commands.CreateManualTransaction;
 using MTK.Modules.Payments.Application.Transactions.Queries.GetTransactionsSummary;
 using MTK.Modules.Payments.Application.Transactions.Queries.SearchTransactions;
-using MTK.Modules.Payments.Domain.Transactions;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
@@ -13,16 +11,9 @@ public class TransactionsController(ISender sender) : BaseController(sender)
 {
     [HttpPost("search")]
     public async Task<IActionResult> SearchTransactions(
-        [FromBody] SearchTransactionsRequest request,
+        [FromBody] SearchTransactionsQuery query,
         CancellationToken cancellationToken)
     {
-        var query = new SearchTransactionsQuery(
-            request.Filters,
-            request.SortCriteria,
-            request.SearchTerm,
-            request.Page,
-            request.PageSize);
-
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess
@@ -32,10 +23,9 @@ public class TransactionsController(ISender sender) : BaseController(sender)
 
     [HttpPost("summary")]
     public async Task<IActionResult> GetTransactionsSummary(
-        [FromBody] TransactionsSummaryRequest request,
+        [FromBody] GetTransactionsSummaryQuery query,
         CancellationToken cancellationToken)
     {
-        var query = new GetTransactionsSummaryQuery(request.Filters);
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess
@@ -51,15 +41,9 @@ public class TransactionsController(ISender sender) : BaseController(sender)
     [HttpPost]
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateManualTransaction(
-        [FromBody] CreateManualTransactionRequest request,
+        [FromBody] CreateManualTransactionCommand command,
         CancellationToken cancellationToken)
     {
-        var command = new CreateManualTransactionCommand(
-            request.Direction,
-            request.Category,
-            request.Amount,
-            request.Description);
-
         var result = await _sender.Send(command, cancellationToken);
 
         return result.IsSuccess
@@ -67,18 +51,3 @@ public class TransactionsController(ISender sender) : BaseController(sender)
             : BadRequest(result.Error);
     }
 }
-
-public sealed record SearchTransactionsRequest(
-    List<QueryFilter>? Filters,
-    SortCriteria? SortCriteria,
-    string? SearchTerm,
-    int? Page,
-    int? PageSize);
-
-public sealed record TransactionsSummaryRequest(List<QueryFilter>? Filters);
-
-public sealed record CreateManualTransactionRequest(
-    TransactionDirection Direction,
-    string Category,
-    decimal Amount,
-    string? Description);

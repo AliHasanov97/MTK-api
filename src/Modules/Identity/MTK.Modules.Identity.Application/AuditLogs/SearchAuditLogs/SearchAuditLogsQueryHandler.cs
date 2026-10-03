@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Identity.Domain.AuditLogs;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Identity.Application.AuditLogs.SearchAuditLogs;
 internal sealed class SearchAuditLogsQueryHandler : IQueryHandler<SearchAuditLogsQuery, SearchAuditLogsResponse>
 {
     private readonly IAuditLogRepository _auditLogRepository;
+    private readonly IMapper _mapper;
 
-    public SearchAuditLogsQueryHandler(IAuditLogRepository auditLogRepository)
+    public SearchAuditLogsQueryHandler(IAuditLogRepository auditLogRepository, IMapper mapper)
     {
         _auditLogRepository = auditLogRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<SearchAuditLogsResponse>> Handle(
@@ -31,15 +34,7 @@ internal sealed class SearchAuditLogsQueryHandler : IQueryHandler<SearchAuditLog
             request.SearchTerm,
             cancellationToken);
 
-        var items = auditLogs.Select(al => new AuditLogDto(
-            al.Id,
-            al.EntityType,
-            al.EntityId,
-            al.Action,
-            al.OldValues,
-            al.NewValues,
-            al.UserId,
-            al.Timestamp.ToUniversalTime().Date)).ToList();
+        var items = _mapper.Map<IReadOnlyCollection<AuditLogDto>>(auditLogs);
 
         var response = new SearchAuditLogsResponse(
             items,

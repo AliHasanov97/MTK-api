@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.VendorCharges.Queries.SearchVendorCharges;
@@ -9,10 +10,12 @@ internal sealed class GetChargesByVendorQueryHandler
     : IQueryHandler<GetChargesByVendorQuery, IReadOnlyCollection<VendorChargeResponse>>
 {
     private readonly IVendorChargeRepository _vendorChargeRepository;
+    private readonly IMapper _mapper;
 
-    public GetChargesByVendorQueryHandler(IVendorChargeRepository vendorChargeRepository)
+    public GetChargesByVendorQueryHandler(IVendorChargeRepository vendorChargeRepository, IMapper mapper)
     {
         _vendorChargeRepository = vendorChargeRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyCollection<VendorChargeResponse>>> Handle(
@@ -21,10 +24,6 @@ internal sealed class GetChargesByVendorQueryHandler
     {
         var charges = await _vendorChargeRepository.ListByVendorAsync(request.VendorId, cancellationToken);
 
-        var response = charges
-            .Select(SearchVendorChargesQueryHandler.ToResponse)
-            .ToList();
-
-        return response;
+        return _mapper.Map<List<VendorChargeResponse>>(charges);
     }
 }

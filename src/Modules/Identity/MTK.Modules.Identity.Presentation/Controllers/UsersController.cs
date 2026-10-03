@@ -45,15 +45,8 @@ public class UsersController : ControllerBase
 
     [HttpPost("search")]
     [RequireAnyRole(Roles.Admin)]
-    public async Task<IActionResult> SearchUsers([FromBody] SearchUsersRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SearchUsers([FromBody] SearchUsersQuery query, CancellationToken cancellationToken)
     {
-        var query = new SearchUsersQuery(
-            request.SearchTerm,
-            request.PageNumber,
-            request.PageSize,
-            request.SortBy,
-            request.SortDirection);
-
         var result = await _sender.Send(query, cancellationToken);
 
         if (result.IsFailure)
@@ -81,23 +74,15 @@ public class UsersController : ControllerBase
 
     [HttpPost("register")]
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
-    public async Task<IActionResult> Register([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Register([FromBody] RegisterUserCommand command, CancellationToken cancellationToken)
     {
         // Admin yaratdığı istifadəçiyə istənilən rolu verə bilər; komandant isə yalnız
         // sakin (owner) hesabı yarada bilər — başqa rol (admin, mühasib, işçi və s.)
         // tələb etsə, bloklanır.
-        if (!User.IsInRole(Roles.Admin) && (request.RoleNames is not { Length: 1 } || request.RoleNames[0] != Roles.Owner))
+        if (!User.IsInRole(Roles.Admin) && (command.RoleNames is not { Length: 1 } || command.RoleNames[0] != Roles.Owner))
         {
             return BadRequest(new { error = "Komandant yalnız sakin (owner) hesabı yarada bilər." });
         }
-
-        var command = new RegisterUserCommand(
-            request.Email,
-            request.FirstName,
-            request.LastName,
-            request.Password,
-            request.PhoneNumber,
-            request.RoleNames);
 
         var result = await _sender.Send(command, cancellationToken);
 
@@ -111,15 +96,9 @@ public class UsersController : ControllerBase
 
     [HttpPatch("{id:guid}")]
     [RequireAnyRole(Roles.Admin)]
-    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserCommand command, CancellationToken cancellationToken)
     {
-        var command = new UpdateUserCommand(
-            id,
-            request.FirstName,
-            request.LastName,
-            request.PhoneNumber);
-
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(command with { Id = id }, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -161,10 +140,9 @@ public class UsersController : ControllerBase
 
     [HttpPost("{userId:guid}/roles")]
     [Authorize]
-    public async Task<IActionResult> AssignRolesToUser(Guid userId, [FromBody] AssignRolesRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> AssignRolesToUser(Guid userId, [FromBody] AssignRolesToUserCommand command, CancellationToken cancellationToken)
     {
-        var command = new AssignRolesToUserCommand(userId, request.RoleNames);
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(command with { UserId = userId }, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -176,10 +154,9 @@ public class UsersController : ControllerBase
 
     [HttpDelete("{userId:guid}/roles")]
     [RequireAnyRole(Roles.Admin)]
-    public async Task<IActionResult> RemoveRolesFromUser(Guid userId, [FromBody] RemoveRolesRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> RemoveRolesFromUser(Guid userId, [FromBody] RemoveRolesFromUserCommand command, CancellationToken cancellationToken)
     {
-        var command = new RemoveRolesFromUserCommand(userId, request.RoleNames);
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _sender.Send(command with { UserId = userId }, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -234,28 +211,3 @@ public class UsersController : ControllerBase
         return Ok(result.Value);
     }
 }
-
-// Request DTOs
-public sealed record RegisterUserRequest(
-    string Email,
-    string FirstName,
-    string LastName,
-    string Password,
-    string? PhoneNumber,
-    string[]? RoleNames = null);
-
-public sealed record UpdateUserRequest(
-    string FirstName,
-    string LastName,
-    string? PhoneNumber);
-
-public sealed record SearchUsersRequest(
-    string? SearchTerm,
-    int PageNumber = 1,
-    int PageSize = 10,
-    string? SortBy = null,
-    string? SortDirection = null);
-
-public sealed record AssignRolesRequest(List<string> RoleNames);
-
-public sealed record RemoveRolesRequest(List<string> RoleNames);

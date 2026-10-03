@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Payments.Application.Payments.Queries.SearchPayments;
 internal sealed class SearchPaymentsQueryHandler : IQueryHandler<SearchPaymentsQuery, SearchPaymentsResponse>
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly IMapper _mapper;
 
-    public SearchPaymentsQueryHandler(IPaymentRepository paymentRepository)
+    public SearchPaymentsQueryHandler(IPaymentRepository paymentRepository, IMapper mapper)
     {
         _paymentRepository = paymentRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<SearchPaymentsResponse>> Handle(
@@ -31,17 +34,7 @@ internal sealed class SearchPaymentsQueryHandler : IQueryHandler<SearchPaymentsQ
             request.SearchTerm,
             cancellationToken);
 
-        var items = payments.Select(p => new PaymentSearchResult(
-            p.Id,
-            p.PartyId,
-            p.Amount,
-            p.PaymentMethod,
-            p.PaymentDate,
-            p.Status,
-            p.Notes,
-            p.CreatedAt,
-            p.PropertyId,
-            p.PropertyType)).ToList();
+        var items = _mapper.Map<IReadOnlyCollection<PaymentSearchResult>>(payments);
 
         var response = new SearchPaymentsResponse(
             items,

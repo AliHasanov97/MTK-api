@@ -9,9 +9,11 @@ using MTK.Common.Infrastructure.EventBus;
 using IUnitOfWork = MTK.Modules.Payments.Application.Abstractions.Data.IUnitOfWork;
 using MTK.Common.Infrastructure.Inbox;
 using MTK.Common.Infrastructure.Outbox;
+using MTK.Modules.Payments.Application.Abstractions.Services.Export;
 using MTK.Modules.Payments.Application.Payments.Commands.CreatePayment;
 using MTK.Modules.Payments.Domain.Repositories;
 using MTK.Modules.Payments.Infrastructure.Database;
+using MTK.Modules.Payments.Infrastructure.Export;
 using MTK.Modules.Payments.Infrastructure.Inbox;
 using MTK.Modules.Payments.Infrastructure.Repositories;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
@@ -75,6 +77,11 @@ public static class PaymentsModule
         services.AddScoped<IVendorChargeRepository, VendorChargeRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+
+        // Export services (PDF/Excel)
+        services.AddScoped<IPaymentReceiptExportService, PaymentReceiptExportService>();
+        services.AddScoped<IAnnualPaymentReportExcelExportService, AnnualPaymentReportExcelExportService>();
+        services.AddScoped<IContractExportService, ContractExportService>();
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();

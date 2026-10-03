@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.Application.Buildings.Queries.GetBuildingById;
@@ -9,10 +10,12 @@ internal sealed class GetAllBuildingsQueryHandler
     : IQueryHandler<GetAllBuildingsQuery, IEnumerable<BuildingResponse>>
 {
     private readonly IBuildingRepository _buildingRepository;
+    private readonly IMapper _mapper;
 
-    public GetAllBuildingsQueryHandler(IBuildingRepository buildingRepository)
+    public GetAllBuildingsQueryHandler(IBuildingRepository buildingRepository, IMapper mapper)
     {
         _buildingRepository = buildingRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<IEnumerable<BuildingResponse>>> Handle(
@@ -21,16 +24,6 @@ internal sealed class GetAllBuildingsQueryHandler
     {
         var buildings = await _buildingRepository.GetAllAsync(cancellationToken);
 
-        var response = buildings.Select(building => new BuildingResponse(
-            building.Id,
-            building.Name,
-            building.Address.GetFullAddress(),
-            building.TotalFloors,
-            building.ApartmentsPerFloor,
-            building.TotalApartments,
-            building.Status.ToString(),
-            building.Description));
-
-        return Result.Success(response);
+        return Result.Success(_mapper.Map<IEnumerable<BuildingResponse>>(buildings));
     }
 }

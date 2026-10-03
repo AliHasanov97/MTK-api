@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByOwner;
@@ -9,10 +10,12 @@ internal sealed class GetPaymentsByPropertyQueryHandler
     : IQueryHandler<GetPaymentsByPropertyQuery, IReadOnlyCollection<PaymentResponse>>
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly IMapper _mapper;
 
-    public GetPaymentsByPropertyQueryHandler(IPaymentRepository paymentRepository)
+    public GetPaymentsByPropertyQueryHandler(IPaymentRepository paymentRepository, IMapper mapper)
     {
         _paymentRepository = paymentRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyCollection<PaymentResponse>>> Handle(
@@ -21,20 +24,6 @@ internal sealed class GetPaymentsByPropertyQueryHandler
     {
         var payments = await _paymentRepository.GetByPropertyIdAsync(request.PropertyId, cancellationToken);
 
-        var response = payments
-            .Select(p => new PaymentResponse(
-                p.Id,
-                p.PartyId,
-                p.Amount,
-                p.PaymentMethod,
-                p.PaymentDate,
-                p.Status,
-                p.Notes,
-                p.CreatedAt,
-                p.PropertyId,
-                p.PropertyType))
-            .ToList();
-
-        return response;
+        return _mapper.Map<List<PaymentResponse>>(payments);
     }
 }

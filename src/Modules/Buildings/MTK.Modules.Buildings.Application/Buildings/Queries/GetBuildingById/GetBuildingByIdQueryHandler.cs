@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.Domain.Repositories;
@@ -8,10 +9,12 @@ internal sealed class GetBuildingByIdQueryHandler
     : IQueryHandler<GetBuildingByIdQuery, BuildingResponse>
 {
     private readonly IBuildingRepository _buildingRepository;
+    private readonly IMapper _mapper;
 
-    public GetBuildingByIdQueryHandler(IBuildingRepository buildingRepository)
+    public GetBuildingByIdQueryHandler(IBuildingRepository buildingRepository, IMapper mapper)
     {
         _buildingRepository = buildingRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<BuildingResponse>> Handle(
@@ -29,16 +32,6 @@ internal sealed class GetBuildingByIdQueryHandler
                 $"Bina tapılmadı: {request.BuildingId}"));
         }
 
-        var response = new BuildingResponse(
-            building.Id,
-            building.Name,
-            building.Address.GetFullAddress(),
-            building.TotalFloors,
-            building.ApartmentsPerFloor,
-            building.TotalApartments,
-            building.Status.ToString(),
-            building.Description);
-
-        return Result.Success(response);
+        return Result.Success(_mapper.Map<BuildingResponse>(building));
     }
 }

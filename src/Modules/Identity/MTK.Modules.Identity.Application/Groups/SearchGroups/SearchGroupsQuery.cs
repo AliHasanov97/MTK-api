@@ -4,7 +4,7 @@ namespace MTK.Modules.Identity.Application.Groups.SearchGroups;
 
 public sealed record SearchGroupsQuery(
     string? SearchTerm,
-    int PageNumber,
-    int PageSize,
-    string? SortBy,
-    string? SortDirection) : IQuery<SearchGroupsResponse>;
+    int PageNumber = 1,
+    int PageSize = 10,
+    string? SortBy = null,
+    string? SortDirection = null) : IQuery<SearchGroupsResponse>;

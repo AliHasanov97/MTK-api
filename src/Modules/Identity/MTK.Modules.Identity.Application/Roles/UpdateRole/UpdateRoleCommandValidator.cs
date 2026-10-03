@@ -10,7 +10,7 @@ internal sealed class UpdateRoleCommandValidator : AbstractValidator<UpdateRoleC
             .NotEmpty()
             .MaximumLength(100);
 
-        RuleFor(x => x.NewRoleName)
+        RuleFor(x => x.Name)
             .NotEmpty()
             .MaximumLength(100);
 

@@ -1,14 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
-using MTK.Common.Domain.Queries;
 using MTK.Modules.Payments.Application.Payments.Commands.CreatePayment;
+using MTK.Modules.Payments.Application.Payments.Queries.ExportPaymentReceipt;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentAllocations;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByOwner;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByProperty;
 using MTK.Modules.Payments.Application.Payments.Queries.SearchPayments;
-using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
@@ -42,16 +40,9 @@ public class PaymentsController(ISender sender) : BaseController(sender)
 
     [HttpPost("search")]
     public async Task<IActionResult> SearchPayments(
-        [FromBody] SearchPaymentsRequest request,
+        [FromBody] SearchPaymentsQuery query,
         CancellationToken cancellationToken)
     {
-        var query = new SearchPaymentsQuery(
-            request.Filters,
-            request.SortCriteria,
-            request.SearchTerm,
-            request.Page,
-            request.PageSize);
-
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess
@@ -62,17 +53,9 @@ public class PaymentsController(ISender sender) : BaseController(sender)
     [HttpPost]
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager, Roles.Accountant)]
     public async Task<IActionResult> CreatePayment(
-        [FromBody] CreatePaymentRequest request,
+        [FromBody] CreatePaymentCommand command,
         CancellationToken cancellationToken)
     {
-        var command = new CreatePaymentCommand(
-            request.OwnerId,
-            request.Amount,
-            request.PaymentMethod,
-            request.Notes,
-            request.PropertyId,
-            request.PropertyType);
-
         var result = await _sender.Send(command, cancellationToken);
 
         return result.IsSuccess
@@ -92,19 +75,24 @@ public class PaymentsController(ISender sender) : BaseController(sender)
             ? Success(result.Value)
             : BadRequest(result.Error);
     }
+
+    /// <summary>
+    /// PayerName/PropertyLabel gözlənilir — Payments modulu sahib/tədarükçü adını
+    /// özü bilmir (yalnız Buildings/Identity-də var), frontend-in artıq ekranda
+    /// göstərdiyi adı ötürməsi gözlənilir.
+    /// </summary>
+    [HttpGet("{paymentId:guid}/receipt")]
+    public async Task<IActionResult> ExportReceipt(
+        Guid paymentId,
+        [FromQuery] string? payerName,
+        [FromQuery] string? propertyLabel,
+        CancellationToken cancellationToken)
+    {
+        var query = new ExportPaymentReceiptQuery(paymentId, payerName, propertyLabel);
+        var result = await _sender.Send(query, cancellationToken);
+
+        return result.IsSuccess
+            ? File(result.Value.FileContent, result.Value.ContentType, result.Value.FileName)
+            : BadRequest(result.Error);
+    }
 }
-
-public sealed record SearchPaymentsRequest(
-    List<QueryFilter>? Filters,
-    SortCriteria? SortCriteria,
-    string? SearchTerm,
-    int? Page,
-    int? PageSize);
-
-public sealed record CreatePaymentRequest(
-    Guid OwnerId,
-    decimal Amount,
-    PaymentMethod PaymentMethod,
-    string? Notes,
-    Guid? PropertyId = null,
-    PropertyType? PropertyType = null);

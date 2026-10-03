@@ -16,6 +16,7 @@ using MTK.Common.Infrastructure.Options;
 using MTK.Common.Infrastructure.Outbox;
 using Npgsql;
 using Quartz;
+using QuestPDF.Infrastructure;
 
 namespace MTK.Common.Infrastructure;
 
@@ -28,6 +29,9 @@ public static class InfrastructureConfiguration
         string databaseConnectionString,
         IConfiguration configuration)
     {
+        // Document generation — set once for every module that uses QuestPDF.
+        QuestPDF.Settings.License = LicenseType.Community;
+
         // RabbitMQ Configuration
         services.Configure<RabbitMqOptions>(configuration.GetSection("RabbitMQ"));
 

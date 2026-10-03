@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Identity.Application.Abstractions;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Identity.Application.Groups.GetGroupById;
 internal sealed class GetGroupByIdQueryHandler : IQueryHandler<GetGroupByIdQuery, GroupDetailResponse>
 {
     private readonly IAuthenticationService _authenticationService;
+    private readonly IMapper _mapper;
 
-    public GetGroupByIdQueryHandler(IAuthenticationService authenticationService)
+    public GetGroupByIdQueryHandler(IAuthenticationService authenticationService, IMapper mapper)
     {
         _authenticationService = authenticationService;
+        _mapper = mapper;
     }
 
     public async Task<Result<GroupDetailResponse>> Handle(GetGroupByIdQuery request, CancellationToken cancellationToken)
@@ -23,12 +26,6 @@ internal sealed class GetGroupByIdQueryHandler : IQueryHandler<GetGroupByIdQuery
                 new Error("Group.NotFound", $"Group with ID '{request.Id}' was not found."));
         }
 
-        var response = new GroupDetailResponse(
-            group.Id,
-            group.Name,
-            group.Description,
-            group.ParentId);
-
-        return Result.Success(response);
+        return Result.Success(_mapper.Map<GroupDetailResponse>(group));
     }
 }

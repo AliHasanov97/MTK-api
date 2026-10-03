@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -8,10 +9,12 @@ internal sealed class SearchVendorChargesQueryHandler
     : IQueryHandler<SearchVendorChargesQuery, SearchVendorChargesResponse>
 {
     private readonly IVendorChargeRepository _vendorChargeRepository;
+    private readonly IMapper _mapper;
 
-    public SearchVendorChargesQueryHandler(IVendorChargeRepository vendorChargeRepository)
+    public SearchVendorChargesQueryHandler(IVendorChargeRepository vendorChargeRepository, IMapper mapper)
     {
         _vendorChargeRepository = vendorChargeRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<SearchVendorChargesResponse>> Handle(
@@ -32,7 +35,7 @@ internal sealed class SearchVendorChargesQueryHandler
             request.SearchTerm,
             cancellationToken);
 
-        var items = charges.Select(ToResponse).ToList();
+        var items = _mapper.Map<IReadOnlyList<VendorChargeResponse>>(charges);
 
         return new SearchVendorChargesResponse(
             items,
@@ -40,20 +43,4 @@ internal sealed class SearchVendorChargesQueryHandler
             request.Page ?? 1,
             request.PageSize ?? 10);
     }
-
-    internal static VendorChargeResponse ToResponse(Domain.Charges.Charge c) => new(
-        c.Id,
-        c.ContractId,
-        c.PartyId,
-        c.ContractServiceId,
-        c.Period,
-        c.Description,
-        c.Amount,
-        c.PaidAmount,
-        c.OutstandingAmount,
-        c.Status,
-        c.IssuedOn,
-        c.DueDate,
-        c.IsOverdue,
-        c.CreatedAt);
 }

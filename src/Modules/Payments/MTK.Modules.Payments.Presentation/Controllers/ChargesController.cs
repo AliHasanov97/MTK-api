@@ -1,15 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
-using MTK.Common.Domain.Queries;
 using MTK.Modules.Payments.Application.Charges.Commands.CreateCharge;
 using MTK.Modules.Payments.Application.Charges.Commands.CreateOneTimeServiceExpense;
+using MTK.Modules.Payments.Application.Charges.Queries.ExportAnnualPaymentReport;
 using MTK.Modules.Payments.Application.Charges.Queries.GetAnnualPaymentReport;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargeAllocations;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargesByOwner;
 using MTK.Modules.Payments.Application.Charges.Queries.SearchCharges;
 using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
@@ -43,16 +42,9 @@ public class ChargesController(ISender sender) : BaseController(sender)
 
     [HttpPost("search")]
     public async Task<IActionResult> SearchCharges(
-        [FromBody] SearchChargesRequest request,
+        [FromBody] SearchChargesQuery query,
         CancellationToken cancellationToken)
     {
-        var query = new SearchChargesQuery(
-            request.Filters,
-            request.SortCriteria,
-            request.SearchTerm,
-            request.Page,
-            request.PageSize);
-
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess
@@ -75,20 +67,27 @@ public class ChargesController(ISender sender) : BaseController(sender)
             : BadRequest(result.Error);
     }
 
+    /// <summary>Yuxarıdakı hesabatın Excel (.xlsx) faylı kimi ixracı.</summary>
+    [HttpGet("reports/annual/export")]
+    public async Task<IActionResult> ExportAnnualPaymentReport(
+        [FromQuery] int year,
+        [FromQuery] PropertyType? propertyType,
+        CancellationToken cancellationToken)
+    {
+        var query = new ExportAnnualPaymentReportQuery(year, propertyType);
+        var result = await _sender.Send(query, cancellationToken);
+
+        return result.IsSuccess
+            ? File(result.Value.FileContent, result.Value.ContentType, result.Value.FileName)
+            : BadRequest(result.Error);
+    }
+
     [HttpPost]
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateCharge(
-        [FromBody] CreateChargeRequest request,
+        [FromBody] CreateChargeCommand command,
         CancellationToken cancellationToken)
     {
-        var command = new CreateChargeCommand(
-            request.OwnerId,
-            request.PropertyType,
-            request.PropertyId,
-            request.Amount,
-            request.Description,
-            request.Period);
-
         var result = await _sender.Send(command, cancellationToken);
 
         return result.IsSuccess
@@ -100,16 +99,9 @@ public class ChargesController(ISender sender) : BaseController(sender)
     [HttpPost("one-time-service-expense")]
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateOneTimeServiceExpense(
-        [FromBody] CreateOneTimeServiceExpenseRequest request,
+        [FromBody] CreateOneTimeServiceExpenseCommand command,
         CancellationToken cancellationToken)
     {
-        var command = new CreateOneTimeServiceExpenseCommand(
-            request.ContractId,
-            request.ContractServiceId,
-            request.Amount,
-            request.PaymentMethod,
-            request.Notes);
-
         var result = await _sender.Send(command, cancellationToken);
 
         return result.IsSuccess
@@ -117,25 +109,3 @@ public class ChargesController(ISender sender) : BaseController(sender)
             : BadRequest(result.Error);
     }
 }
-
-public sealed record SearchChargesRequest(
-    List<QueryFilter>? Filters,
-    SortCriteria? SortCriteria,
-    string? SearchTerm,
-    int? Page,
-    int? PageSize);
-
-public sealed record CreateChargeRequest(
-    Guid OwnerId,
-    PropertyType PropertyType,
-    Guid PropertyId,
-    decimal Amount,
-    string Description,
-    string? Period = null);
-
-public sealed record CreateOneTimeServiceExpenseRequest(
-    Guid ContractId,
-    Guid ContractServiceId,
-    decimal Amount,
-    PaymentMethod PaymentMethod,
-    string? Notes = null);

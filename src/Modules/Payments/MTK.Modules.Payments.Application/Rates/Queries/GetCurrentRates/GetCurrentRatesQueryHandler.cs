@@ -1,3 +1,4 @@
+using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -7,10 +8,12 @@ namespace MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates;
 internal sealed class GetCurrentRatesQueryHandler : IQueryHandler<GetCurrentRatesQuery, IReadOnlyCollection<RateResponse>>
 {
     private readonly IRateRepository _rateRepository;
+    private readonly IMapper _mapper;
 
-    public GetCurrentRatesQueryHandler(IRateRepository rateRepository)
+    public GetCurrentRatesQueryHandler(IRateRepository rateRepository, IMapper mapper)
     {
         _rateRepository = rateRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyCollection<RateResponse>>> Handle(
@@ -19,17 +22,6 @@ internal sealed class GetCurrentRatesQueryHandler : IQueryHandler<GetCurrentRate
     {
         var rates = await _rateRepository.GetActiveRatesAsync(cancellationToken);
 
-        var response = rates
-            .Select(r => new RateResponse(
-                r.Id,
-                r.RateType,
-                r.Amount,
-                r.EffectiveFrom,
-                r.EffectiveTo,
-                r.Description,
-                r.GarageType))
-            .ToList();
-
-        return response;
+        return _mapper.Map<List<RateResponse>>(rates);
     }
 }

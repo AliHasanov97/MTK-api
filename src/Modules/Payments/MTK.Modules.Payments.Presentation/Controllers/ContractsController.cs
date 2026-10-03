@@ -8,6 +8,7 @@ using MTK.Modules.Payments.Application.Contracts.Commands.RemoveContractService;
 using MTK.Modules.Payments.Application.Contracts.Commands.SetContractServiceStatus;
 using MTK.Modules.Payments.Application.Contracts.Commands.UpdateContract;
 using MTK.Modules.Payments.Application.Contracts.Commands.UpdateContractService;
+using MTK.Modules.Payments.Application.Contracts.Queries.ExportContract;
 using MTK.Modules.Payments.Application.Contracts.Queries.GetContractById;
 using MTK.Modules.Payments.Application.Contracts.Queries.SearchContracts;
 
@@ -36,6 +37,18 @@ public class ContractsController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value)
+            : BadRequest(result.Error);
+    }
+
+    [HttpGet("{contractId:guid}/export")]
+    public async Task<IActionResult> ExportContract(
+        Guid contractId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new ExportContractQuery(contractId), cancellationToken);
+
+        return result.IsSuccess
+            ? File(result.Value.FileContent, result.Value.ContentType, result.Value.FileName)
             : BadRequest(result.Error);
     }
 
