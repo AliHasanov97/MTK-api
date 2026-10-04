@@ -1,0 +1,143 @@
+# Dokploy-da "Compose" tipli layihə yaradıb birbaşa bu faylı göstərin (dev
+# faylı docker-compose.yml deyil, MƏHZ bunu). Bütün sirlər aşağıda ${...} kimi
+# dəyişənlərdir — Dokploy-un bu layihə üçün "Environment Variables" panelinə
+# bunları yazmalısınız (dəyərlər nümunədəndir, real şifrələrlə əvəz edin):
+#
+#   POSTGRES_PASSWORD=...
+#   RABBITMQ_PASSWORD=...
+#   KEYCLOAK_DB_PASSWORD=...
+#   KEYCLOAK_ADMIN_USER=admin
+#   KEYCLOAK_ADMIN_PASSWORD=...
+#   KEYCLOAK_HOSTNAME=keycloak.sizin-domeniniz.az        # sxemsiz, yalnız host
+#   KEYCLOAK_AUTH_CLIENT_SECRET=...                      # Keycloak-da mtk-auth client-in secret-i
+#   KEYCLOAK_ADMIN_CLIENT_SECRET=...                     # Keycloak-da mtk-admin client-in secret-i
+#   UI_HOSTNAME=panel.sizin-domeniniz.az                 # sxemsiz, yalnız host
+#   CLOUDFLARE_R2_ACCOUNT_ID=...
+#   CLOUDFLARE_R2_ACCESS_KEY=...
+#   CLOUDFLARE_R2_SECRET_KEY=...
+#
+# postgres/rabbitmq/keycloak-postgres-ə host port açılmayıb (bilərəkdən) —
+# yalnız mtk-network üzərindən bir-birinə görünürlər. Dokploy-da yalnız api
+# (və istəsəniz keycloak-ın 8080-i, rabbitmq-nın 15672 idarəetmə paneli) üçün
+# domen təyin edin. Keycloak-ı özünüz `start-dev` ilə yox, `start` (production
+# rejimi) ilə işə salır — ona görə KC_HOSTNAME mütləq doğru domen olmalıdır,
+# yoxsa Keycloak açılmayacaq.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: mtk-postgres
+    environment:
+      POSTGRES_DB: MTK
+      POSTGRES_USER: mtkuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mtk-network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: mtk-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: mtk-admin
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - mtk-network
+    restart: unless-stopped
+
+  keycloak-postgres:
+    image: postgres:16-alpine
+    container_name: mtk-keycloak-postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+    networks:
+      - mtk-network
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: mtk-keycloak
+    # start-dev DEV ÜÇÜNDÜR — production-da `start` istifadə olunur, bunun üçün
+    # düzgün KC_HOSTNAME (aşağıda) və KC_PROXY=edge (Dokploy/Traefik TLS-i
+    # özündə bitirdiyi üçün) şərtdir.
+    command: start
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME}
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY: edge
+      KC_HTTP_ENABLED: "true"
+    volumes:
+      - ./themes/mtk:/opt/keycloak/themes/mtk
+    depends_on:
+      - keycloak-postgres
+    networks:
+      - mtk-network
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mtk-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+      ConnectionStrings__Database: "Host=postgres;Port=5432;Database=MTK;Username=mtkuser;Password=${POSTGRES_PASSWORD};Include Error Detail=true"
+
+      Keycloak__Realm: mtk
+      Keycloak__OpenIdUrl: "https://${KEYCLOAK_HOSTNAME}/realms/mtk/protocol/openid-connect/"
+      Keycloak__TokenUrl: "https://${KEYCLOAK_HOSTNAME}/realms/mtk/protocol/openid-connect/token"
+      Keycloak__AuthClientId: mtk-auth
+      Keycloak__AuthClientSecret: ${KEYCLOAK_AUTH_CLIENT_SECRET}
+      Keycloak__AdminClientId: mtk-admin
+      Keycloak__AdminClientSecret: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      Keycloak__AdminUrl: "https://${KEYCLOAK_HOSTNAME}/admin/realms/mtk/"
+      Keycloak__AuthorizationUrl: "https://${KEYCLOAK_HOSTNAME}/realms/mtk/protocol/openid-connect/auth"
+
+      Authentication__Audience: mtk-auth
+      Authentication__ValidIssuer: "https://${KEYCLOAK_HOSTNAME}/realms/mtk"
+      Authentication__MetadataUrl: "https://${KEYCLOAK_HOSTNAME}/realms/mtk/.well-known/openid-configuration"
+      Authentication__RequireHttpsMetadata: "true"
+
+      Cors__AllowedOrigins__0: "https://${UI_HOSTNAME}"
+
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__VirtualHost: /
+      RabbitMQ__Username: mtk-admin
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
+      CloudflareR2__AccountId: ${CLOUDFLARE_R2_ACCOUNT_ID}
+      CloudflareR2__AccessKey: ${CLOUDFLARE_R2_ACCESS_KEY}
+      CloudflareR2__SecretKey: ${CLOUDFLARE_R2_SECRET_KEY}
+      CloudflareR2__BucketName: mtk-file-attachments
+    depends_on:
+      - postgres
+      - rabbitmq
+      - keycloak
+    networks:
+      - mtk-network
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
+  keycloak_postgres_data:
+
+networks:
+  mtk-network:
+    driver: bridge
