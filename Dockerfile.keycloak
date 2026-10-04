@@ -4,3 +4,10 @@
 # etmir və ./themes/mtk qovluğuna çata bilməz.
 FROM quay.io/keycloak/keycloak:25.0
 COPY themes/mtk /opt/keycloak/themes/mtk
+
+# Dokploy-un UI-dəki "Command" sahəsi nə qədər cəhd etsək də düzgün ötürülmədi
+# (kc.sh-ə ya boş, ya konfliktli arqument gedib, nəticədə yalnız kömək mətni
+# çıxırdı) — ona görə production əmrini birbaşa buraya, image-in öz CMD-sinə
+# yazırıq ki, heç bir UI sahəsindən asılı olmasın. Dokploy-da "Command" sahəsi
+# boş qalmalıdır (doluysa, bunu əvəz edib yenə problem yarada bilər).
+CMD ["start"]
