@@ -1,0 +1,6 @@
+# Stok Keycloak image-i + repo-dakı custom login/account teması. Dokploy-da
+# "Application" (Git Repository) tipli servis kimi, bu faylı Dockerfile olaraq
+# göstərib qurun — "Docker Image" tipi ilə yox, çünki o rejim repo-nu clone
+# etmir və ./themes/mtk qovluğuna çata bilməz.
+FROM quay.io/keycloak/keycloak:25.0
+COPY themes/mtk /opt/keycloak/themes/mtk
