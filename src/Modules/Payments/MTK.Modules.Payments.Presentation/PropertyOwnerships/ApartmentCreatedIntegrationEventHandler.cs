@@ -2,6 +2,7 @@ using MediatR;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
+using MTK.Modules.Payments.Application.Apartments.Commands.SyncApartment;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
@@ -18,6 +19,23 @@ internal sealed class ApartmentCreatedIntegrationEventHandler(
         ApartmentCreatedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken = default)
     {
+        // Descriptive shadow (what/where this apartment is) — independent of
+        // ownership, always kept fresh regardless of whether an owner exists yet.
+        var syncApartment = new SyncApartmentCommand(
+            integrationEvent.ApartmentId,
+            integrationEvent.BuildingId,
+            integrationEvent.ApartmentNumber,
+            integrationEvent.AreaSquareMeters,
+            integrationEvent.BuildingName,
+            integrationEvent.BuildingAddress);
+
+        Result apartmentResult = await sender.Send(syncApartment, cancellationToken);
+        if (apartmentResult.IsFailure)
+        {
+            throw new InvalidOperationException(
+                $"Failed to sync apartment shadow: {apartmentResult.Error}");
+        }
+
         // Check if property ownership record exists (might have been created by owner assignment event)
         PropertyOwnership? propertyOwnership = await propertyOwnershipRepository
             .GetByPropertyIdAsync(integrationEvent.ApartmentId, cancellationToken);
@@ -26,11 +44,9 @@ internal sealed class ApartmentCreatedIntegrationEventHandler(
         if (propertyOwnership is not null)
         {
             var command = new SyncPropertyOwnershipCommand(
-                integrationEvent.ApartmentId,
-                PropertyType.Apartment,
-                propertyOwnership.OwnerId,
-                integrationEvent.AreaSquareMeters,
-                PropertyNumber: integrationEvent.ApartmentNumber);
+                ApartmentId: integrationEvent.ApartmentId,
+                GarageId: null,
+                propertyOwnership.OwnerId);
 
             Result result = await sender.Send(command, cancellationToken);
 

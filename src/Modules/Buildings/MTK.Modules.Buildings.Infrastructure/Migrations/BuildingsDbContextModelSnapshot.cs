@@ -295,6 +295,64 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     b.ToTable("Buildings", "buildings");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.FileAttachments.FileAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BuildingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid?>("GarageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApartmentId");
+
+                    b.HasIndex("BuildingId");
+
+                    b.HasIndex("GarageId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("FileAttachments", "buildings");
+                });
+
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Garages.Garage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -600,6 +658,37 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
 
                     b.Navigation("Address")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.FileAttachments.FileAttachment", b =>
+                {
+                    b.HasOne("MTK.Modules.Buildings.Domain.Apartments.Apartment", "Apartment")
+                        .WithMany()
+                        .HasForeignKey("ApartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Buildings.Domain.Buildings.Building", "Building")
+                        .WithMany()
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Buildings.Domain.Garages.Garage", "Garage")
+                        .WithMany()
+                        .HasForeignKey("GarageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Buildings.Domain.Owners.Owner", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Apartment");
+
+                    b.Navigation("Building");
+
+                    b.Navigation("Garage");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Garages.Garage", b =>

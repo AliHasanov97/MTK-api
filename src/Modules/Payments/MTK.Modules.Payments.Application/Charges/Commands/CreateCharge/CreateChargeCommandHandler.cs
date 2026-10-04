@@ -33,7 +33,16 @@ internal sealed class CreateChargeCommandHandler : ICommandHandler<CreateChargeC
 
     public async Task<Result<Guid>> Handle(CreateChargeCommand request, CancellationToken cancellationToken)
     {
-        var ownership = await _propertyOwnershipRepository.GetByPropertyIdAsync(request.PropertyId, cancellationToken);
+        if (request.ApartmentId is null == request.GarageId is null)
+        {
+            return Result.Failure<Guid>(new Error(
+                "Charge.PropertyRequired",
+                "Mənzil və ya qaraj seçilməlidir (yalnız biri)"));
+        }
+
+        Guid propertyId = request.ApartmentId ?? request.GarageId!.Value;
+
+        var ownership = await _propertyOwnershipRepository.GetByPropertyIdAsync(propertyId, cancellationToken);
 
         if (ownership is null || ownership.OwnerId != request.OwnerId)
         {
@@ -47,7 +56,7 @@ internal sealed class CreateChargeCommandHandler : ICommandHandler<CreateChargeC
         string period = request.Period ?? $"MANUAL-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..40];
 
         bool alreadyExists = await _chargeRepository.ChargeExistsForPeriodAsync(
-            request.PropertyId, period, cancellationToken);
+            propertyId, period, cancellationToken);
 
         if (alreadyExists)
         {
@@ -60,19 +69,17 @@ internal sealed class CreateChargeCommandHandler : ICommandHandler<CreateChargeC
         // tranzaksiyadır — yarımçıq vəziyyət qala bilməz.
         await using var transaction = await _chargeRepository.BeginTransactionAsync(cancellationToken);
 
-        var charge = Charge.Create(
-            request.OwnerId,
-            request.PropertyType,
-            request.PropertyId,
-            period,
-            // Dövr verilməyibsə borc indi yaranır; verilibsə də manual borc öz
-            // yaranma anı ilə yaşlanır (Period sıralama üçün istifadə olunmur).
-            DateTimeOffset.UtcNow,
-            request.Amount,
-            request.Amount,
-            RateType.Manual,
-            areaSquareMeters: null,
-            description: request.Description);
+        // Dövr verilməyibsə borc indi yaranır; verilibsə də manual borc öz yaranma
+        // anı ilə yaşlanır (Period sıralama üçün istifadə olunmur).
+        var charge = request.ApartmentId is { } apartmentId
+            ? Charge.CreateForApartment(
+                request.OwnerId, apartmentId, period, DateTimeOffset.UtcNow,
+                request.Amount, request.Amount, RateType.Manual, areaSquareMeters: null,
+                description: request.Description)
+            : Charge.CreateForGarage(
+                request.OwnerId, request.GarageId!.Value, period, DateTimeOffset.UtcNow,
+                request.Amount, request.Amount, RateType.Manual,
+                description: request.Description);
 
         _chargeRepository.Add(charge);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

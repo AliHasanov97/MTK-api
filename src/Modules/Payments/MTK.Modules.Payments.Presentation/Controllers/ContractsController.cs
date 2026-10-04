@@ -41,6 +41,7 @@ public class ContractsController(ISender sender) : BaseController(sender)
     }
 
     [HttpGet("{contractId:guid}/export")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager, Roles.Accountant)]
     public async Task<IActionResult> ExportContract(
         Guid contractId,
         CancellationToken cancellationToken)

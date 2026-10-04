@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MTK.Common.Application.Authorization;
 using MTK.Modules.Payments.Application.Vendors.Commands.CreateVendor;
 using MTK.Modules.Payments.Application.Vendors.Commands.DeleteVendor;
 using MTK.Modules.Payments.Application.Vendors.Commands.SetVendorStatus;
@@ -36,6 +37,7 @@ public class VendorsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPost]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> CreateVendor(
         [FromBody] CreateVendorCommand command,
         CancellationToken cancellationToken)
@@ -48,6 +50,7 @@ public class VendorsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPut("{vendorId:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> UpdateVendor(
         Guid vendorId,
         [FromBody] UpdateVendorCommand command,
@@ -62,6 +65,7 @@ public class VendorsController(ISender sender) : BaseController(sender)
     }
 
     [HttpPut("{vendorId:guid}/status")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> SetVendorStatus(
         Guid vendorId,
         [FromBody] SetVendorStatusCommand command,
@@ -75,6 +79,7 @@ public class VendorsController(ISender sender) : BaseController(sender)
     }
 
     [HttpDelete("{vendorId:guid}")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
     public async Task<IActionResult> DeleteVendor(
         Guid vendorId,
         CancellationToken cancellationToken)

@@ -147,7 +147,7 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
         {
             var chargeIds = allocations.Select(a => a.ChargeId).Distinct().ToList();
             var charges = await _chargeRepository.ListFromIdsAsync(chargeIds, cancellationToken);
-            propertyId ??= charges.Select(c => c.PropertyId).FirstOrDefault(id => id.HasValue);
+            propertyId ??= charges.Select(c => c.ApartmentId ?? c.GarageId).FirstOrDefault(id => id.HasValue);
 
             var periods = charges
                 .Select(c => c.Period)
@@ -164,10 +164,16 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
         if (propertyId.HasValue)
         {
             var ownership = await _propertyOwnershipRepository.GetByPropertyIdAsync(propertyId.Value, cancellationToken);
-            if (ownership is not null && !string.IsNullOrWhiteSpace(ownership.PropertyNumber))
+            if (ownership is not null)
             {
-                var propertyKind = ownership.PropertyType == PropertyType.Garage ? "qaraj" : "mənzil";
-                propertyLabel = $"{ownership.PropertyNumber} nömrəli {propertyKind}";
+                // Real unit number comes straight from the Apartment/Garage shadow navigation.
+                string? number = ownership.Garage?.GarageNumber ?? ownership.Apartment?.ApartmentNumber;
+
+                if (!string.IsNullOrWhiteSpace(number))
+                {
+                    var propertyKind = ownership.GarageId.HasValue ? "qaraj" : "mənzil";
+                    propertyLabel = $"{number} nömrəli {propertyKind}";
+                }
             }
         }
 

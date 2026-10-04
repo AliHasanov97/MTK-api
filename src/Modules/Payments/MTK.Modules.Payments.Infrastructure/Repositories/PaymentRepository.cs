@@ -10,7 +10,7 @@ namespace MTK.Modules.Payments.Infrastructure.Repositories;
 
 /// <summary>
 /// Ödənişlər üzrə repository. <see cref="Payment"/> artıq hər iki tərəfi saxlayır;
-/// sakin-facing axtarış/toplu sorğular <c>PartyType == Owner</c> ilə məhdudlaşdırılır.
+/// sakin-facing axtarış/toplu sorğular <c>OwnerId != null</c> ilə məhdudlaşdırılır.
 /// </summary>
 internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymentRepository
 {
@@ -25,7 +25,7 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
         SortCriteria? sortCriteria)
     {
         return base.ApplyFiltersAndSort(filters, sortCriteria)
-            .Where(p => p.PartyType == PartyType.Owner);
+            .Where(p => p.OwnerId != null);
     }
 
     public async Task<IEnumerable<Payment>> GetByOwnerIdAsync(
@@ -33,7 +33,7 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
         CancellationToken cancellationToken = default)
     {
         return await PaymentsContext.Payments
-            .Where(p => p.PartyType == PartyType.Owner && p.PartyId == ownerId)
+            .Where(p => p.OwnerId == ownerId)
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync(cancellationToken);
     }
@@ -43,7 +43,7 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
         CancellationToken cancellationToken = default)
     {
         return await PaymentsContext.Payments
-            .Where(p => p.PropertyId == propertyId)
+            .Where(p => p.ApartmentId == propertyId || p.GarageId == propertyId)
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync(cancellationToken);
     }
@@ -53,8 +53,11 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
         Guid partyId,
         CancellationToken cancellationToken = default)
     {
-        return await PaymentsContext.Payments
-            .Where(p => p.PartyType == partyType && p.PartyId == partyId)
+        var query = partyType == PartyType.Owner
+            ? PaymentsContext.Payments.Where(p => p.OwnerId == partyId)
+            : PaymentsContext.Payments.Where(p => p.VendorId == partyId);
+
+        return await query
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync(cancellationToken);
     }
@@ -70,10 +73,10 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
 
         var totals = await PaymentsContext.Payments
             .Where(p =>
-                p.PartyType == PartyType.Owner &&
-                ownerIds.Contains(p.PartyId) &&
+                p.OwnerId != null &&
+                ownerIds.Contains(p.OwnerId!.Value) &&
                 p.Status == PaymentStatus.Completed)
-            .GroupBy(p => p.PartyId)
+            .GroupBy(p => p.OwnerId!.Value)
             .Select(g => new { OwnerId = g.Key, Total = g.Sum(p => p.Amount) })
             .ToListAsync(cancellationToken);
 

@@ -5,6 +5,7 @@ using MTK.Common.Infrastructure.Outbox;
 using IUnitOfWork = MTK.Modules.Identity.Application.Abstractions.Data.IUnitOfWork;
 using MTK.Modules.Identity.Domain.Users;
 using MTK.Modules.Identity.Domain.AuditLogs;
+using MTK.Modules.Identity.Domain.FileAttachments;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
@@ -31,6 +32,7 @@ public sealed class IdentityDbContext : DbContext, IUnitOfWork, IHasAuditActor
 
     public DbSet<User> Users => Set<User>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
 
     // Outbox Pattern
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

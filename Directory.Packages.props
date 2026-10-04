@@ -2,9 +2,9 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup>
     <!-- Application -->
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.104.1" />
     <PackageVersion Include="FluentValidation" Version="11.12.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.12.0" />
     <PackageVersion Include="MediatR" Version="14.2.0" />
@@ -12,45 +12,35 @@
     <!-- 13.0.1 had a known DoS advisory (GHSA-rvv3-g6hj-g44x / CVE-2026-32933,
          uncontrolled recursion on deeply nested graphs); 16.2.0 is the latest patched release. -->
     <PackageVersion Include="AutoMapper" Version="16.2.0" />
-
     <!-- Infrastructure -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />
-
     <!-- Presentation -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.2.0" />
-
     <!-- Extensions -->
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0" />
-
     <!-- Authentication -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-
     <!-- Quartz Scheduler -->
     <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.8.1" />
     <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.8.1" />
     <PackageVersion Include="Quartz" Version="3.8.1" />
-
     <!-- MassTransit -->
     <PackageVersion Include="MassTransit" Version="8.2.1" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.2.1" />
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.2.1" />
-
     <!-- Database -->
     <PackageVersion Include="Npgsql" Version="9.0.2" />
     <PackageVersion Include="Dapper" Version="2.1.35" />
-
     <!-- Serialization -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-
     <!-- Options -->
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
-
     <!-- Document generation -->
     <PackageVersion Include="QuestPDF" Version="2025.7.4" />
     <PackageVersion Include="ClosedXML" Version="0.104.2" />

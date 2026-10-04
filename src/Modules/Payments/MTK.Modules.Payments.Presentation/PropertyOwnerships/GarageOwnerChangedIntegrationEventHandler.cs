@@ -2,6 +2,7 @@ using MediatR;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Garages;
+using MTK.Modules.Payments.Application.Garages.Commands.SyncGarage;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
 using MTK.Modules.Payments.Domain.Charges;
 using PaymentsGarageType = MTK.Modules.Payments.Domain.PropertyOwnerships.GarageType;
@@ -15,17 +16,24 @@ internal sealed class GarageOwnerChangedIntegrationEventHandler(ISender sender)
         GarageOwnerChangedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken = default)
     {
-        PaymentsGarageType? garageType = Enum.TryParse<PaymentsGarageType>(integrationEvent.GarageType, ignoreCase: true, out var parsed)
+        PaymentsGarageType garageType = Enum.TryParse<PaymentsGarageType>(integrationEvent.GarageType, ignoreCase: true, out var parsed)
             ? parsed
-            : null;
+            : PaymentsGarageType.OpenParking;
+
+        // Keep the descriptive shadow fresh too — this event also carries the
+        // garage's current number/type, same as GarageCreated.
+        var syncGarage = new SyncGarageCommand(integrationEvent.GarageId, integrationEvent.GarageNumber, garageType);
+        Result garageResult = await sender.Send(syncGarage, cancellationToken);
+        if (garageResult.IsFailure)
+        {
+            throw new InvalidOperationException(
+                $"Failed to sync garage shadow: {garageResult.Error}");
+        }
 
         var command = new SyncPropertyOwnershipCommand(
-            integrationEvent.GarageId,
-            PropertyType.Garage,
-            integrationEvent.NewOwnerId,
-            0, // Garages use fixed rate, not area-based
-            garageType,
-            PropertyNumber: integrationEvent.GarageNumber);
+            ApartmentId: null,
+            GarageId: integrationEvent.GarageId,
+            integrationEvent.NewOwnerId);
 
         Result result = await sender.Send(command, cancellationToken);
 

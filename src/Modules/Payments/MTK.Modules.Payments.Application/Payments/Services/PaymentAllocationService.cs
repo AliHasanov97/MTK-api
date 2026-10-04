@@ -56,7 +56,9 @@ internal sealed class PaymentAllocationService(
     {
         var openChargesByParty = charges
             .Where(charge => charge.OutstandingAmount > 0)
-            .GroupBy(charge => (charge.PartyType, charge.PartyId));
+            .GroupBy(charge => charge.OwnerId.HasValue
+                ? (PartyType: PartyType.Owner, PartyId: charge.OwnerId.Value)
+                : (PartyType: PartyType.Vendor, PartyId: charge.VendorId!.Value));
 
         foreach (var partyCharges in openChargesByParty)
         {
@@ -83,7 +85,7 @@ internal sealed class PaymentAllocationService(
         return charges
             .OrderBy(c => c.IssuedOn)
             .ThenBy(c => c.CreatedAt)
-            .ThenBy(c => c.PropertyType)
+            .ThenBy(c => c.ApartmentId ?? c.GarageId)
             .ThenBy(c => c.Id)
             .ToList();
     }

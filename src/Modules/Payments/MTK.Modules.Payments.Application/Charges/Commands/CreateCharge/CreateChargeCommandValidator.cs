@@ -7,11 +7,10 @@ internal sealed class CreateChargeCommandValidator : AbstractValidator<CreateCha
     public CreateChargeCommandValidator()
     {
         RuleFor(x => x.OwnerId).NotEmpty();
-        RuleFor(x => x.PropertyId).NotEmpty();
 
-        RuleFor(x => x.PropertyType)
-            .IsInEnum()
-            .WithMessage("Əmlak tipi düzgün deyil");
+        RuleFor(x => x)
+            .Must(x => x.ApartmentId.HasValue != x.GarageId.HasValue)
+            .WithMessage("Mənzil və ya qaraj seçilməlidir (yalnız biri)");
 
         RuleFor(x => x.Amount)
             .GreaterThan(0)

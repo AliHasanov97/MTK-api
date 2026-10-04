@@ -1,41 +1,53 @@
 using MTK.Common.Domain.Abstractions;
+using MTK.Modules.Payments.Domain.Apartments;
 using MTK.Modules.Payments.Domain.Charges.Events;
 using MTK.Modules.Payments.Domain.Contracts;
+using MTK.Modules.Payments.Domain.Garages;
+using MTK.Modules.Payments.Domain.Owners;
 using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Rates;
+using MTK.Modules.Payments.Domain.Vendors;
 
 namespace MTK.Modules.Payments.Domain.Charges;
 
 /// <summary>
-/// Borc — həm sakinə (<see cref="PartyType.Owner"/>), həm də tədarükçüyə
-/// (<see cref="PartyType.Vendor"/>) aid ola bilər.
+/// Borc — həm sakinə (<see cref="OwnerId"/>), həm də tədarükçüyə (<see cref="VendorId"/>)
+/// aid ola bilər.
 ///
 /// Əvvəllər bunlar iki ayrı aqreqat idi (<c>Charge</c> və <c>VendorCharge</c>) və
 /// demək olar ki, eyni işi görürdü. Birləşdirmə sayəsində ödənişlərin borclara
 /// paylanması (allocation / FIFO / avans) hər iki tərəf üçün eyni mexanizmlə işləyir.
 ///
-/// Tərəf <see cref="PartyType"/> ilə ayrılır; tərəfə xas sahələr <b>nullable</b>-dır,
-/// ortaq sahələr isə həmişə dolur.
+/// Tərəf <see cref="OwnerId"/>/<see cref="VendorId"/>-dən biri dolu olmaqla ayrılır
+/// (əvvəlki <c>PartyType</c>/<c>PartyId</c> discriminator-cütü tamamilə silinib — bu
+/// iki həqiqi FK özü-özlüyündə diskriminatordur); eynilə əmlak da
+/// <see cref="ApartmentId"/>/<see cref="GarageId"/>-dən biri ilə.
 /// </summary>
 public sealed class Charge : SearchableEntity
 {
     private Charge() : base() { }
 
-    /// <summary>Borcun tərəfi (sakin / tədarükçü).</summary>
-    public PartyType PartyType { get; private set; }
+    // ---- Tərəf — OwnerId/VendorId-dən məhz biri dolu olur -------------------------
 
-    /// <summary>Sahibin və ya tədarükçünün Id-si (tərəfə uyğun).</summary>
-    public Guid PartyId { get; private set; }
+    public Guid? OwnerId { get; private set; }
+    public Owner? Owner { get; private set; }
 
-    // ---- Sakinə xas sahələr (yalnız PartyType == Owner üçün dolu) ----------------
+    public Guid? VendorId { get; private set; }
+    public Vendor? Vendor { get; private set; }
 
-    public PropertyType? PropertyType { get; private set; }
-    public Guid? PropertyId { get; private set; }
+    // ---- Sakinə xas sahələr (yalnız OwnerId dolu olanda mənalıdır) ----------------
+
+    public Guid? ApartmentId { get; private set; }
+    public Apartment? Apartment { get; private set; }
+
+    public Guid? GarageId { get; private set; }
+    public Garage? Garage { get; private set; }
+
     public decimal? AreaSquareMeters { get; private set; }
     public decimal? RateAmount { get; private set; }
     public RateType? RateType { get; private set; }
 
-    // ---- Tədarükçüyə xas sahələr (yalnız PartyType == Vendor üçün dolu) ----------
+    // ---- Tədarükçüyə xas sahələr (yalnız VendorId dolu olanda mənalıdır) ----------
 
     public Guid? ContractId { get; private set; }
     public Guid? ContractServiceId { get; private set; }
@@ -64,18 +76,17 @@ public sealed class Charge : SearchableEntity
 
     /// <summary>Gecikmiş tədarükçü borcu (yalnız Vendor tərəfi üçün mənalıdır).</summary>
     public bool IsOverdue =>
-        PartyType == PartyType.Vendor
+        VendorId.HasValue
         && Status is ChargeStatus.Unpaid or ChargeStatus.PartiallyPaid
         && DueDate is not null
         && DueDate.Value.Date < DateTimeOffset.UtcNow.Date;
 
     // ---- Fabriklər ---------------------------------------------------------------
 
-    /// <summary>Sakin borcu (aylıq və ya manual).</summary>
-    public static Charge Create(
+    /// <summary>Sakin borcu — mənzil üçün (aylıq və ya manual).</summary>
+    public static Charge CreateForApartment(
         Guid ownerId,
-        PropertyType propertyType,
-        Guid propertyId,
+        Guid apartmentId,
         string period,
         DateTimeOffset issuedOn,
         decimal amount,
@@ -83,16 +94,44 @@ public sealed class Charge : SearchableEntity
         RateType rateType,
         decimal? areaSquareMeters,
         string? description = null)
+        => CreateOwnerCharge(
+            ownerId, apartmentId, garageId: null, period, issuedOn, amount, rateAmount, rateType,
+            areaSquareMeters, description);
+
+    /// <summary>Sakin borcu — qaraj üçün (aylıq və ya manual). Qarajın sahəsi olmur.</summary>
+    public static Charge CreateForGarage(
+        Guid ownerId,
+        Guid garageId,
+        string period,
+        DateTimeOffset issuedOn,
+        decimal amount,
+        decimal rateAmount,
+        RateType rateType,
+        string? description = null)
+        => CreateOwnerCharge(
+            ownerId, apartmentId: null, garageId, period, issuedOn, amount, rateAmount, rateType,
+            areaSquareMeters: null, description);
+
+    private static Charge CreateOwnerCharge(
+        Guid ownerId,
+        Guid? apartmentId,
+        Guid? garageId,
+        string period,
+        DateTimeOffset issuedOn,
+        decimal amount,
+        decimal rateAmount,
+        RateType rateType,
+        decimal? areaSquareMeters,
+        string? description)
     {
         if (amount <= 0)
             throw new ArgumentException("Charge amount must be positive");
 
         var charge = new Charge
         {
-            PartyType = PartyType.Owner,
-            PartyId = ownerId,
-            PropertyType = propertyType,
-            PropertyId = propertyId,
+            OwnerId = ownerId,
+            ApartmentId = apartmentId,
+            GarageId = garageId,
             Period = period,
             IssuedOn = issuedOn,
             Amount = amount,
@@ -120,8 +159,7 @@ public sealed class Charge : SearchableEntity
 
         var charge = new Charge
         {
-            PartyType = PartyType.Vendor,
-            PartyId = contract.VendorId,
+            VendorId = contract.VendorId,
             ContractId = contract.Id,
             ContractServiceId = service.Id,
             Period = period,
@@ -154,8 +192,7 @@ public sealed class Charge : SearchableEntity
 
         var charge = new Charge
         {
-            PartyType = PartyType.Vendor,
-            PartyId = contract.VendorId,
+            VendorId = contract.VendorId,
             ContractId = contract.Id,
             ContractServiceId = service.Id,
             Description = service.Name,
@@ -205,7 +242,7 @@ public sealed class Charge : SearchableEntity
     public void ApplyAdvanceFrom(Guid paymentId, decimal amount)
     {
         ApplyPayment(amount);
-        RaiseDomainEvent(new ChargeSettledFromAdvanceDomainEvent(Id, PartyId, paymentId, amount));
+        RaiseDomainEvent(new ChargeSettledFromAdvanceDomainEvent(Id, OwnerId ?? VendorId!.Value, paymentId, amount));
     }
 
     /// <summary>

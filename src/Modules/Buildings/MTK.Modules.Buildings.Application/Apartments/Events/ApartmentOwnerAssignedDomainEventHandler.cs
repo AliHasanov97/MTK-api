@@ -42,7 +42,9 @@ internal sealed class ApartmentOwnerAssignedDomainEventHandler : DomainEventHand
             domainEvent.NewOwnerId,
             domainEvent.PreviousOwnerId,
             apartment.AreaSquareMeters,
-            apartment.ApartmentNumber);
+            apartment.ApartmentNumber,
+            apartment.Building.Name,
+            apartment.Building.Address.GetFullAddress());
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

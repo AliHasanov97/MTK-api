@@ -77,18 +77,15 @@ public class PaymentsController(ISender sender) : BaseController(sender)
     }
 
     /// <summary>
-    /// PayerName/PropertyLabel gözlənilir — Payments modulu sahib/tədarükçü adını
-    /// özü bilmir (yalnız Buildings/Identity-də var), frontend-in artıq ekranda
-    /// göstərdiyi adı ötürməsi gözlənilir.
+    /// Frontend yalnız paymentId ötürür — qəbzdəki qalan hər şey (sahib/tədarükçü adı,
+    /// mənzil/qaraj nömrəsi, dövr, bina ünvanı, əməliyyatı icra edən şəxs/vəzifə) server
+    /// tərəfdə, Payments-in öz məlumatından həll olunur.
     /// </summary>
     [HttpGet("{paymentId:guid}/receipt")]
-    public async Task<IActionResult> ExportReceipt(
-        Guid paymentId,
-        [FromQuery] string? payerName,
-        [FromQuery] string? propertyLabel,
-        CancellationToken cancellationToken)
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager, Roles.Accountant)]
+    public async Task<IActionResult> ExportReceipt(Guid paymentId, CancellationToken cancellationToken)
     {
-        var query = new ExportPaymentReceiptQuery(paymentId, payerName, propertyLabel);
+        var query = new ExportPaymentReceiptQuery(paymentId);
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess

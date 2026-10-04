@@ -12,6 +12,14 @@ public sealed class AuditLog : SearchableEntity
     public string? OldValues { get; private set; }
     public string? NewValues { get; private set; }
     public Guid? UserId { get; private set; }
+
+    // The actor's business role at the moment of the action (e.g. "building-manager",
+    // "accountant") — captured here because Role itself is never persisted anywhere
+    // (it's a live Keycloak claim, re-read fresh on every request), so without this
+    // snapshot there would be no way to answer "was this done by a Komendant or a
+    // Xəzinədar?" after the fact. Null for actions with no resolvable business role.
+    public string? ActorRole { get; private set; }
+
     public DateTimeOffset Timestamp { get; private set; }
 
     public static AuditLog Create(
@@ -20,7 +28,8 @@ public sealed class AuditLog : SearchableEntity
         string action,
         string? oldValues,
         string? newValues,
-        Guid? userId)
+        Guid? userId,
+        string? actorRole = null)
     {
         var auditLog = new AuditLog
         {
@@ -30,6 +39,7 @@ public sealed class AuditLog : SearchableEntity
             OldValues = oldValues,
             NewValues = newValues,
             UserId = userId,
+            ActorRole = actorRole,
             Timestamp = DateTimeOffset.UtcNow
         };
         auditLog.SetCreatedAt();

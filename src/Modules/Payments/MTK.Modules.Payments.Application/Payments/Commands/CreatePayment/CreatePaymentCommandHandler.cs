@@ -16,6 +16,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
     private readonly IOwnerBalanceService _ownerBalanceService;
     private readonly IPropertyOwnershipRepository _propertyOwnershipRepository;
     private readonly IChargeRepository _chargeRepository;
+    private readonly IOwnerRepository _ownerRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreatePaymentCommandHandler(
@@ -24,6 +25,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
         IOwnerBalanceService ownerBalanceService,
         IPropertyOwnershipRepository propertyOwnershipRepository,
         IChargeRepository chargeRepository,
+        IOwnerRepository ownerRepository,
         IUnitOfWork unitOfWork)
     {
         _paymentRepository = paymentRepository;
@@ -31,14 +33,35 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
         _ownerBalanceService = ownerBalanceService;
         _propertyOwnershipRepository = propertyOwnershipRepository;
         _chargeRepository = chargeRepository;
+        _ownerRepository = ownerRepository;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
     {
-        if (request.PropertyId.HasValue)
+        if (request.ApartmentId.HasValue && request.GarageId.HasValue)
         {
-            var ownership = await _propertyOwnershipRepository.GetByPropertyIdAsync(request.PropertyId.Value, cancellationToken);
+            return Result.Failure<Guid>(new Error(
+                "Payment.PropertyAmbiguous",
+                "Ödəniş eyni anda həm mənzilə, həm qaraja hədəflənə bilməz"));
+        }
+
+        Guid? propertyId = request.ApartmentId ?? request.GarageId;
+
+        // Advance/general payments (no property) skip the ownership check below —
+        // this is the only place that would otherwise catch a bogus OwnerId before a
+        // Payment gets created against it.
+        var owner = await _ownerRepository.GetByIdDefaultAsync(request.OwnerId, cancellationToken);
+        if (owner is null)
+        {
+            return Result.Failure<Guid>(new Error(
+                "Owner.NotFound",
+                $"Sahib tapılmadı: {request.OwnerId}"));
+        }
+
+        if (propertyId.HasValue)
+        {
+            var ownership = await _propertyOwnershipRepository.GetByPropertyIdAsync(propertyId.Value, cancellationToken);
 
             if (ownership is null || ownership.OwnerId != request.OwnerId)
             {
@@ -51,7 +74,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
             // bilər — artıq (avans) yalnız sahib səviyyəli ödənişdə yaranır.
             var propertyDebt = (await _chargeRepository.GetUnpaidChargesAsync(
                     request.OwnerId,
-                    request.PropertyId.Value,
+                    propertyId.Value,
                     cancellationToken))
                 .Sum(c => c.OutstandingAmount);
 
@@ -69,15 +92,14 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
         // dispose olunanda avtomatik geri qaytarılır.
         await using var transaction = await _chargeRepository.BeginTransactionAsync(cancellationToken);
 
-        var payment = Payment.Create(
-            PartyType.Owner,
+        var payment = Payment.CreateForOwner(
             request.OwnerId,
             request.Amount,
             request.PaymentMethod,
             DateTimeOffset.UtcNow,
             request.Notes,
-            request.PropertyId,
-            request.PropertyType);
+            request.ApartmentId,
+            request.GarageId);
 
         _paymentRepository.Add(payment);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -88,7 +110,7 @@ internal sealed class CreatePaymentCommandHandler : ICommandHandler<CreatePaymen
             PartyType.Owner,
             request.OwnerId,
             request.Amount,
-            request.PropertyId,
+            propertyId,
             cancellationToken);
 
         if (allocationResult.IsFailure)

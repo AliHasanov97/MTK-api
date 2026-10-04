@@ -15,40 +15,21 @@ internal sealed class SyncPropertyOwnershipCommandHandler(
         SyncPropertyOwnershipCommand request,
         CancellationToken cancellationToken)
     {
-        // Check if property ownership record exists
+        Guid propertyId = request.ApartmentId ?? request.GarageId
+            ?? throw new ArgumentException("Exactly one of ApartmentId/GarageId must be set", nameof(request));
+
         PropertyOwnership? propertyOwnership = await propertyOwnershipRepository
-            .GetByPropertyIdAsync(request.PropertyId, cancellationToken);
+            .GetByPropertyIdAsync(propertyId, cancellationToken);
 
         if (propertyOwnership is not null)
         {
-            // Update existing record
             propertyOwnership.UpdateOwner(request.OwnerId);
-
-            if (request.AreaSquareMeters > 0)
-            {
-                propertyOwnership.UpdateArea(request.AreaSquareMeters);
-            }
-
-            if (request.GarageType.HasValue)
-            {
-                propertyOwnership.UpdateGarageType(request.GarageType.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.PropertyNumber))
-            {
-                propertyOwnership.UpdatePropertyNumber(request.PropertyNumber);
-            }
         }
         else
         {
-            // Create new property ownership record
-            propertyOwnership = PropertyOwnership.Create(
-                request.PropertyId,
-                request.PropertyType,
-                request.OwnerId,
-                request.AreaSquareMeters,
-                request.GarageType,
-                request.PropertyNumber);
+            propertyOwnership = request.ApartmentId is { } apartmentId
+                ? PropertyOwnership.CreateForApartment(apartmentId, request.OwnerId)
+                : PropertyOwnership.CreateForGarage(request.GarageId!.Value, request.OwnerId);
 
             propertyOwnershipRepository.Add(propertyOwnership);
         }

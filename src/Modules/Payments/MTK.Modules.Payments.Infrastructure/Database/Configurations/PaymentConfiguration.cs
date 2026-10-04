@@ -20,13 +20,11 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();
 
-        builder.Property(p => p.PartyType)
-            .HasConversion<string>()
-            .IsRequired()
-            .HasMaxLength(50);
-
-        builder.Property(p => p.PartyId)
-            .IsRequired();
+        // OwnerId/VendorId-dən məhz biri dolu olur (əvvəlki PartyType discriminator-u
+        // əvəzinə həqiqi FK-lər; PartyType/PartyId indi Payment.cs-də [NotMapped]
+        // köməkçi xassələrdir, DB sütunu deyil).
+        builder.Property(p => p.OwnerId);
+        builder.Property(p => p.VendorId);
 
         builder.Property(p => p.Amount)
             .IsRequired()
@@ -48,11 +46,8 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Notes)
             .HasMaxLength(1000);
 
-        builder.Property(p => p.PropertyId);
-
-        builder.Property(p => p.PropertyType)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(p => p.ApartmentId);
+        builder.Property(p => p.GarageId);
 
         builder.Property(p => p.CreatedAt)
             .IsRequired();
@@ -73,10 +68,11 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .HasMethod("GIN");
 
         // Indexes
-        builder.HasIndex(p => p.PartyType);
-        builder.HasIndex(p => p.PartyId);
+        builder.HasIndex(p => p.OwnerId);
+        builder.HasIndex(p => p.VendorId);
         builder.HasIndex(p => p.PaymentDate);
         builder.HasIndex(p => p.Status);
-        builder.HasIndex(p => p.PropertyId);
+        builder.HasIndex(p => p.ApartmentId);
+        builder.HasIndex(p => p.GarageId);
     }
 }

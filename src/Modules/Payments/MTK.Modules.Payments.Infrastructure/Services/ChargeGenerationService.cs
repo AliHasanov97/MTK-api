@@ -44,44 +44,46 @@ internal sealed class ChargeGenerationService(
         // Generate charges for apartments
         if (apartmentRate is not null)
         {
-            foreach (PropertyOwnership apartment in apartments)
+            foreach (PropertyOwnership ownership in apartments)
             {
+                Guid apartmentId = ownership.ApartmentId!.Value;
+                decimal area = ownership.Apartment!.AreaSquareMeters;
+
                 // Check if charge already exists for this period
                 bool chargeExists = await chargeRepository.ChargeExistsForPeriodAsync(
-                    apartment.PropertyId,
+                    apartmentId,
                     period,
                     cancellationToken);
 
                 if (chargeExists)
                 {
-                    logger.LogDebug("Charge already exists for apartment {PropertyId} in period {Period}",
-                        apartment.PropertyId, period);
+                    logger.LogDebug("Charge already exists for apartment {ApartmentId} in period {Period}",
+                        apartmentId, period);
                     continue;
                 }
 
                 // Calculate charge amount: rate per m² × area
-                decimal chargeAmount = apartmentRate.Amount * apartment.AreaSquareMeters;
+                decimal chargeAmount = apartmentRate.Amount * area;
 
                 // Create charge with snapshot data
-                Charge charge = Charge.Create(
-                    apartment.OwnerId,
-                    PropertyType.Apartment,
-                    apartment.PropertyId,
+                Charge charge = Charge.CreateForApartment(
+                    ownership.OwnerId,
+                    apartmentId,
                     period,
                     issuedOn,
                     chargeAmount,
-                    apartmentRate.Amount,           // Snapshot: rate at time of creation
-                    RateType.PerSquareMeter,        // Snapshot: rate type
-                    apartment.AreaSquareMeters);    // Snapshot: area at time of creation
+                    apartmentRate.Amount,     // Snapshot: rate at time of creation
+                    RateType.PerSquareMeter,  // Snapshot: rate type
+                    area);                    // Snapshot: area at time of creation
 
                 chargeRepository.Add(charge);
                 createdCharges.Add(charge);
-                affectedOwnerIds.Add(apartment.OwnerId);
+                affectedOwnerIds.Add(ownership.OwnerId);
 
                 chargesCreated++;
 
-                logger.LogDebug("Created charge for apartment {PropertyId}, owner {OwnerId}, amount {Amount}",
-                    apartment.PropertyId, apartment.OwnerId, chargeAmount);
+                logger.LogDebug("Created charge for apartment {ApartmentId}, owner {OwnerId}, amount {Amount}",
+                    apartmentId, ownership.OwnerId, chargeAmount);
             }
         }
 
@@ -96,11 +98,13 @@ internal sealed class ChargeGenerationService(
         Rate? defaultGarageRate = null;
         bool defaultGarageRateResolved = false;
 
-        foreach (PropertyOwnership garage in garages)
+        foreach (PropertyOwnership ownership in garages)
         {
+            Guid garageId = ownership.GarageId!.Value;
+            GarageType? garageType = ownership.Garage!.GarageType;
             Rate? garageRate;
 
-            if (garage.GarageType is { } specificType)
+            if (garageType is { } specificType)
             {
                 if (!garageRateByType.TryGetValue(specificType, out garageRate))
                 {
@@ -122,46 +126,44 @@ internal sealed class ChargeGenerationService(
             if (garageRate is null)
             {
                 logger.LogWarning(
-                    "No active FixedGarage rate found for garage type {GarageType} (garage {PropertyId}); skipping",
-                    garage.GarageType, garage.PropertyId);
+                    "No active FixedGarage rate found for garage type {GarageType} (garage {GarageId}); skipping",
+                    garageType, garageId);
                 continue;
             }
 
             // Check if charge already exists for this period
             bool chargeExists = await chargeRepository.ChargeExistsForPeriodAsync(
-                garage.PropertyId,
+                garageId,
                 period,
                 cancellationToken);
 
             if (chargeExists)
             {
-                logger.LogDebug("Charge already exists for garage {PropertyId} in period {Period}",
-                    garage.PropertyId, period);
+                logger.LogDebug("Charge already exists for garage {GarageId} in period {Period}",
+                    garageId, period);
                 continue;
             }
 
             decimal chargeAmount = garageRate.Amount;
 
             // Create charge with snapshot data
-            Charge charge = Charge.Create(
-                garage.OwnerId,
-                PropertyType.Garage,
-                garage.PropertyId,
+            Charge charge = Charge.CreateForGarage(
+                ownership.OwnerId,
+                garageId,
                 period,
                 issuedOn,
                 chargeAmount,
-                garageRate.Amount,              // Snapshot: rate at time of creation
-                RateType.FixedGarage,           // Snapshot: rate type
-                null);                          // Snapshot: no area for garages
+                garageRate.Amount,     // Snapshot: rate at time of creation
+                RateType.FixedGarage); // Snapshot: rate type (no area for garages)
 
             chargeRepository.Add(charge);
             createdCharges.Add(charge);
-            affectedOwnerIds.Add(garage.OwnerId);
+            affectedOwnerIds.Add(ownership.OwnerId);
 
             chargesCreated++;
 
-            logger.LogDebug("Created charge for garage {PropertyId} (type {GarageType}), owner {OwnerId}, amount {Amount}",
-                garage.PropertyId, garage.GarageType, garage.OwnerId, chargeAmount);
+            logger.LogDebug("Created charge for garage {GarageId} (type {GarageType}), owner {OwnerId}, amount {Amount}",
+                garageId, garageType, ownership.OwnerId, chargeAmount);
         }
 
         if (chargesCreated == 0)

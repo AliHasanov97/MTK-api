@@ -18,19 +18,30 @@ internal sealed class PropertyOwnershipRepository : Repository<PropertyOwnership
     public async Task<PropertyOwnership?> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
     {
         return await PaymentsContext.PropertyOwnerships
-            .FirstOrDefaultAsync(p => p.PropertyId == propertyId, cancellationToken);
+            .Include(p => p.Apartment).ThenInclude(a => a!.Building)
+            .Include(p => p.Garage)
+            .FirstOrDefaultAsync(p => p.ApartmentId == propertyId || p.GarageId == propertyId, cancellationToken);
     }
 
     public async Task<List<PropertyOwnership>> GetByPropertyTypeAsync(PropertyType propertyType, CancellationToken cancellationToken = default)
     {
-        return await PaymentsContext.PropertyOwnerships
-            .Where(p => p.PropertyType == propertyType)
-            .ToListAsync(cancellationToken);
+        var query = PaymentsContext.PropertyOwnerships
+            .Include(p => p.Apartment).ThenInclude(a => a!.Building)
+            .Include(p => p.Garage)
+            .AsQueryable();
+
+        query = propertyType == PropertyType.Apartment
+            ? query.Where(p => p.ApartmentId != null)
+            : query.Where(p => p.GarageId != null);
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<List<PropertyOwnership>> GetAllWithOwnersAsync(CancellationToken cancellationToken = default)
     {
         return await PaymentsContext.PropertyOwnerships
+            .Include(p => p.Apartment).ThenInclude(a => a!.Building)
+            .Include(p => p.Garage)
             .ToListAsync(cancellationToken);
     }
 }

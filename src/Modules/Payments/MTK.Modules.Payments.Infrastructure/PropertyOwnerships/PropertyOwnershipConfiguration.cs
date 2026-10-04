@@ -12,33 +12,37 @@ internal sealed class PropertyOwnershipConfiguration : IEntityTypeConfiguration<
 
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.PropertyId)
-            .IsRequired();
-
-        builder.Property(p => p.PropertyType)
-            .IsRequired()
-            .HasConversion<int>();
+        builder.Property(p => p.ApartmentId);
+        builder.Property(p => p.GarageId);
 
         builder.Property(p => p.OwnerId)
             .IsRequired();
 
-        builder.Property(p => p.AreaSquareMeters)
-            .IsRequired()
-            .HasPrecision(18, 2);
+        // Bir əmlak üçün bir mülkiyyət qeydi — ApartmentId/GarageId qarşılıqlı
+        // müstəsna olduğu üçün iki ayrı filtrlənmiş unikal indeks kifayətdir.
+        builder.HasIndex(p => p.ApartmentId)
+            .IsUnique()
+            .HasFilter("\"ApartmentId\" IS NOT NULL");
+        builder.HasIndex(p => p.GarageId)
+            .IsUnique()
+            .HasFilter("\"GarageId\" IS NOT NULL");
 
-        builder.Property(p => p.GarageType)
-            .HasConversion<string>()
-            .HasMaxLength(50);
-
-        builder.Property(p => p.PropertyNumber)
-            .HasMaxLength(50);
-
-        // Unique index on PropertyId to ensure one entry per property
-        builder.HasIndex(p => p.PropertyId)
-            .IsUnique();
-
-        // Index for faster queries
         builder.HasIndex(p => p.OwnerId);
-        builder.HasIndex(p => p.PropertyType);
+
+        // Naviqasiyalar — Restrict: shadow silinsə belə mülkiyyət tarixçəsi qalmalıdır.
+        builder.HasOne(p => p.Apartment)
+            .WithMany()
+            .HasForeignKey(p => p.ApartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Garage)
+            .WithMany()
+            .HasForeignKey(p => p.GarageId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Owner)
+            .WithMany()
+            .HasForeignKey(p => p.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

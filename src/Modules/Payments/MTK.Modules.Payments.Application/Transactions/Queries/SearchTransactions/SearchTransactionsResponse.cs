@@ -15,4 +15,5 @@ public sealed record TransactionSearchResult(
     decimal Amount,
     string? Description,
     DateTimeOffset TransactionDate,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    Guid? SourcePaymentId);

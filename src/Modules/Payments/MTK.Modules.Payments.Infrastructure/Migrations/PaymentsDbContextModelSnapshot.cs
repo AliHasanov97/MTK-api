@@ -113,6 +113,40 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("outbox_message_consumers", "payments");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Apartments.Apartment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ApartmentNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("AreaSquareMeters")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("BuildingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuildingId");
+
+                    b.ToTable("apartments", "payments");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.AuditLogs.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -123,6 +157,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ActorRole")
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -177,6 +214,36 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("AuditLogs", "payments");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Buildings.Building", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("buildings", "payments");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Charges.Charge", b =>
                 {
                     b.Property<Guid>("Id")
@@ -186,6 +253,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("ApartmentId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("AreaSquareMeters")
                         .HasPrecision(10, 2)
@@ -210,29 +280,20 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("GarageId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("IssuedOn")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("PaidAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<Guid>("PartyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PartyType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("Period")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid?>("PropertyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PropertyType")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -259,6 +320,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("VendorId")
+                        .HasColumnType("uuid");
+
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -267,19 +331,19 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApartmentId");
+
                     b.HasIndex("ContractId");
 
                     b.HasIndex("ContractServiceId");
 
                     b.HasIndex("DueDate");
 
-                    b.HasIndex("PartyId");
+                    b.HasIndex("GarageId");
 
-                    b.HasIndex("PartyType");
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("Period");
-
-                    b.HasIndex("PropertyId");
 
                     b.HasIndex("SearchVector");
 
@@ -287,15 +351,23 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
+                    b.HasIndex("VendorId");
+
                     b.HasIndex("ContractServiceId", "Period")
                         .IsUnique()
                         .HasFilter("\"ContractServiceId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
 
-                    b.HasIndex("PartyId", "PropertyId", "Period")
-                        .IsUnique()
-                        .HasFilter("\"PartyType\" = 'Owner' AND \"DeletedAt\" IS NULL");
+                    b.HasIndex("OwnerId", "IssuedOn");
 
-                    b.HasIndex("PartyType", "PartyId", "IssuedOn");
+                    b.HasIndex("VendorId", "IssuedOn");
+
+                    b.HasIndex("OwnerId", "ApartmentId", "Period")
+                        .IsUnique()
+                        .HasFilter("\"ApartmentId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
+
+                    b.HasIndex("OwnerId", "GarageId", "Period")
+                        .IsUnique()
+                        .HasFilter("\"GarageId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
 
                     b.ToTable("Charges", "payments", t =>
                         {
@@ -457,6 +529,104 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("ContractServices", "payments");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.FileAttachments.FileAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<Guid?>("ContractId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("TransactionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UploadedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("VendorId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("FileAttachments", "payments");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Garages.Garage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GarageNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("GarageType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("garages", "payments");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.OwnerBalances.OwnerBalance", b =>
                 {
                     b.Property<Guid>("Id")
@@ -498,6 +668,31 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("OwnerBalances", "payments");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Owners.Owner", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("owners", "payments");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Payments.Payment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -508,36 +703,30 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<Guid?>("ApartmentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("GarageId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<Guid>("PartyId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("PartyType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTimeOffset>("PaymentDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid?>("PropertyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PropertyType")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -556,6 +745,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("VendorId")
+                        .HasColumnType("uuid");
+
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -564,19 +756,21 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PartyId");
+                    b.HasIndex("ApartmentId");
 
-                    b.HasIndex("PartyType");
+                    b.HasIndex("GarageId");
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("PaymentDate");
-
-                    b.HasIndex("PropertyId");
 
                     b.HasIndex("SearchVector");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("VendorId");
 
                     b.ToTable("Payments", "payments");
                 });
@@ -628,9 +822,8 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<decimal>("AreaSquareMeters")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<Guid?>("ApartmentId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -638,34 +831,26 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("GarageType")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<Guid?>("GarageId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
-
-                    b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PropertyNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("PropertyType")
-                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApartmentId")
+                        .IsUnique()
+                        .HasFilter("\"ApartmentId\" IS NOT NULL");
+
+                    b.HasIndex("GarageId")
+                        .IsUnique()
+                        .HasFilter("\"GarageId\" IS NOT NULL");
+
                     b.HasIndex("OwnerId");
-
-                    b.HasIndex("PropertyId")
-                        .IsUnique();
-
-                    b.HasIndex("PropertyType");
 
                     b.ToTable("property_ownerships", "payments");
                 });
@@ -767,6 +952,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasAnnotation("Npgsql:TsVectorConfig", "english")
                         .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Category", "Description" });
 
+                    b.Property<Guid?>("SourcePaymentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("TransactionDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -782,6 +970,8 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.HasIndex("SearchVector");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+
+                    b.HasIndex("SourcePaymentId");
 
                     b.HasIndex("TransactionDate");
 
@@ -930,6 +1120,48 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("Vendors", "payments");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Apartments.Apartment", b =>
+                {
+                    b.HasOne("MTK.Modules.Payments.Domain.Buildings.Building", "Building")
+                        .WithMany()
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Building");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Charges.Charge", b =>
+                {
+                    b.HasOne("MTK.Modules.Payments.Domain.Apartments.Apartment", "Apartment")
+                        .WithMany()
+                        .HasForeignKey("ApartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Garages.Garage", "Garage")
+                        .WithMany()
+                        .HasForeignKey("GarageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Owners.Owner", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Vendors.Vendor", "Vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Apartment");
+
+                    b.Navigation("Garage");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Vendor");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Contracts.ContractService", b =>
                 {
                     b.HasOne("MTK.Modules.Payments.Domain.Contracts.Contract", null)
@@ -937,6 +1169,84 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasForeignKey("ContractId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.FileAttachments.FileAttachment", b =>
+                {
+                    b.HasOne("MTK.Modules.Payments.Domain.Contracts.Contract", "Contract")
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Owners.Owner", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Payments.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Transactions.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Users.User", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Vendors.Vendor", "Vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Contract");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("Transaction");
+
+                    b.Navigation("UploadedBy");
+
+                    b.Navigation("Vendor");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.PropertyOwnerships.PropertyOwnership", b =>
+                {
+                    b.HasOne("MTK.Modules.Payments.Domain.Apartments.Apartment", "Apartment")
+                        .WithMany()
+                        .HasForeignKey("ApartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Garages.Garage", "Garage")
+                        .WithMany()
+                        .HasForeignKey("GarageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Owners.Owner", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Apartment");
+
+                    b.Navigation("Garage");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Transactions.Transaction", b =>
+                {
+                    b.HasOne("MTK.Modules.Payments.Domain.Payments.Payment", null)
+                        .WithMany()
+                        .HasForeignKey("SourcePaymentId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Contracts.Contract", b =>

@@ -72,8 +72,7 @@ internal sealed class CreateOneTimeServiceExpenseCommandHandler
         _chargeRepository.Add(charge);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var payment = Payment.Create(
-            PartyType.Vendor,
+        var payment = Payment.CreateForVendor(
             contract.VendorId,
             request.Amount,
             request.PaymentMethod,

@@ -9,13 +9,19 @@ internal sealed class GetPaymentAllocationsQueryHandler
 {
     private readonly IPaymentAllocationRepository _paymentAllocationRepository;
     private readonly IChargeRepository _chargeRepository;
+    private readonly IApartmentRepository _apartmentRepository;
+    private readonly IGarageRepository _garageRepository;
 
     public GetPaymentAllocationsQueryHandler(
         IPaymentAllocationRepository paymentAllocationRepository,
-        IChargeRepository chargeRepository)
+        IChargeRepository chargeRepository,
+        IApartmentRepository apartmentRepository,
+        IGarageRepository garageRepository)
     {
         _paymentAllocationRepository = paymentAllocationRepository;
         _chargeRepository = chargeRepository;
+        _apartmentRepository = apartmentRepository;
+        _garageRepository = garageRepository;
     }
 
     public async Task<Result<IReadOnlyCollection<PaymentAllocationDetailResponse>>> Handle(
@@ -34,21 +40,40 @@ internal sealed class GetPaymentAllocationsQueryHandler
         var charges = await _chargeRepository.ListFromIdsAsync(chargeIds, cancellationToken);
         var chargesById = charges.ToDictionary(c => c.Id);
 
+        var apartmentIds = charges.Where(c => c.ApartmentId.HasValue).Select(c => c.ApartmentId!.Value).Distinct().ToList();
+        var garageIds = charges.Where(c => c.GarageId.HasValue).Select(c => c.GarageId!.Value).Distinct().ToList();
+
+        var apartmentLabels = apartmentIds.Count > 0
+            ? (await _apartmentRepository.ListFromIdsWithBuildingAsync(apartmentIds, cancellationToken))
+                .ToDictionary(a => a.Id, a => $"Mənzil {a.ApartmentNumber} — {a.Building.Name}")
+            : new Dictionary<Guid, string>();
+        var garageLabels = garageIds.Count > 0
+            ? (await _garageRepository.ListFromIdsAsync(garageIds, cancellationToken))
+                .ToDictionary(g => g.Id, g => $"Qaraj {g.GarageNumber}")
+            : new Dictionary<Guid, string>();
+
         var response = allocations
             .Where(a => chargesById.ContainsKey(a.ChargeId))
             .Select(a =>
             {
                 var charge = chargesById[a.ChargeId];
+                string? propertyLabel = charge.ApartmentId is { } apartmentId
+                    ? apartmentLabels.GetValueOrDefault(apartmentId)
+                    : charge.GarageId is { } garageId
+                        ? garageLabels.GetValueOrDefault(garageId)
+                        : null;
+
                 return new PaymentAllocationDetailResponse(
                     a.Id,
                     charge.Id,
-                    charge.PropertyType,
-                    charge.PropertyId,
+                    charge.ApartmentId,
+                    charge.GarageId,
                     charge.Period,
                     charge.Description,
                     charge.Amount,
                     a.Amount,
-                    a.RemainingDebtAfterPayment);
+                    a.RemainingDebtAfterPayment,
+                    propertyLabel);
             })
             .ToList();
 

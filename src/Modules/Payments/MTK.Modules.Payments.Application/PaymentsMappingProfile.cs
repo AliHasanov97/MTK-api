@@ -39,23 +39,15 @@ public sealed class PaymentsMappingProfile : Profile
         CreateMap<Vendor, VendorResponse>();
         CreateMap<Vendor, VendorSearchResult>();
 
-        // Charge.PartyId is the owner/vendor discriminator column — each response
-        // names it for the party it actually represents. These responses are
-        // immutable records (positional constructor, no settable properties), so a
-        // renamed member must be wired as a constructor-parameter mapping
-        // (ForCtorParam) — ForMember alone makes AutoMapper fall back to "construct
-        // via parameterless ctor + set properties", which these types don't have.
-        CreateMap<Charge, ChargeResponse>()
-            .ForCtorParam(nameof(ChargeResponse.OwnerId), o => o.MapFrom(s => s.PartyId));
-        CreateMap<Charge, ChargeSearchResult>()
-            .ForCtorParam(nameof(ChargeSearchResult.OwnerId), o => o.MapFrom(s => s.PartyId));
+        // Charge/Payment now carry real OwnerId/VendorId/ApartmentId/GarageId columns
+        // (no more PartyId/PropertyId discriminator-pair to alias), so these map
+        // straight across by name — only ChargeDate still needs an explicit rename.
+        CreateMap<Charge, ChargeResponse>();
+        CreateMap<Charge, ChargeSearchResult>();
         CreateMap<Charge, VendorChargeResponse>()
-            .ForCtorParam(nameof(VendorChargeResponse.VendorId), o => o.MapFrom(s => s.PartyId))
             .ForCtorParam(nameof(VendorChargeResponse.ChargeDate), o => o.MapFrom(s => s.IssuedOn));
 
-        CreateMap<Payment, PaymentResponse>()
-            .ForCtorParam(nameof(PaymentResponse.OwnerId), o => o.MapFrom(s => s.PartyId));
-        CreateMap<Payment, PaymentSearchResult>()
-            .ForCtorParam(nameof(PaymentSearchResult.OwnerId), o => o.MapFrom(s => s.PartyId));
+        CreateMap<Payment, PaymentResponse>();
+        CreateMap<Payment, PaymentSearchResult>();
     }
 }

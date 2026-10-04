@@ -69,6 +69,7 @@ public class ChargesController(ISender sender) : BaseController(sender)
 
     /// <summary>Yuxarıdakı hesabatın Excel (.xlsx) faylı kimi ixracı.</summary>
     [HttpGet("reports/annual/export")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager, Roles.Accountant)]
     public async Task<IActionResult> ExportAnnualPaymentReport(
         [FromQuery] int year,
         [FromQuery] PropertyType? propertyType,

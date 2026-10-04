@@ -37,13 +37,13 @@ internal sealed partial class GetAnnualPaymentReportQueryHandler
 
         var charges = await _chargeRepository.GetOwnerChargesByYearAsync(request.Year, cancellationToken);
         var outstandingByProperty = await _chargeRepository.GetOutstandingAmountByPropertyIdsAsync(
-            properties.Select(p => p.PropertyId).ToList(), cancellationToken);
+            properties.Select(p => (p.ApartmentId ?? p.GarageId)!.Value).ToList(), cancellationToken);
 
         // Period-u tam "yyyy-MM" formatına uyğun olanlar — manual borclar fərqli bir
         // teq daşıya bilər (məs. "MANUAL-...") və bu hesabatda nəzərə alınmır.
         var chargesByPropertyAndMonth = charges
-            .Where(c => c.PropertyId is not null && PeriodPattern().IsMatch(c.Period!))
-            .GroupBy(c => c.PropertyId!.Value)
+            .Where(c => (c.ApartmentId ?? c.GarageId) is not null && PeriodPattern().IsMatch(c.Period!))
+            .GroupBy(c => (c.ApartmentId ?? c.GarageId)!.Value)
             .ToDictionary(
                 g => g.Key,
                 g => g.GroupBy(c => int.Parse(c.Period![5..7])).ToDictionary(mg => mg.Key, mg => mg.ToList()));
@@ -51,7 +51,10 @@ internal sealed partial class GetAnnualPaymentReportQueryHandler
         var rows = properties
             .Select(ownership =>
             {
-                chargesByPropertyAndMonth.TryGetValue(ownership.PropertyId, out var byMonth);
+                Guid propertyId = (ownership.ApartmentId ?? ownership.GarageId)!.Value;
+                PropertyType propertyType = ownership.ApartmentId.HasValue ? PropertyType.Apartment : PropertyType.Garage;
+
+                chargesByPropertyAndMonth.TryGetValue(propertyId, out var byMonth);
 
                 var months = Enumerable.Range(1, 12)
                     .Select(month =>
@@ -78,10 +81,10 @@ internal sealed partial class GetAnnualPaymentReportQueryHandler
                     .ToList();
 
                 return new PropertyAnnualReportRow(
-                    ownership.PropertyId,
-                    ownership.PropertyType,
+                    propertyId,
+                    propertyType,
                     months,
-                    outstandingByProperty.GetValueOrDefault(ownership.PropertyId));
+                    outstandingByProperty.GetValueOrDefault(propertyId));
             })
             .OrderBy(r => r.PropertyType)
             .ThenBy(r => r.PropertyId)

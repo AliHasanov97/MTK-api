@@ -27,12 +27,20 @@ public sealed class Transaction : SearchableEntity
     public string? Description { get; private set; }
     public DateTimeOffset TransactionDate { get; private set; }
 
+    // Only set for a row posted by ForPayment — lets the UI resolve "what document
+    // backs this ledger line" back to that Payment's own FileAttachment(s) (the
+    // receipt) without this entity needing to know anything else about Payments.
+    // Null for a manual entry (Xərclərin/Əlavə gəlirlərin daxil edilməsi), which
+    // instead carries its own FileAttachment keyed directly by this row's Id.
+    public Guid? SourcePaymentId { get; private set; }
+
     public static Transaction Create(
         TransactionDirection direction,
         string category,
         decimal amount,
         string? description,
-        DateTimeOffset transactionDate)
+        DateTimeOffset transactionDate,
+        Guid? sourcePaymentId = null)
     {
         if (amount <= 0)
             throw new ArgumentException("Transaction amount must be positive");
@@ -43,7 +51,8 @@ public sealed class Transaction : SearchableEntity
             Category = category,
             Amount = amount,
             Description = description,
-            TransactionDate = transactionDate
+            TransactionDate = transactionDate,
+            SourcePaymentId = sourcePaymentId,
         };
         transaction.SetCreatedAt();
         return transaction;
@@ -79,13 +88,15 @@ public sealed class Transaction : SearchableEntity
                 !string.IsNullOrWhiteSpace(vendorName) ? vendorName : VendorPaymentCategory,
                 amount ?? payment.Amount,
                 Describe(payment, propertyLabel, periodLabel),
-                payment.PaymentDate.ToUniversalTime())
+                payment.PaymentDate.ToUniversalTime(),
+                payment.Id)
             : Create(
                 TransactionDirection.Income,
                 ResidentPaymentCategory,
                 amount ?? payment.Amount,
                 Describe(payment, propertyLabel, periodLabel),
-                payment.PaymentDate.ToUniversalTime());
+                payment.PaymentDate.ToUniversalTime(),
+                payment.Id);
 
     // No Delete(): the ledger is append-only.
 

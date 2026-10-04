@@ -15,7 +15,9 @@ public sealed class ApartmentOwnerChangedIntegrationEvent : IntegrationEvent
         Guid newOwnerId,
         Guid? previousOwnerId,
         decimal areaSquareMeters,
-        string apartmentNumber)
+        string apartmentNumber,
+        string buildingName,
+        string buildingAddress)
         : base(integrationEventId, occurredOnUtc)
     {
         ApartmentId = apartmentId;
@@ -23,6 +25,8 @@ public sealed class ApartmentOwnerChangedIntegrationEvent : IntegrationEvent
         PreviousOwnerId = previousOwnerId;
         AreaSquareMeters = areaSquareMeters;
         ApartmentNumber = apartmentNumber;
+        BuildingName = buildingName;
+        BuildingAddress = buildingAddress;
     }
 
     public Guid ApartmentId { get; }
@@ -30,4 +34,6 @@ public sealed class ApartmentOwnerChangedIntegrationEvent : IntegrationEvent
     public Guid? PreviousOwnerId { get; }
     public decimal AreaSquareMeters { get; }
     public string ApartmentNumber { get; }
+    public string BuildingName { get; }
+    public string BuildingAddress { get; }
 }

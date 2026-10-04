@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Payments.Domain.AuditLogs;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -9,5 +10,17 @@ internal sealed class AuditLogRepository : SearchableRepository<AuditLog>, IAudi
 {
     public AuditLogRepository(PaymentsDbContext dbContext) : base(dbContext)
     {
+    }
+
+    public Task<AuditLog?> GetForEntityActionAsync(
+        string entityType,
+        Guid entityId,
+        string action,
+        CancellationToken cancellationToken = default)
+    {
+        return DbItem
+            .Where(a => a.EntityType == entityType && a.EntityId == entityId && a.Action == action)
+            .OrderBy(a => a.Timestamp)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

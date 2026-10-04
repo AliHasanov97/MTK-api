@@ -41,7 +41,9 @@ internal sealed class ApartmentCreatedDomainEventHandler : DomainEventHandler<Ap
             apartment.Id,
             apartment.BuildingId,
             apartment.ApartmentNumber,
-            apartment.AreaSquareMeters);
+            apartment.AreaSquareMeters,
+            apartment.Building.Name,
+            apartment.Building.Address.GetFullAddress());
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

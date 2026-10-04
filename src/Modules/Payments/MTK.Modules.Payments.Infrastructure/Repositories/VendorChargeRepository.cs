@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using MTK.Common.Domain.Queries;
 using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Repositories;
 using MTK.Modules.Payments.Infrastructure.Database;
 
@@ -10,7 +9,7 @@ namespace MTK.Modules.Payments.Infrastructure.Repositories;
 
 /// <summary>
 /// Tədarükçü borcları üzrə repository. Borclar tək <see cref="Charge"/> aqreqatında
-/// olduğu üçün bütün sorğular <c>PartyType == Vendor</c> ilə məhdudlaşdırılır.
+/// olduğu üçün bütün sorğular <c>VendorId != null</c> ilə məhdudlaşdırılır.
 /// </summary>
 internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVendorChargeRepository
 {
@@ -26,7 +25,7 @@ internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVe
         SortCriteria? sortCriteria)
     {
         return base.ApplyFiltersAndSort(filters, sortCriteria)
-            .Where(c => c.PartyType == PartyType.Vendor);
+            .Where(c => c.VendorId != null);
     }
 
     public Task<bool> ExistsForPeriodAsync(
@@ -37,7 +36,7 @@ internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVe
         // Ləğv edilmiş borc yenidən hesablana bilsin deyə Cancelled nəzərə alınmır.
         return PaymentsContext.Charges
             .AnyAsync(c =>
-                c.PartyType == PartyType.Vendor &&
+                c.VendorId != null &&
                 c.ContractServiceId == contractServiceId &&
                 c.Period == period &&
                 c.Status != ChargeStatus.Cancelled,
@@ -49,7 +48,7 @@ internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVe
         CancellationToken cancellationToken = default)
     {
         return PaymentsContext.Charges
-            .Where(c => c.PartyType == PartyType.Vendor && c.PartyId == vendorId)
+            .Where(c => c.VendorId == vendorId)
             .OrderByDescending(c => c.IssuedOn)
             .ToListAsync(cancellationToken);
     }
@@ -59,7 +58,7 @@ internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVe
         CancellationToken cancellationToken = default)
     {
         return PaymentsContext.Charges
-            .Where(c => c.PartyType == PartyType.Vendor && c.ContractId == contractId)
+            .Where(c => c.VendorId != null && c.ContractId == contractId)
             .OrderByDescending(c => c.IssuedOn)
             .ToListAsync(cancellationToken);
     }
@@ -70,8 +69,7 @@ internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVe
     {
         return PaymentsContext.Charges
             .Where(c =>
-                c.PartyType == PartyType.Vendor &&
-                c.PartyId == vendorId &&
+                c.VendorId == vendorId &&
                 c.Status != ChargeStatus.Paid &&
                 c.Status != ChargeStatus.Cancelled)
             .OrderBy(c => c.IssuedOn)

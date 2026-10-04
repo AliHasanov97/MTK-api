@@ -177,6 +177,49 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                     b.ToTable("AuditLogs", "identity");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Identity.Domain.FileAttachments.FileAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("FileAttachments", "identity");
+                });
+
             modelBuilder.Entity("MTK.Modules.Identity.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -251,6 +294,17 @@ namespace MTK.Modules.Identity.Infrastructure.Database.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.ToTable("Users", "identity");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Identity.Domain.FileAttachments.FileAttachment", b =>
+                {
+                    b.HasOne("MTK.Modules.Identity.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

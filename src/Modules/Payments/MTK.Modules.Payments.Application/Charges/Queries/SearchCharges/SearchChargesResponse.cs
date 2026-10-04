@@ -12,8 +12,8 @@ public sealed record SearchChargesResponse(
 public sealed record ChargeSearchResult(
     Guid Id,
     Guid OwnerId,
-    PropertyType? PropertyType,
-    Guid? PropertyId,
+    Guid? ApartmentId,
+    Guid? GarageId,
     string? Period,
     decimal Amount,
     decimal PaidAmount,
@@ -24,4 +24,8 @@ public sealed record ChargeSearchResult(
     decimal? RateAmount,
     RateType? RateType,
     // Borcun yaşı — FIFO sırasını və "avansdan ödənilib" işarəsini UI bununla qurur.
-    DateTimeOffset IssuedOn);
+    DateTimeOffset IssuedOn,
+    // Resolved server-side from Payments' own Owner/Vendor/Apartment/Garage shadows
+    // (see IChargeDisplayEnricher) — null only when a shadow hasn't synced yet.
+    string? PartyName = null,
+    string? PropertyLabel = null);

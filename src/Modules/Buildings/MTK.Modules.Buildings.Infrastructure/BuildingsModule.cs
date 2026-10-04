@@ -67,6 +67,7 @@ public static class BuildingsModule
         services.AddScoped<IOwnershipHistoryRepository, OwnershipHistoryRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IFileAttachmentRepository, FileAttachmentRepository>();
 
         // Outbox & Inbox Configuration
         services.Configure<OutboxOptions>(configuration.GetSection("Buildings:Outbox"));

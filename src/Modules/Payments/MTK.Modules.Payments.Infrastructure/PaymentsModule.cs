@@ -17,8 +17,10 @@ using MTK.Modules.Payments.Infrastructure.Export;
 using MTK.Modules.Payments.Infrastructure.Inbox;
 using MTK.Modules.Payments.Infrastructure.Repositories;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
+using MTK.Modules.Buildings.IntegrationEvents.Buildings;
 using MTK.Modules.Buildings.IntegrationEvents.Garages;
 using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
+using MTK.Modules.Buildings.IntegrationEvents.Owners;
 using MTK.Modules.Identity.IntegrationEvents.Users;
 using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
 
@@ -77,6 +79,15 @@ public static class PaymentsModule
         services.AddScoped<IVendorChargeRepository, VendorChargeRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IOwnerRepository, OwnerRepository>();
+        services.AddScoped<IBuildingRepository, BuildingRepository>();
+        services.AddScoped<IApartmentRepository, ApartmentRepository>();
+        services.AddScoped<IGarageRepository, GarageRepository>();
+        services.AddScoped<IFileAttachmentRepository, FileAttachmentRepository>();
+
+        // The only place this module reaches into Identity's concrete IUserContext —
+        // see CurrentUserProvider's own docs.
+        services.AddScoped<MTK.Modules.Payments.Application.Abstractions.ICurrentUserProvider, Services.CurrentUserProvider>();
 
         // Export services (PDF/Excel)
         services.AddScoped<IPaymentReceiptExportService, PaymentReceiptExportService>();
@@ -85,6 +96,8 @@ public static class PaymentsModule
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentDisplayEnricher, MTK.Modules.Payments.Application.Payments.Services.PaymentDisplayEnricher>();
+        services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeDisplayEnricher, MTK.Modules.Payments.Application.Charges.Services.ChargeDisplayEnricher>();
         services.AddScoped<MTK.Modules.Payments.Application.OwnerBalances.Services.IOwnerBalanceService, MTK.Modules.Payments.Application.OwnerBalances.Services.OwnerBalanceService>();
         services.AddScoped<MTK.Modules.Payments.Application.CompanyBalances.Services.ICompanyBalanceService, MTK.Modules.Payments.Application.CompanyBalances.Services.CompanyBalanceService>();
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.ChargeGenerationService>();
@@ -139,6 +152,8 @@ public static class PaymentsModule
     public static void ConfigureConsumers(IRegistrationConfigurator registrationConfigurator)
     {
         // Register integration event consumers from Buildings module
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<BuildingCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<BuildingUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<ApartmentCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<ApartmentOwnerChangedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<ApartmentUpdatedIntegrationEvent>>();
@@ -146,6 +161,8 @@ public static class PaymentsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<GarageOwnerChangedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<GarageOwnerRemovedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<OwnershipTransferredIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<OwnerCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<OwnerUpdatedIntegrationEvent>>();
 
         // Register integration event consumers from Identity module — used to keep
         // this module's own User snapshot (AuditLog.UserId -> readable name) in sync.

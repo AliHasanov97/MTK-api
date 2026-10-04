@@ -14,17 +14,23 @@ public sealed class ApartmentCreatedIntegrationEvent : IntegrationEvent
         Guid apartmentId,
         Guid buildingId,
         string apartmentNumber,
-        decimal areaSquareMeters)
+        decimal areaSquareMeters,
+        string buildingName,
+        string buildingAddress)
         : base(integrationEventId, occurredOnUtc)
     {
         ApartmentId = apartmentId;
         BuildingId = buildingId;
         ApartmentNumber = apartmentNumber;
         AreaSquareMeters = areaSquareMeters;
+        BuildingName = buildingName;
+        BuildingAddress = buildingAddress;
     }
 
     public Guid ApartmentId { get; }
     public Guid BuildingId { get; }
     public string ApartmentNumber { get; }
     public decimal AreaSquareMeters { get; }
+    public string BuildingName { get; }
+    public string BuildingAddress { get; }
 }

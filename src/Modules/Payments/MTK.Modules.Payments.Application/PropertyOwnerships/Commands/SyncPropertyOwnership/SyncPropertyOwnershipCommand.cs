@@ -1,13 +1,9 @@
 using MTK.Common.Application.Messaging;
-using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.PropertyOwnerships;
 
 namespace MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
 
+/// <summary>Exactly one of ApartmentId/GarageId must be set.</summary>
 public sealed record SyncPropertyOwnershipCommand(
-    Guid PropertyId,
-    PropertyType PropertyType,
-    Guid OwnerId,
-    decimal AreaSquareMeters,
-    GarageType? GarageType = null,
-    string? PropertyNumber = null) : ICommand;
+    Guid? ApartmentId,
+    Guid? GarageId,
+    Guid OwnerId) : ICommand;

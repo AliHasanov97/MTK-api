@@ -42,9 +42,12 @@ internal sealed class ExportAnnualPaymentReportQueryHandler : IQueryHandler<Expo
             ? await _propertyOwnershipRepository.GetByPropertyTypeAsync(propertyType, cancellationToken)
             : await _propertyOwnershipRepository.GetAllWithOwnersAsync(cancellationToken);
 
+        // Real unit number comes straight from the Apartment/Garage shadow navigation now.
         var propertyLabels = ownerships.ToDictionary(
-            o => o.PropertyId,
-            o => $"{o.PropertyNumber ?? "—"} ({(o.PropertyType == PropertyType.Garage ? "Qaraj" : "Mənzil")})");
+            o => (o.ApartmentId ?? o.GarageId)!.Value,
+            o => o.GarageId.HasValue
+                ? $"{o.Garage?.GarageNumber ?? "—"} (Qaraj)"
+                : $"{o.Apartment?.ApartmentNumber ?? "—"} (Mənzil)");
 
         var stream = _exportService.ExportToExcel(reportResult.Value, propertyLabels);
         var fileName = $"Illik_Hesabat_{request.Year}.xlsx";

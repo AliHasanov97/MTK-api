@@ -57,8 +57,7 @@ internal sealed class CreateVendorPaymentCommandHandler : ICommandHandler<Create
         // vəziyyət (ödəniş var, paylanma yox) qala bilməz.
         await using var transaction = await _paymentRepository.BeginTransactionAsync(cancellationToken);
 
-        var payment = Domain.Payments.Payment.Create(
-            PartyType.Vendor,
+        var payment = Domain.Payments.Payment.CreateForVendor(
             request.VendorId,
             request.Amount,
             request.PaymentMethod,

@@ -1,5 +1,4 @@
 using MTK.Common.Application.Messaging;
-using MTK.Modules.Payments.Domain.Charges;
 
 namespace MTK.Modules.Payments.Application.Payments.Queries.GetPaymentAllocations;
 
@@ -17,10 +16,14 @@ public sealed record PaymentAllocationDetailResponse(
     // PaymentAllocation-un öz Id-si — AuditLogs-da "kim icra edib"-i axtarmaq üçün.
     Guid Id,
     Guid ChargeId,
-    PropertyType? PropertyType,
-    Guid? PropertyId,
+    Guid? ApartmentId,
+    Guid? GarageId,
     string? Period,
     string? Description,
     decimal ChargeAmount,
     decimal AllocatedAmount,
-    decimal RemainingDebtAfterPayment);
+    decimal RemainingDebtAfterPayment,
+    // Resolved server-side from the Apartment/Garage shadow — "Mənzil N — Bina"/"Qaraj
+    // N" — null when both ApartmentId/GarageId are null (a general/advance allocation)
+    // or the shadow hasn't synced yet.
+    string? PropertyLabel = null);

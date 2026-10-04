@@ -6,8 +6,8 @@ namespace MTK.Modules.Payments.Application.Charges.Queries.GetChargesByOwner;
 public sealed record ChargeResponse(
     Guid Id,
     Guid OwnerId,
-    PropertyType? PropertyType,
-    Guid? PropertyId,
+    Guid? ApartmentId,
+    Guid? GarageId,
     string? Period,
     decimal Amount,
     decimal PaidAmount,
@@ -20,4 +20,8 @@ public sealed record ChargeResponse(
     decimal? RateAmount,
     RateType? RateType,
     // Borcun yaşı — ödənişin avansdan gəlib-gəlmədiyini UI bununla ayırd edir.
-    DateTimeOffset IssuedOn);
+    DateTimeOffset IssuedOn,
+    // Resolved server-side from Payments' own Owner/Vendor/Apartment/Garage shadows
+    // (see IChargeDisplayEnricher) — null only when a shadow hasn't synced yet.
+    string? PartyName = null,
+    string? PropertyLabel = null);

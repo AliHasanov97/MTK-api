@@ -15,6 +15,7 @@ using MTK.Modules.Buildings.Domain.Owners;
 using MTK.Modules.Buildings.Domain.OwnershipHistories;
 using MTK.Modules.Buildings.Domain.AuditLogs;
 using MTK.Modules.Buildings.Domain.Users;
+using MTK.Modules.Buildings.Domain.FileAttachments;
 
 namespace MTK.Modules.Buildings.Infrastructure.Database;
 
@@ -45,6 +46,7 @@ public sealed class BuildingsDbContext : DbContext, IUnitOfWork, IHasAuditActor
     public DbSet<OwnershipHistory> OwnershipHistories { get; set; }
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
 
     // Outbox Pattern
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

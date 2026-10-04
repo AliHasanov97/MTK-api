@@ -1,3 +1,4 @@
+using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
 
@@ -8,14 +9,18 @@ public interface IPaymentReceiptExportService
     MemoryStream ExportToPdf(PaymentReceiptData data);
 }
 
-/// <summary>One line in the receipt's charge breakdown — which charge this payment covered and how much of it.</summary>
-public sealed record PaymentReceiptLine(string Description, decimal Amount);
+/// <summary>One line in the receipt's charge breakdown — which charge this payment covered,
+/// for which unit (only set when the payment settled MORE THAN ONE unit — e.g. part
+/// cleared an apartment's debt, the rest a garage's) and billing period, and how much of
+/// it. A bulk/toplu payment that settles several months and/or several units at once must
+/// show every one of these — collapsing them into a single sentence naming only one
+/// unit/month would misstate what was actually paid.</summary>
+public sealed record PaymentReceiptLine(string Description, decimal Amount, string? Period = null, string? PropertyLabel = null);
 
 /// <summary>
-/// Everything the PDF needs, already resolved. PayerName/PropertyLabel come from the
-/// caller (frontend) rather than a cross-module lookup — Payments has no Owner name of
-/// its own (see PropertyOwnership — only an OwnerId), and the frontend already has
-/// these labels on screen for the payment it's requesting a receipt for.
+/// Everything the PDF needs, already resolved server-side from Payments' own data (Owner/
+/// Building/Apartment shadows, AuditLog) — the frontend only ever supplies PaymentId (see
+/// ExportPaymentReceiptQueryHandler); no other field is caller-supplied.
 /// </summary>
 public sealed record PaymentReceiptData(
     Guid PaymentId,
@@ -25,5 +30,19 @@ public sealed record PaymentReceiptData(
     string? Notes,
     PartyType PartyType,
     string? PayerName,
-    string? PropertyLabel,
-    IReadOnlyCollection<PaymentReceiptLine> Lines);
+    // Apartment/garage number this payment is for — null for a general (FIFO/advance)
+    // payment not tied to one unit.
+    string? PropertyNumber,
+    PropertyType? PropertyType,
+    // "yyyy-MM" — only set when every charge this payment settled shares one billing
+    // period; ambiguous (several months) or absent (pure advance) otherwise.
+    string? Period,
+    IReadOnlyCollection<PaymentReceiptLine> Lines,
+    // The real person/role who recorded this payment (from the Payment entity's own
+    // "Created" audit row) — not always a Komendant, could be a Xəzinədar. Null when
+    // that audit row's actor can't be resolved (e.g. a legacy payment).
+    string? IssuerName,
+    string? IssuerTitle,
+    // The complex's building address — resolved from the Apartment/Building shadow for
+    // apartment payments, or the complex's one Building for garage/unattached payments.
+    string? BuildingAddress);

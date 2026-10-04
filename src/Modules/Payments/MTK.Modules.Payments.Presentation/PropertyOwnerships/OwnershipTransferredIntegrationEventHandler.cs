@@ -3,7 +3,6 @@ using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
-using MTK.Modules.Payments.Domain.Charges;
 
 namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
@@ -19,10 +18,9 @@ internal sealed class OwnershipTransferredIntegrationEventHandler(ISender sender
     {
         // Transfer zamanı PropertyOwnership-i yeni owner-ə update edirik
         var command = new SyncPropertyOwnershipCommand(
-            integrationEvent.ApartmentId,
-            PropertyType.Apartment,
-            integrationEvent.NewOwnerId,
-            0); // Area information will be preserved/updated separately
+            ApartmentId: integrationEvent.ApartmentId,
+            GarageId: null,
+            integrationEvent.NewOwnerId);
 
         Result result = await sender.Send(command, cancellationToken);
 
