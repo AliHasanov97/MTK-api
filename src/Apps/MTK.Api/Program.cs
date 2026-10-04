@@ -144,8 +144,7 @@ app.Services.GetRequiredService<AutoMapper.IConfigurationProvider>().AssertConfi
 await ApplyMigrationsAsync(app.Services);
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue("Swagger:Enabled", true)){
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
