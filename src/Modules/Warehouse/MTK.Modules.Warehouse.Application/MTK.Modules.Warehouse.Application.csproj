@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Common\MTK.Common.Application\MTK.Common.Application.csproj" />
     <ProjectReference Include="..\MTK.Modules.Warehouse.Domain\MTK.Modules.Warehouse.Domain.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Warehouse.IntegrationEvents\MTK.Modules.Warehouse.IntegrationEvents.csproj" />
   </ItemGroup>
 
   <ItemGroup>

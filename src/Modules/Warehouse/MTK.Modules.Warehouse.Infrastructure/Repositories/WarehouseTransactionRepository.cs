@@ -1,13 +1,15 @@
 using Microsoft.EntityFrameworkCore;
-using MTK.Common.Infrastructure.Data;
+using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Warehouse.Domain.WarehouseTransactions;
 using MTK.Modules.Warehouse.Infrastructure.Database;
 
 namespace MTK.Modules.Warehouse.Infrastructure.Repositories;
 
-internal sealed class WarehouseTransactionRepository 
-    : Repository<WarehouseTransaction, WarehouseDbContext>, IWarehouseTransactionRepository
+internal sealed class WarehouseTransactionRepository
+    : Repository<WarehouseTransaction>, IWarehouseTransactionRepository
 {
+    private WarehouseDbContext WarehouseContext => (WarehouseDbContext)Context;
+
     public WarehouseTransactionRepository(WarehouseDbContext dbContext)
         : base(dbContext)
     {
@@ -17,7 +19,7 @@ internal sealed class WarehouseTransactionRepository
         Guid nomenclatureId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseTransactions
+        return await WarehouseContext.WarehouseTransactions
             .Where(t => t.NomenclatureId == nomenclatureId)
             .Include(t => t.Nomenclature)
             .OrderByDescending(t => t.TransactionDate)
@@ -28,7 +30,7 @@ internal sealed class WarehouseTransactionRepository
         TransactionType transactionType,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseTransactions
+        return await WarehouseContext.WarehouseTransactions
             .Where(t => t.TransactionType == transactionType)
             .Include(t => t.Nomenclature)
             .OrderByDescending(t => t.TransactionDate)
@@ -40,7 +42,7 @@ internal sealed class WarehouseTransactionRepository
         DateTimeOffset endDate,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseTransactions
+        return await WarehouseContext.WarehouseTransactions
             .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate)
             .Include(t => t.Nomenclature)
             .OrderByDescending(t => t.TransactionDate)
@@ -52,7 +54,7 @@ internal sealed class WarehouseTransactionRepository
         Guid referenceId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseTransactions
+        return await WarehouseContext.WarehouseTransactions
             .Include(t => t.Nomenclature)
             .FirstOrDefaultAsync(
                 t => t.ReferenceType == referenceType && t.ReferenceId == referenceId,

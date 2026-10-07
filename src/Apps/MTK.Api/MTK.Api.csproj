@@ -24,6 +24,8 @@
       <ProjectReference Include="..\..\Modules\Buildings\MTK.Modules.Buildings.Presentation\MTK.Modules.Buildings.Presentation.csproj" />
       <ProjectReference Include="..\..\Modules\Payments\MTK.Modules.Payments.Infrastructure\MTK.Modules.Payments.Infrastructure.csproj" />
       <ProjectReference Include="..\..\Modules\Payments\MTK.Modules.Payments.Presentation\MTK.Modules.Payments.Presentation.csproj" />
+      <ProjectReference Include="..\..\Modules\Warehouse\MTK.Modules.Warehouse.Infrastructure\MTK.Modules.Warehouse.Infrastructure.csproj" />
+      <ProjectReference Include="..\..\Modules\Warehouse\MTK.Modules.Warehouse.Presentation\MTK.Modules.Warehouse.Presentation.csproj" />
     </ItemGroup>
 
 </Project>

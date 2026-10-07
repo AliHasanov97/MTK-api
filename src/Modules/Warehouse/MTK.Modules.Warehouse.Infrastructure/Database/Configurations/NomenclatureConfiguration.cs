@@ -50,6 +50,15 @@ internal sealed class NomenclatureConfiguration : IEntityTypeConfiguration<Nomen
         // Soft delete query filter
         builder.HasQueryFilter(n => n.DeletedAt == null);
 
+        // Search vector for full-text search (Nomenclature derives from SearchableEntity)
+        builder
+            .HasGeneratedTsVectorColumn(
+                n => n.SearchVector,
+                "english",
+                n => new { n.Code, n.Name, n.Description })
+            .HasIndex(n => n.SearchVector)
+            .HasMethod("GIN");
+
         // Ignore domain events
         builder.Ignore(n => n.DomainEvents);
     }

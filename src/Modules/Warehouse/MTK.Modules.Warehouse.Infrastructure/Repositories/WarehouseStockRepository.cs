@@ -1,13 +1,15 @@
 using Microsoft.EntityFrameworkCore;
-using MTK.Common.Infrastructure.Data;
+using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Warehouse.Domain.WarehouseStock;
 using MTK.Modules.Warehouse.Infrastructure.Database;
 
 namespace MTK.Modules.Warehouse.Infrastructure.Repositories;
 
-internal sealed class WarehouseStockRepository 
-    : Repository<WarehouseStock, WarehouseDbContext>, IWarehouseStockRepository
+internal sealed class WarehouseStockRepository
+    : Repository<WarehouseStock>, IWarehouseStockRepository
 {
+    private WarehouseDbContext WarehouseContext => (WarehouseDbContext)Context;
+
     public WarehouseStockRepository(WarehouseDbContext dbContext)
         : base(dbContext)
     {
@@ -17,7 +19,7 @@ internal sealed class WarehouseStockRepository
         Guid nomenclatureId,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseStock
+        return await WarehouseContext.WarehouseStocks
             .Include(s => s.Nomenclature)
             .FirstOrDefaultAsync(s => s.NomenclatureId == nomenclatureId, cancellationToken);
     }
@@ -27,7 +29,7 @@ internal sealed class WarehouseStockRepository
         int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseStock
+        return await WarehouseContext.WarehouseStocks
             .Include(s => s.Nomenclature)
             .OrderBy(s => s.Nomenclature.Name)
             .Skip((pageNumber - 1) * pageSize)
@@ -37,7 +39,7 @@ internal sealed class WarehouseStockRepository
 
     public async Task<List<WarehouseStock>> GetLowStockItemsAsync(CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseStock
+        return await WarehouseContext.WarehouseStocks
             .Include(s => s.Nomenclature)
             .Where(s => s.Nomenclature.MinStockLevel.HasValue &&
                        s.QuantityOnHand < s.Nomenclature.MinStockLevel.Value)
@@ -47,7 +49,7 @@ internal sealed class WarehouseStockRepository
 
     public async Task<List<WarehouseStock>> GetOutOfStockItemsAsync(CancellationToken cancellationToken = default)
     {
-        return await DbContext.WarehouseStock
+        return await WarehouseContext.WarehouseStocks
             .Include(s => s.Nomenclature)
             .Where(s => s.QuantityOnHand == 0)
             .OrderBy(s => s.Nomenclature.Name)

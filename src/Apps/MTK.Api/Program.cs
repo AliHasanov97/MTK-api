@@ -11,6 +11,9 @@ using MTK.Modules.Identity.Infrastructure.Database;
 using MTK.Modules.Payments.Application;
 using MTK.Modules.Payments.Infrastructure;
 using MTK.Modules.Payments.Infrastructure.Database;
+using MTK.Modules.Warehouse.Application;
+using MTK.Modules.Warehouse.Infrastructure;
+using MTK.Modules.Warehouse.Infrastructure.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -116,12 +119,14 @@ builder.Services.AddAutoMapper(
     cfg => { },
     typeof(PaymentsMappingProfile).Assembly,
     typeof(BuildingsMappingProfile).Assembly,
-    typeof(IdentityMappingProfile).Assembly);
+    typeof(IdentityMappingProfile).Assembly,
+    typeof(WarehouseMappingProfile).Assembly);
 
 // Add Modules
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddBuildingsModule(builder.Configuration);
 builder.Services.AddPaymentsModule(builder.Configuration);
+builder.Services.AddWarehouseModule(builder.Configuration);
 
 // TODO: Register other modules here
 // builder.Services.AddBillingModule(builder.Configuration);
@@ -182,6 +187,10 @@ static async Task ApplyMigrationsAsync(IServiceProvider serviceProvider)
     // Apply Payments module migrations
     var paymentsDbContext = scope.ServiceProvider.GetRequiredService<PaymentsDbContext>();
     await paymentsDbContext.Database.MigrateAsync();
+
+    // Apply Warehouse module migrations
+    var warehouseDbContext = scope.ServiceProvider.GetRequiredService<WarehouseDbContext>();
+    await warehouseDbContext.Database.MigrateAsync();
 
     // TODO: Apply other module migrations here
 }
