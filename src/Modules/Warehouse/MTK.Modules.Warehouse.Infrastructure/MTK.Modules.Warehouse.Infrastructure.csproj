@@ -11,11 +11,16 @@
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Common\MTK.Common.Infrastructure\MTK.Common.Infrastructure.csproj" />
     <ProjectReference Include="..\MTK.Modules.Warehouse.Application\MTK.Modules.Warehouse.Application.csproj" />
+    <ProjectReference Include="..\MTK.Modules.Warehouse.Presentation\MTK.Modules.Warehouse.Presentation.csproj" />
+    <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.Application\MTK.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
   </ItemGroup>
 
 </Project>
