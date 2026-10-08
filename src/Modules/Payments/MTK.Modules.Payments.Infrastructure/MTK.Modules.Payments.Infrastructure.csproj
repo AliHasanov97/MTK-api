@@ -23,6 +23,7 @@
     <ProjectReference Include="..\MTK.Modules.Payments.Presentation\MTK.Modules.Payments.Presentation.csproj" />
     <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.Application\MTK.Modules.Identity.Application.csproj" />
     <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
+    <ProjectReference Include="..\..\Warehouse\MTK.Modules.Warehouse.IntegrationEvents\MTK.Modules.Warehouse.IntegrationEvents.csproj" />
   </ItemGroup>
 
 </Project>

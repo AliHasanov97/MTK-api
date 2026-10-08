@@ -8,6 +8,7 @@ public sealed record ListFileAttachmentsQuery(
     Guid? VendorId = null,
     Guid? PaymentId = null,
     Guid? OwnerId = null,
+    Guid? PurchaseId = null,
     Guid? TransactionId = null,
     // Resolved server-side from the authenticated request (see FileAttachmentsController) —
     // never bound from the client's query string, so a client-supplied value here is

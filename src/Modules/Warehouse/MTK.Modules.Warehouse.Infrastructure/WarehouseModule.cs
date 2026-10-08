@@ -18,6 +18,7 @@ using MTK.Modules.Warehouse.Infrastructure.Database;
 using MTK.Modules.Warehouse.Infrastructure.Inbox;
 using MTK.Modules.Warehouse.Infrastructure.Repositories;
 using MTK.Modules.Identity.IntegrationEvents.Users;
+using MTK.Modules.Payments.IntegrationEvents.Warehouse;
 using Outbox = MTK.Modules.Warehouse.Infrastructure.Outbox;
 
 namespace MTK.Modules.Warehouse.Infrastructure;
@@ -115,5 +116,8 @@ public static class WarehouseModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserDeletedIntegrationEvent>>();
+
+        // Payments modulundan gələn alış qəbulu — anbara girişin yeganə yolu.
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<GoodsReceivedIntegrationEvent>>();
     }
 }

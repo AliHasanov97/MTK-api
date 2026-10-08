@@ -60,6 +60,12 @@ internal sealed class WarehouseTransactionConfiguration : IEntityTypeConfigurati
         builder.HasIndex(t => t.TransactionDate);
         builder.HasIndex(t => new { t.ReferenceType, t.ReferenceId });
 
+        // Bir istinad (məs. alış) üçün eyni nomenklaturadan yalnız bir əməliyyat —
+        // integration event-in təkrar çatdırılmasına qarşı bazada son müdafiə xətti.
+        builder.HasIndex(t => new { t.ReferenceType, t.ReferenceId, t.NomenclatureId })
+            .IsUnique()
+            .HasFilter("\"ReferenceType\" IS NOT NULL AND \"ReferenceId\" IS NOT NULL");
+
         // Ignore domain events
         builder.Ignore(t => t.DomainEvents);
     }

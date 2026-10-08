@@ -22,6 +22,7 @@ using MTK.Modules.Buildings.IntegrationEvents.Garages;
 using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
 using MTK.Modules.Buildings.IntegrationEvents.Owners;
 using MTK.Modules.Identity.IntegrationEvents.Users;
+using MTK.Modules.Warehouse.IntegrationEvents.Nomenclatures;
 using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
 
 namespace MTK.Modules.Payments.Infrastructure;
@@ -84,6 +85,8 @@ public static class PaymentsModule
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IGarageRepository, GarageRepository>();
         services.AddScoped<IFileAttachmentRepository, FileAttachmentRepository>();
+        services.AddScoped<INomenclatureShadowRepository, NomenclatureShadowRepository>();
+        services.AddScoped<IPurchaseRepository, PurchaseRepository>();
 
         // The only place this module reaches into Identity's concrete IUserContext —
         // see CurrentUserProvider's own docs.
@@ -169,5 +172,12 @@ public static class PaymentsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserDeletedIntegrationEvent>>();
+
+        // Register integration event consumers from Warehouse module — keeps this
+        // module's NomenclatureShadow (used by purchase lines) in sync. Nomenclature
+        // is owned by Warehouse and authored there.
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<NomenclatureCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<NomenclatureUpdatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<NomenclatureDeletedIntegrationEvent>>();
     }
 }

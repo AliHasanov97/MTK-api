@@ -18,6 +18,7 @@ public sealed class Transaction : SearchableEntity
     // row: the payment handlers and any reporting both key off these.
     public const string ResidentPaymentCategory = "Sakin ödənişi";
     public const string VendorPaymentCategory = "Tədarükçü ödənişi";
+    public const string PurchaseExpenseCategory = "Satınalma";
 
     private Transaction() : base() { }
 
@@ -34,13 +35,27 @@ public sealed class Transaction : SearchableEntity
     // instead carries its own FileAttachment keyed directly by this row's Id.
     public Guid? SourcePaymentId { get; private set; }
 
+    /// <summary>Alış sənədindən yaradılmış xərcin mənbə alış identifikatoru.</summary>
+    public Guid? SourcePurchaseId { get; private set; }
+
+    /// <summary>Identifies the related document opened from a ledger transaction.</summary>
+    public string DocumentType => SourcePurchaseId.HasValue
+        ? "Purchase"
+        : SourcePaymentId.HasValue
+            ? (Direction == TransactionDirection.Income ? "ResidentPayment" : "VendorPayment")
+            : "LedgerEntry";
+
+    /// <summary>The related document ID, or this ledger entry ID for manual transactions.</summary>
+    public Guid ReferenceId => SourcePurchaseId ?? SourcePaymentId ?? Id;
+
     public static Transaction Create(
         TransactionDirection direction,
         string category,
         decimal amount,
         string? description,
         DateTimeOffset transactionDate,
-        Guid? sourcePaymentId = null)
+        Guid? sourcePaymentId = null,
+        Guid? sourcePurchaseId = null)
     {
         if (amount <= 0)
             throw new ArgumentException("Transaction amount must be positive");
@@ -53,6 +68,7 @@ public sealed class Transaction : SearchableEntity
             Description = description,
             TransactionDate = transactionDate,
             SourcePaymentId = sourcePaymentId,
+            SourcePurchaseId = sourcePurchaseId,
         };
         transaction.SetCreatedAt();
         return transaction;
@@ -97,6 +113,31 @@ public sealed class Transaction : SearchableEntity
                 Describe(payment, propertyLabel, periodLabel),
                 payment.PaymentDate.ToUniversalTime(),
                 payment.Id);
+
+    public static Transaction ForPurchase(
+        Guid purchaseId,
+        decimal amount,
+        DateTimeOffset purchaseDate,
+        string? vendorName,
+        string? invoiceNumber,
+        string? note)
+    {
+        var descriptionParts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(vendorName))
+            descriptionParts.Add($"Tədarükçü: {vendorName}");
+        if (!string.IsNullOrWhiteSpace(invoiceNumber))
+            descriptionParts.Add($"Qaimə: {invoiceNumber}");
+        if (!string.IsNullOrWhiteSpace(note))
+            descriptionParts.Add(note);
+
+        return Create(
+            TransactionDirection.Expense,
+            PurchaseExpenseCategory,
+            amount,
+            descriptionParts.Count > 0 ? string.Join(" · ", descriptionParts) : "Satınalma sənədi",
+            purchaseDate.ToUniversalTime(),
+            sourcePurchaseId: purchaseId);
+    }
 
     // No Delete(): the ledger is append-only.
 

@@ -36,4 +36,13 @@ public interface IWarehouseTransactionRepository : IRepository<WarehouseTransact
         string referenceType,
         Guid referenceId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Verilmiş istinad üzrə artıq əməliyyat varmı — integration event-in təkrar
+    /// çatdırılmasına qarşı idempotentlik yoxlaması üçün.
+    /// </summary>
+    Task<bool> ExistsByReferenceAsync(
+        string referenceType,
+        Guid referenceId,
+        CancellationToken cancellationToken = default);
 }

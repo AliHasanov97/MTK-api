@@ -9,5 +9,6 @@ public interface IFileAttachmentRepository : IRepository<FileAttachment>
     Task<List<FileAttachment>> ListByVendorIdAsync(Guid vendorId, CancellationToken cancellationToken = default);
     Task<List<FileAttachment>> ListByPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default);
     Task<List<FileAttachment>> ListByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken = default);
+    Task<List<FileAttachment>> ListByPurchaseIdAsync(Guid purchaseId, CancellationToken cancellationToken = default);
     Task<List<FileAttachment>> ListByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken = default);
 }

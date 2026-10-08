@@ -14,6 +14,13 @@ internal sealed class TransactionRepository : SearchableRepository<Transaction>,
     {
     }
 
+    public Task<bool> ExistsBySourcePurchaseIdAsync(Guid purchaseId, CancellationToken cancellationToken = default)
+    {
+        return PaymentsContext.Transactions.AnyAsync(
+            t => t.SourcePurchaseId == purchaseId,
+            cancellationToken);
+    }
+
     public async Task<Dictionary<TransactionDirection, decimal>> GetTotalsByDirectionAsync(
         CancellationToken cancellationToken = default)
     {

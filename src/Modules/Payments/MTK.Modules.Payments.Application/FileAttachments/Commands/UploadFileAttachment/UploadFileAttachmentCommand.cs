@@ -9,6 +9,7 @@ public sealed record UploadFileAttachmentCommand(
     Guid? VendorId,
     Guid? PaymentId,
     Guid? OwnerId,
+    Guid? PurchaseId,
     Guid? TransactionId,
     // Resolved server-side from the authenticated request (see FileAttachmentsController) —
     // never bound from the client's form data, so a client-supplied value here is

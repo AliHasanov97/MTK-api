@@ -24,6 +24,8 @@ using MTK.Modules.Payments.Domain.Buildings;
 using MTK.Modules.Payments.Domain.Apartments;
 using MTK.Modules.Payments.Domain.Garages;
 using MTK.Modules.Payments.Domain.Owners;
+using MTK.Modules.Payments.Domain.Nomenclatures;
+using MTK.Modules.Payments.Domain.Purchases;
 using MTK.Modules.Payments.Domain.FileAttachments;
 
 namespace MTK.Modules.Payments.Infrastructure.Database;
@@ -66,6 +68,13 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork, IHasAuditActor
     public DbSet<Apartment> Apartments => Set<Apartment>();
     public DbSet<Garage> Garages => Set<Garage>();
     public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
+
+    // Warehouse-dan (integration event ilə) sinxronlaşan nomenklatura güzgüsü
+    public DbSet<NomenclatureShadow> NomenclatureShadows => Set<NomenclatureShadow>();
+
+    // Alış (satınalma) sənədləri — qəbul edildikdə Warehouse-a ötürülür
+    public DbSet<Purchase> Purchases => Set<Purchase>();
+    public DbSet<PurchaseLine> PurchaseLines => Set<PurchaseLine>();
 
     // Outbox Pattern
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

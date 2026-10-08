@@ -5,6 +5,7 @@ using MTK.Modules.Payments.Application.Payments.Commands.CreatePayment;
 using MTK.Modules.Payments.Application.Payments.Queries.ExportPaymentReceipt;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentAllocations;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByOwner;
+using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentById;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByProperty;
 using MTK.Modules.Payments.Application.Payments.Queries.SearchPayments;
 
@@ -12,6 +13,13 @@ namespace MTK.Modules.Payments.Presentation.Controllers;
 
 public class PaymentsController(ISender sender) : BaseController(sender)
 {
+    [HttpGet("{paymentId:guid}")]
+    public async Task<IActionResult> GetPaymentById(Guid paymentId, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetPaymentByIdQuery(paymentId), cancellationToken);
+        return result.IsSuccess ? Success(result.Value) : BadRequest(result.Error);
+    }
+
     [HttpGet("owner/{ownerId:guid}")]
     public async Task<IActionResult> GetPaymentsByOwner(
         Guid ownerId,

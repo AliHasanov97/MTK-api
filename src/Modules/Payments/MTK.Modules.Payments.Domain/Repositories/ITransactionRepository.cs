@@ -7,4 +7,5 @@ public interface ITransactionRepository : IRepository<Transaction>
 {
     /// <summary>All-time sum per direction (Income/Expense) — the source CompanyBalance recalculates from.</summary>
     Task<Dictionary<TransactionDirection, decimal>> GetTotalsByDirectionAsync(CancellationToken cancellationToken = default);
+    Task<bool> ExistsBySourcePurchaseIdAsync(Guid purchaseId, CancellationToken cancellationToken = default);
 }

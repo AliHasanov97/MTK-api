@@ -28,7 +28,9 @@ public sealed class WarehouseMappingProfile : Profile
         CreateMap<WarehouseTransaction, TransactionResponse>()
             .ForCtorParam(nameof(TransactionResponse.NomenclatureName), o => o.MapFrom(s => s.Nomenclature.Name));
         CreateMap<WarehouseTransaction, TransactionDto>()
-            .ForCtorParam(nameof(TransactionDto.NomenclatureName), o => o.MapFrom(s => s.Nomenclature.Name));
+            .ForCtorParam(nameof(TransactionDto.NomenclatureName), o => o.MapFrom(s => s.Nomenclature.Name))
+            .ForCtorParam(nameof(TransactionDto.ReferenceType), o => o.MapFrom(s => s.ReferenceType))
+            .ForCtorParam(nameof(TransactionDto.ReferenceId), o => o.MapFrom(s => s.ReferenceId));
 
         // WarehouseStock mappings — code/name are joined from the Nomenclature
         // navigation; IsLowStock is derived from MinStockLevel.

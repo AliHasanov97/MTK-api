@@ -50,6 +50,11 @@ internal sealed class FileAttachmentConfiguration : IEntityTypeConfiguration<Fil
             .HasForeignKey(f => f.OwnerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(f => f.Purchase)
+            .WithMany()
+            .HasForeignKey(f => f.PurchaseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(f => f.Transaction)
             .WithMany()
             .HasForeignKey(f => f.TransactionId)
@@ -66,6 +71,7 @@ internal sealed class FileAttachmentConfiguration : IEntityTypeConfiguration<Fil
         builder.HasIndex(f => f.VendorId);
         builder.HasIndex(f => f.PaymentId);
         builder.HasIndex(f => f.OwnerId);
+        builder.HasIndex(f => f.PurchaseId);
         builder.HasIndex(f => f.TransactionId);
         builder.HasIndex(f => f.UploadedByUserId);
     }

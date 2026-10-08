@@ -15,6 +15,13 @@ internal sealed class WarehouseTransactionRepository
     {
     }
 
+    public override Task<List<WarehouseTransaction>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        return WarehouseContext.WarehouseTransactions
+            .Include(t => t.Nomenclature)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<WarehouseTransaction>> GetByNomenclatureIdAsync(
         Guid nomenclatureId,
         CancellationToken cancellationToken = default)
@@ -57,6 +64,17 @@ internal sealed class WarehouseTransactionRepository
         return await WarehouseContext.WarehouseTransactions
             .Include(t => t.Nomenclature)
             .FirstOrDefaultAsync(
+                t => t.ReferenceType == referenceType && t.ReferenceId == referenceId,
+                cancellationToken);
+    }
+
+    public async Task<bool> ExistsByReferenceAsync(
+        string referenceType,
+        Guid referenceId,
+        CancellationToken cancellationToken = default)
+    {
+        return await WarehouseContext.WarehouseTransactions
+            .AnyAsync(
                 t => t.ReferenceType == referenceType && t.ReferenceId == referenceId,
                 cancellationToken);
     }

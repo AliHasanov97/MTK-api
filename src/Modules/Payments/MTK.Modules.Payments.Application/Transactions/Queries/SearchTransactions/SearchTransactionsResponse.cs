@@ -16,4 +16,7 @@ public sealed record TransactionSearchResult(
     string? Description,
     DateTimeOffset TransactionDate,
     DateTimeOffset CreatedAt,
-    Guid? SourcePaymentId);
+    Guid? SourcePaymentId,
+    Guid? SourcePurchaseId,
+    string DocumentType,
+    Guid ReferenceId);

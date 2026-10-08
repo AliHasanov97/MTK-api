@@ -14,6 +14,7 @@ internal sealed class UploadFileAttachmentCommandHandler : ICommandHandler<Uploa
     private readonly IVendorRepository _vendorRepository;
     private readonly IPaymentRepository _paymentRepository;
     private readonly IOwnerRepository _ownerRepository;
+    private readonly IPurchaseRepository _purchaseRepository;
     private readonly ITransactionRepository _transactionRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly IUnitOfWork _unitOfWork;
@@ -24,6 +25,7 @@ internal sealed class UploadFileAttachmentCommandHandler : ICommandHandler<Uploa
         IVendorRepository vendorRepository,
         IPaymentRepository paymentRepository,
         IOwnerRepository ownerRepository,
+        IPurchaseRepository purchaseRepository,
         ITransactionRepository transactionRepository,
         IFileStorageService fileStorageService,
         IUnitOfWork unitOfWork)
@@ -33,6 +35,7 @@ internal sealed class UploadFileAttachmentCommandHandler : ICommandHandler<Uploa
         _vendorRepository = vendorRepository;
         _paymentRepository = paymentRepository;
         _ownerRepository = ownerRepository;
+        _purchaseRepository = purchaseRepository;
         _transactionRepository = transactionRepository;
         _fileStorageService = fileStorageService;
         _unitOfWork = unitOfWork;
@@ -41,7 +44,7 @@ internal sealed class UploadFileAttachmentCommandHandler : ICommandHandler<Uploa
     public async Task<Result<Guid>> Handle(UploadFileAttachmentCommand request, CancellationToken cancellationToken)
     {
         if (!request.ContractId.HasValue && !request.VendorId.HasValue && !request.PaymentId.HasValue
-            && !request.OwnerId.HasValue && !request.TransactionId.HasValue)
+            && !request.OwnerId.HasValue && !request.PurchaseId.HasValue && !request.TransactionId.HasValue)
         {
             return Result.Failure<Guid>(new Error(
                 "FileAttachment.NoTarget",
@@ -77,6 +80,12 @@ internal sealed class UploadFileAttachmentCommandHandler : ICommandHandler<Uploa
             return Result.Failure<Guid>(new Error("FileAttachment.OwnerNotFound", "Sahib tapılmadı"));
         }
 
+        if (request.PurchaseId.HasValue
+            && await _purchaseRepository.GetByIdDefaultAsync(request.PurchaseId.Value, cancellationToken) is null)
+        {
+            return Result.Failure<Guid>(new Error("FileAttachment.PurchaseNotFound", "Sat?nalma tap?lmad?"));
+        }
+
         if (request.TransactionId.HasValue
             && await _transactionRepository.GetByIdDefaultAsync(request.TransactionId.Value, cancellationToken) is null)
         {
@@ -99,6 +108,7 @@ internal sealed class UploadFileAttachmentCommandHandler : ICommandHandler<Uploa
             request.VendorId,
             request.PaymentId,
             request.OwnerId,
+            request.PurchaseId,
             request.TransactionId,
             request.UploadedByUserId);
 

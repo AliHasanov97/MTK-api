@@ -2,6 +2,7 @@ using AutoMapper;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargesByOwner;
 using MTK.Modules.Payments.Application.Charges.Queries.SearchCharges;
 using MTK.Modules.Payments.Application.CompanyBalances.Queries.GetCompanyBalance;
+using MTK.Modules.Payments.Application.Nomenclatures.Queries.SearchNomenclatureShadows;
 using MTK.Modules.Payments.Application.OwnerBalances.Queries.GetOwnerBalance;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByOwner;
 using MTK.Modules.Payments.Application.Payments.Queries.SearchPayments;
@@ -12,6 +13,7 @@ using MTK.Modules.Payments.Application.Vendors.Queries.GetVendorById;
 using MTK.Modules.Payments.Application.Vendors.Queries.SearchVendors;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.CompanyBalances;
+using MTK.Modules.Payments.Domain.Nomenclatures;
 using MTK.Modules.Payments.Domain.OwnerBalances;
 using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.Rates;
@@ -38,6 +40,8 @@ public sealed class PaymentsMappingProfile : Profile
 
         CreateMap<Vendor, VendorResponse>();
         CreateMap<Vendor, VendorSearchResult>();
+
+        CreateMap<NomenclatureShadow, NomenclatureShadowSearchResult>();
 
         // Charge/Payment now carry real OwnerId/VendorId/ApartmentId/GarageId columns
         // (no more PartyId/PropertyId discriminator-pair to alias), so these map

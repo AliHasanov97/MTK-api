@@ -19,4 +19,6 @@ public sealed record TransactionDto(
     decimal Quantity,
     decimal? UnitPrice,
     DateTimeOffset TransactionDate,
-    string? Notes);
+    string? Notes,
+    string? ReferenceType,
+    Guid? ReferenceId);

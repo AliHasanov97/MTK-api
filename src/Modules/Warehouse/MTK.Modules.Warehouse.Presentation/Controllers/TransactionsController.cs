@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
 using MTK.Modules.Warehouse.Application.Transactions.Commands.RecordIssue;
-using MTK.Modules.Warehouse.Application.Transactions.Commands.RecordReceipt;
 using MTK.Modules.Warehouse.Application.Transactions.Queries.GetTransactionById;
 using MTK.Modules.Warehouse.Application.Transactions.Queries.GetTransactionHistory;
 
@@ -35,18 +34,8 @@ public class TransactionsController(ISender sender) : BaseController(sender)
             : BadRequest(result.Error);
     }
 
-    [HttpPost("receipt")]
-    [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]
-    public async Task<IActionResult> RecordReceipt(
-        [FromBody] RecordReceiptCommand command,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(command, cancellationToken);
-
-        return result.IsSuccess
-            ? Success(result.Value, "Mal qəbulu uğurla qeyd edildi")
-            : BadRequest(result.Error);
-    }
+    // Mal qəbulu endpoint-i yoxdur: anbara giriş yalnız Payments modulundakı alışın
+    // qəbulundan (GoodsReceivedIntegrationEvent) gəlir.
 
     [HttpPost("issue")]
     [RequireAnyRole(Roles.Admin, Roles.BuildingManager)]

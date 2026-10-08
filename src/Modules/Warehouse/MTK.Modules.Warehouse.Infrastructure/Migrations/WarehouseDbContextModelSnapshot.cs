@@ -393,6 +393,10 @@ namespace MTK.Modules.Warehouse.Infrastructure.Migrations
 
                     b.HasIndex("ReferenceType", "ReferenceId");
 
+                    b.HasIndex("ReferenceType", "ReferenceId", "NomenclatureId")
+                        .IsUnique()
+                        .HasFilter("\"ReferenceType\" IS NOT NULL AND \"ReferenceId\" IS NOT NULL");
+
                     b.ToTable("warehouse_transactions", "warehouse");
                 });
 

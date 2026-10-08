@@ -46,6 +46,14 @@ internal sealed class FileAttachmentRepository : Repository<FileAttachment>, IFi
             .ToListAsync(cancellationToken);
     }
 
+    public Task<List<FileAttachment>> ListByPurchaseIdAsync(Guid purchaseId, CancellationToken cancellationToken = default)
+    {
+        return PaymentsContext.FileAttachments
+            .Where(f => f.PurchaseId == purchaseId)
+            .OrderByDescending(f => f.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<List<FileAttachment>> ListByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken = default)
     {
         return PaymentsContext.FileAttachments

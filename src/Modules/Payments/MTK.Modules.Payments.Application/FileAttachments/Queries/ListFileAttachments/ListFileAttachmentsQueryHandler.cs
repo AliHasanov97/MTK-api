@@ -24,6 +24,7 @@ internal sealed class ListFileAttachmentsQueryHandler : IQueryHandler<ListFileAt
             { VendorId: { } vendorId } => await _fileAttachmentRepository.ListByVendorIdAsync(vendorId, cancellationToken),
             { PaymentId: { } paymentId } => await _fileAttachmentRepository.ListByPaymentIdAsync(paymentId, cancellationToken),
             { OwnerId: { } ownerId } => await _fileAttachmentRepository.ListByOwnerIdAsync(ownerId, cancellationToken),
+            { PurchaseId: { } purchaseId } => await _fileAttachmentRepository.ListByPurchaseIdAsync(purchaseId, cancellationToken),
             { TransactionId: { } transactionId } => await _fileAttachmentRepository.ListByTransactionIdAsync(transactionId, cancellationToken),
             _ => [],
         };

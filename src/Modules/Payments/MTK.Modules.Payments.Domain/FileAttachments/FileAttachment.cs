@@ -2,6 +2,7 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Contracts;
 using MTK.Modules.Payments.Domain.Owners;
 using MTK.Modules.Payments.Domain.Payments;
+using MTK.Modules.Payments.Domain.Purchases;
 using MTK.Modules.Payments.Domain.Transactions;
 using MTK.Modules.Payments.Domain.Users;
 using MTK.Modules.Payments.Domain.Vendors;
@@ -35,6 +36,9 @@ public sealed class FileAttachment : Entity
     public Guid? OwnerId { get; private set; }
     public Owner? Owner { get; private set; }
 
+    public Guid? PurchaseId { get; private set; }
+    public Purchase? Purchase { get; private set; }
+
     public Guid? TransactionId { get; private set; }
     public Transaction? Transaction { get; private set; }
 
@@ -53,6 +57,7 @@ public sealed class FileAttachment : Entity
         Guid? vendorId,
         Guid? paymentId,
         Guid? ownerId,
+        Guid? purchaseId,
         Guid? transactionId,
         Guid? uploadedByUserId)
     {
@@ -62,7 +67,7 @@ public sealed class FileAttachment : Entity
         }
 
         if (!contractId.HasValue && !vendorId.HasValue && !paymentId.HasValue
-            && !ownerId.HasValue && !transactionId.HasValue)
+            && !ownerId.HasValue && !purchaseId.HasValue && !transactionId.HasValue)
         {
             throw new ArgumentException(
                 "Ən azı bir əlaqəli obyekt (müqavilə, tədarükçü, ödəniş, sahib və ya " +
@@ -80,6 +85,7 @@ public sealed class FileAttachment : Entity
             VendorId = vendorId,
             PaymentId = paymentId,
             OwnerId = ownerId,
+            PurchaseId = purchaseId,
             TransactionId = transactionId,
             UploadedByUserId = uploadedByUserId,
         };
