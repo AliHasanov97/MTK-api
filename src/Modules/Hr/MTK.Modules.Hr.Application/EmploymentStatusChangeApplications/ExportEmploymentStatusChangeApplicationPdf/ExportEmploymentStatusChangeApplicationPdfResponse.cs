@@ -1,0 +1,3 @@
+namespace MTK.Modules.Hr.Application.EmploymentStatusChangeApplications.ExportEmploymentStatusChangeApplicationPdf;
+
+public sealed record ExportEmploymentStatusChangeApplicationPdfResponse(MemoryStream FileStream, string FileName);

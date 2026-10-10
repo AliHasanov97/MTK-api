@@ -1,0 +1,5 @@
+using MTK.Common.Application.Messaging;
+
+namespace MTK.Modules.Hr.Application.EmploymentStatusChangeApplications.ExportEmploymentStatusChangeApplicationPdf;
+
+public sealed record ExportEmploymentStatusChangeApplicationPdfQuery(Guid ApplicationId) : IQuery<ExportEmploymentStatusChangeApplicationPdfResponse>;

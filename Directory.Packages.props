@@ -44,5 +44,6 @@
     <!-- Document generation -->
     <PackageVersion Include="QuestPDF" Version="2025.7.4" />
     <PackageVersion Include="ClosedXML" Version="0.104.2" />
+    <PackageVersion Include="DocumentFormat.OpenXml" Version="3.1.1" />
   </ItemGroup>
 </Project>

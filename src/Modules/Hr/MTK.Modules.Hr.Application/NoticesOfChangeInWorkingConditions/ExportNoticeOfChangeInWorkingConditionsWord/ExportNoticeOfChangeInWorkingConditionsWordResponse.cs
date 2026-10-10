@@ -1,0 +1,3 @@
+namespace MTK.Modules.Hr.Application.NoticesOfChangeInWorkingConditions.ExportNoticeOfChangeInWorkingConditionsWord;
+
+public sealed record ExportNoticeOfChangeInWorkingConditionsWordResponse(Stream FileStream, string FileName);

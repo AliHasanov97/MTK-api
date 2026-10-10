@@ -28,6 +28,7 @@ internal sealed class PropertyOwnershipRepository : Repository<PropertyOwnership
         var query = PaymentsContext.PropertyOwnerships
             .Include(p => p.Apartment).ThenInclude(a => a!.Building)
             .Include(p => p.Garage)
+            .Include(p => p.Owner)
             .AsQueryable();
 
         query = propertyType == PropertyType.Apartment
@@ -42,6 +43,7 @@ internal sealed class PropertyOwnershipRepository : Repository<PropertyOwnership
         return await PaymentsContext.PropertyOwnerships
             .Include(p => p.Apartment).ThenInclude(a => a!.Building)
             .Include(p => p.Garage)
+            .Include(p => p.Owner)
             .ToListAsync(cancellationToken);
     }
 }

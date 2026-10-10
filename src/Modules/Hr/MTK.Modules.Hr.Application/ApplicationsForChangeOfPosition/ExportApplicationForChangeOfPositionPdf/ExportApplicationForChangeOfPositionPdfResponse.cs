@@ -1,0 +1,3 @@
+namespace MTK.Modules.Hr.Application.ApplicationsForChangeOfPosition.ExportApplicationForChangeOfPositionPdf;
+
+public sealed record ExportApplicationForChangeOfPositionPdfResponse(Stream FileStream, string FileName);

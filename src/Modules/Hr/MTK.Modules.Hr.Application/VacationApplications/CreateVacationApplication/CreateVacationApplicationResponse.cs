@@ -1,0 +1,3 @@
+namespace MTK.Modules.Hr.Application.VacationApplications.CreateVacationApplication;
+
+public sealed record CreateVacationApplicationResponse(Guid VacationApplicationId);
