@@ -148,7 +148,7 @@ internal sealed class GetTimesheetsQueryHandler : IQueryHandler<GetTimesheetsQue
             }
 
             // Norma hesabla (işçinin qrafikinə görə bu ayda neçə gün/saat işləməli idi)
-            var (normDays, normHours) = CalculateNorm(employee, startDate, endDate, calendarDayMap, employeeStartDate);
+            var (normDays, normHours) = CalculateNorm(employee, startDate, endDate, calendarDayMap);
 
             employeeTimesheets.Add(new EmployeeTimesheetDto
             {
@@ -198,20 +198,18 @@ internal sealed class GetTimesheetsQueryHandler : IQueryHandler<GetTimesheetsQue
         Employee employee,
         DateOnly startDate,
         DateOnly endDate,
-        Dictionary<DateOnly, CalendarDay> calendarDayMap,
-        DateOnly employeeStartDate)
+        Dictionary<DateOnly, CalendarDay> calendarDayMap)
     {
         int normDays = 0;
         decimal normHours = 0m;
 
         for (var date = startDate; date <= endDate; date = date.AddDays(1))
         {
-            // İşçi hələ işə başlamamışdı
-            if (date < employeeStartDate)
-                continue;
-
-            // Hər tarix üçün o tarixdə aktiv olan qrafiki tap
-            var schedule = employee.GetScheduleForDate(date);
+            // Norma ayın tam iş günlərinə görə hesablanır (ayın ortasında işə qəbul olunan işçi üçün də),
+            // faktiki göstərici isə yalnız işə başladığı gündən sayılır.
+            // İşə başlamazdan əvvəlki günlərdə qrafik hələ qüvvədə olmadığı üçün işçinin ilk qrafiki götürülür.
+            var schedule = employee.GetScheduleForDate(date)
+                           ?? employee.WorkSchedules.OrderBy(s => s.EffectiveFrom).FirstOrDefault();
 
             // Bayram günüdür
             if (calendarDayMap.TryGetValue(date, out var calendarDay))

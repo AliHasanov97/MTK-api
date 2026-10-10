@@ -28,8 +28,15 @@ internal sealed class EmployeeRepository : SearchableRepository<Employee>, IEmpl
         int? pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = ApplyFiltersAndSort(filters, sortCriteria)
+        IQueryable<Employee> query = ApplyFiltersAndSort(filters, sortCriteria)
             .Include(e => e.Job);
+
+        // Ad / soyad / ata adı üzrə tam mətn axtarışı (CountAsync əsas sinifdə eyni şərti tətbiq edir)
+        var searchTermQuery = GetSearchTerm(searchTerm);
+        if (!string.IsNullOrWhiteSpace(searchTermQuery))
+        {
+            query = query.Where(e => e.SearchVector.Matches(EF.Functions.ToTsQuery(searchTermQuery)));
+        }
 
         return await ApplyPages(query, page, pageSize)
             .ToListAsync(cancellationToken);

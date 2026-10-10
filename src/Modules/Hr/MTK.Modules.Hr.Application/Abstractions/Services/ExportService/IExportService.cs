@@ -46,6 +46,10 @@ public interface IExportService
         Guid orderId,
         CancellationToken cancellationToken = default);
 
+    Task<ExportResult> ExportVacationOrderToPdfAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default);
+
     Task<ExportResult> ExportVacationApplicationToPdfAsync(
         Guid applicationId,
         CancellationToken cancellationToken = default);

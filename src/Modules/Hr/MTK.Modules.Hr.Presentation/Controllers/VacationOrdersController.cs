@@ -1,3 +1,4 @@
+using MTK.Modules.Hr.Application.VacationOrders.ExportVacationOrderPdf;
 using MTK.Common.Application.Authorization;
 
 using MTK.Modules.Hr.Application.VacationOrders.GetVacationOrderById;
@@ -36,5 +37,21 @@ public class VacationOrdersController : BaseController
     {
         var result = await _sender.Send(query, cancellationToken);
         return result.IsSuccess ? Success(result.Value) : BadRequest(result.Error);
+    }
+
+    /// <summary>
+    /// Əmək məzuniyyəti əmrini PDF formatında export edir
+    /// </summary>
+    [HttpGet("{id:guid}/export-pdf")]
+    public async Task<IActionResult> ExportPdf(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new ExportVacationOrderPdfQuery(id), cancellationToken);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Error);
+
+        return File(result.Value.FileStream, "application/pdf", result.Value.FileName);
     }
 }

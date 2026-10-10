@@ -16,6 +16,7 @@ internal sealed class ExportService : IExportService
     private readonly CompensationOrderExportService _compensationOrderExportService;
     private readonly UnpaidLeaveApplicationExportService _unpaidLeaveApplicationExportService;
     private readonly UnpaidLeaveOrderExportService _unpaidLeaveOrderExportService;
+    private readonly VacationOrderExportService _vacationOrderExportService;
     private readonly VacationApplicationExportService _vacationApplicationExportService;
     private readonly EducationLeaveApplicationExportService _educationLeaveApplicationExportService;
     private readonly EducationLeaveOrderExportService _educationLeaveOrderExportService;
@@ -39,6 +40,7 @@ internal sealed class ExportService : IExportService
         CompensationOrderExportService compensationOrderExportService,
         UnpaidLeaveApplicationExportService unpaidLeaveApplicationExportService,
         UnpaidLeaveOrderExportService unpaidLeaveOrderExportService,
+        VacationOrderExportService vacationOrderExportService,
         VacationApplicationExportService vacationApplicationExportService,
         EducationLeaveApplicationExportService educationLeaveApplicationExportService,
         EducationLeaveOrderExportService educationLeaveOrderExportService,
@@ -61,6 +63,7 @@ internal sealed class ExportService : IExportService
         _compensationOrderExportService = compensationOrderExportService;
         _unpaidLeaveApplicationExportService = unpaidLeaveApplicationExportService;
         _unpaidLeaveOrderExportService = unpaidLeaveOrderExportService;
+        _vacationOrderExportService = vacationOrderExportService;
         _vacationApplicationExportService = vacationApplicationExportService;
         _educationLeaveApplicationExportService = educationLeaveApplicationExportService;
         _educationLeaveOrderExportService = educationLeaveOrderExportService;
@@ -224,6 +227,19 @@ internal sealed class ExportService : IExportService
             cancellationToken);
 
         var fileName = $"Ödənişsiz_Məzuniyyət_Əmr_{index:D4}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pdf";
+
+        return new ExportResult(stream, fileName);
+    }
+
+    public async Task<ExportResult> ExportVacationOrderToPdfAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        var (stream, index) = await _vacationOrderExportService.ExportToPdfAsync(
+            orderId,
+            cancellationToken);
+
+        var fileName = $"Əmək_Məzuniyyəti_Əmr_{index:D4}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pdf";
 
         return new ExportResult(stream, fileName);
     }

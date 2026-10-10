@@ -12,5 +12,6 @@ public enum DocumentType
     IDCard = 7,             // Şəxsiyyət vəsiqəsi
     Certificate = 8,        // Sertifikat
     Contract = 9,           // Müqavilə
+    SignedDocument = 10, // İmzalanmış (skan edilmiş) ərizə/əmr
     Other = 99              // Digər
 }
