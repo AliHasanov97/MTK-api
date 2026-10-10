@@ -1,3 +1,4 @@
+using MTK.Modules.Hr.Domain.Employees;
 using MTK.Common.Domain.Queries;
 using MTK.Common.Infrastructure.Database;
 using MTK.Modules.Hr.Domain.BonusOrders;
@@ -22,6 +23,39 @@ namespace MTK.Modules.Hr.Infrastructure.Repositories;
 internal sealed class OrderRepository : Repository<Order>, IOrderRepository
 {
     public OrderRepository(HrDbContext context) : base(context) { }
+
+    /// <summary>
+    /// Əsas Order cədvəlində EmployeeId sütunu yoxdur (hər əmr növünün öz EmployeeId-si var).
+    /// Ona görə Filters-dəki "EmployeeId" şərti, bütün növlərdən həmin işçiyə aid ID-lərin alt-sorğusuna çevrilir.
+    /// </summary>
+    protected override IQueryable<Order> ApplyFiltersAndSort(List<QueryFilter>? filters, SortCriteria? sortCriteria)
+    {
+        var employeeFilter = filters?.FirstOrDefault(f => f.ColumnName.Equals("EmployeeId", StringComparison.OrdinalIgnoreCase));
+        if (employeeFilter is null)
+            return base.ApplyFiltersAndSort(filters, sortCriteria);
+
+        var employeeId = EmployeeFilterValue.ToGuid(employeeFilter.Value);
+        var query = base.ApplyFiltersAndSort(filters!.Where(f => f != employeeFilter).ToList(), sortCriteria);
+
+        // İşçi kartı işə qəbul əmrinə (Employee.EmploymentOrderId) bağlıdır
+        var employmentOrderIds = Context.Set<Employee>()
+            .Where(e => e.Id == employeeId && e.EmploymentOrderId != null)
+            .Select(e => e.EmploymentOrderId!.Value);
+        var ids = employmentOrderIds
+            .Union(Context.Set<OrderForChangeOfPosition>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<UnexcusedAbsenceOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<WarningOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<CompensationOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<UnpaidLeaveOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<VacationOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<EducationLeaveOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<BonusOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<SalaryDeduction>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<EmploymentStatusChangeOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
+            .Union(Context.Set<VacationReturnOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id));
+
+        return query.Where(o => ids.Contains(o.Id));
+    }
 
     public override async Task<List<Order>> SearchAsync(
         List<QueryFilter>? filters,
