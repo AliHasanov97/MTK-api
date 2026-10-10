@@ -49,7 +49,13 @@ internal sealed class ExportAnnualPaymentReportQueryHandler : IQueryHandler<Expo
                 : new PropertyExportLabel(o.Apartment?.ApartmentNumber ?? "—", o.Apartment?.Building?.Name, o.Owner?.FullName));
 
         var stream = _exportService.ExportToExcel(reportResult.Value, labels);
-        var fileName = $"Illik_Hesabat_{request.Year}.xlsx";
+        var typePart = request.PropertyType switch
+        {
+            PropertyType.Apartment => "Menzil_",
+            PropertyType.Garage => "Qaraj_",
+            _ => "",
+        };
+        var fileName = $"Illik_Odenis_Qrafiki_{typePart}{request.Year}.xlsx";
 
         return new ExportFileResult(
             stream.ToArray(),

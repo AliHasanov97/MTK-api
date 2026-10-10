@@ -6,8 +6,9 @@ using MTK.Modules.Payments.Domain.Charges;
 namespace MTK.Modules.Payments.Infrastructure.Export;
 
 /// <summary>
-/// Bütün mənzil və qarajların illik ödəniş qrafiki. Düzülüş iş vaxtı tabeli ilə eynidir:
+/// Mənzil və/və ya qarajların illik ödəniş qrafiki. Düzülüş iş vaxtı tabeli ilə eynidir:
 /// başlıq sətirləri, sabit sütunlar, ay xanaları, yekun sütunları və şərti işarələr cədvəli.
+/// Başlıq və sütunlar hesabatın tərkibinə uyğun dəyişir: yalnız mənzillər, yalnız qarajlar və ya hər ikisi.
 /// </summary>
 internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentReportExcelExportService
 {
@@ -17,21 +18,46 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
         "İyl", "Avq", "Sen", "Okt", "Noy", "Dek",
     ];
 
-    // Sabit sütunlar: № | Növ | Nömrə | Bina | Sahibi
-    private const int FixedColumns = 5;
-    private const int MonthStartCol = FixedColumns + 1;           // 6
-    private const int SummaryStartCol = MonthStartCol + 12;       // 18
-    private const int TotalColumns = SummaryStartCol + 2;         // 20 (Hesablanıb / Ödənilib / Cari borc)
     private const int HeaderRows = 4;
+
+    /// <summary>Hesabatın tərkibinə görə sütun düzülüşü və başlıq.</summary>
+    private sealed record Layout(bool ShowKind, bool ShowBuilding, string Title, string SheetSuffix)
+    {
+        // № | [Növ] | Nömrə | [Bina] | Sahibi
+        public int KindCol => 2;
+        public int NumberCol => ShowKind ? 3 : 2;
+        public int BuildingCol => NumberCol + 1;
+        public int OwnerCol => ShowBuilding ? BuildingCol + 1 : NumberCol + 1;
+        public int FixedColumns => OwnerCol;
+        public int MonthStartCol => FixedColumns + 1;
+        public int SummaryStartCol => MonthStartCol + 12;
+        public int TotalColumns => SummaryStartCol + 2; // Hesablanıb / Ödənilib / Cari borc
+    }
+
+    private static Layout CreateLayout(AnnualPaymentReportResponse report)
+    {
+        var hasApartments = report.Properties.Any(p => p.PropertyType == PropertyType.Apartment);
+        var hasGarages = report.Properties.Any(p => p.PropertyType == PropertyType.Garage);
+
+        if (hasGarages && !hasApartments)
+            return new Layout(false, false, "Q A R A J L A R I N   İ L L İ K   Ö D Ə N İ Ş   Q R A F İ K İ", "Qarajlar");
+
+        if (hasApartments && !hasGarages)
+            return new Layout(false, true, "M Ə N Z İ L L Ə R İ N   İ L L İ K   Ö D Ə N İ Ş   Q R A F İ K İ", "Mənzillər");
+
+        return new Layout(true, true, "M Ə N Z İ L   V Ə   Q A R A J L A R I N   İ L L İ K   Ö D Ə N İ Ş   Q R A F İ K İ", "Mənzil və qarajlar");
+    }
 
     public MemoryStream ExportToExcel(AnnualPaymentReportResponse report, IReadOnlyDictionary<Guid, PropertyExportLabel> labels)
     {
+        var layout = CreateLayout(report);
+
         using var workbook = new XLWorkbook();
         var ws = workbook.Worksheets.Add($"{report.Year}");
 
-        SetupHeader(ws, report.Year);
-        var lastRow = FillRows(ws, report, labels);
-        AddLegendTable(ws, lastRow + 2);
+        SetupHeader(ws, layout, report.Year);
+        var lastRow = FillRows(ws, layout, report, labels);
+        AddLegendTable(ws, layout, lastRow + 2);
         SetupPageSettings(ws);
 
         var stream = new MemoryStream();
@@ -40,19 +66,19 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
         return stream;
     }
 
-    private static void SetupHeader(IXLWorksheet ws, int year)
+    private static void SetupHeader(IXLWorksheet ws, Layout l, int year)
     {
         // Row 1: il
         ws.Cell(1, 1).Value = $"{year}-ci il üzrə";
-        ws.Range(1, 1, 1, TotalColumns).Merge();
+        ws.Range(1, 1, 1, l.TotalColumns).Merge();
         ws.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         ws.Cell(1, 1).Style.Font.Bold = true;
         ws.Cell(1, 1).Style.Font.FontSize = 12;
         ws.Row(1).Height = 20;
 
         // Row 2: əsas başlıq
-        ws.Cell(2, 1).Value = "M Ə N Z İ L   V Ə   Q A R A J L A R I N   İ L L İ K   Ö D Ə N İ Ş   Q R A F İ K İ";
-        ws.Range(2, 1, 2, TotalColumns).Merge();
+        ws.Cell(2, 1).Value = l.Title;
+        ws.Range(2, 1, 2, l.TotalColumns).Merge();
         ws.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         ws.Cell(2, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         ws.Cell(2, 1).Style.Font.Bold = true;
@@ -60,29 +86,34 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
         ws.Row(2).Height = 26;
 
         // Row 3-4: sütun başlıqları
-        string[] fixedHeaders = ["№", "Növ", "Nömrə", "Bina", "Sahibi"];
-        for (var i = 0; i < fixedHeaders.Length; i++)
+        var fixedHeaders = new List<(int Col, string Text)> { (1, "№") };
+        if (l.ShowKind) fixedHeaders.Add((l.KindCol, "Növ"));
+        fixedHeaders.Add((l.NumberCol, "Nömrə"));
+        if (l.ShowBuilding) fixedHeaders.Add((l.BuildingCol, "Bina"));
+        fixedHeaders.Add((l.OwnerCol, "Sahibi"));
+
+        foreach (var (col, text) in fixedHeaders)
         {
-            ws.Range(3, 1 + i, 4, 1 + i).Merge();
-            ws.Cell(3, 1 + i).Value = fixedHeaders[i];
+            ws.Range(3, col, 4, col).Merge();
+            ws.Cell(3, col).Value = text;
         }
 
-        ws.Range(3, MonthStartCol, 3, MonthStartCol + 11).Merge();
-        ws.Cell(3, MonthStartCol).Value = "A Y L A R";
+        ws.Range(3, l.MonthStartCol, 3, l.MonthStartCol + 11).Merge();
+        ws.Cell(3, l.MonthStartCol).Value = "A Y L A R";
 
         for (var month = 1; month <= 12; month++)
         {
-            ws.Cell(4, MonthStartCol + month - 1).Value = MonthNames[month - 1];
+            ws.Cell(4, l.MonthStartCol + month - 1).Value = MonthNames[month - 1];
         }
 
         string[] summaryHeaders = ["Hesablanıb (₼)", "Ödənilib (₼)", "Cari borc (₼)"];
         for (var i = 0; i < summaryHeaders.Length; i++)
         {
-            ws.Range(3, SummaryStartCol + i, 4, SummaryStartCol + i).Merge();
-            ws.Cell(3, SummaryStartCol + i).Value = summaryHeaders[i];
+            ws.Range(3, l.SummaryStartCol + i, 4, l.SummaryStartCol + i).Merge();
+            ws.Cell(3, l.SummaryStartCol + i).Value = summaryHeaders[i];
         }
 
-        var head = ws.Range(3, 1, HeaderRows, TotalColumns);
+        var head = ws.Range(3, 1, HeaderRows, l.TotalColumns);
         head.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         head.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         head.Style.Alignment.WrapText = true;
@@ -91,30 +122,31 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
         head.Style.Fill.BackgroundColor = XLColor.LightYellow;
         head.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
         head.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-        ws.Range(3, SummaryStartCol, 4, TotalColumns).Style.Fill.BackgroundColor = XLColor.LightCyan;
+        ws.Range(3, l.SummaryStartCol, 4, l.TotalColumns).Style.Fill.BackgroundColor = XLColor.LightCyan;
         ws.Row(3).Height = 22;
         ws.Row(4).Height = 20;
 
-        ws.Column(1).Width = 5;    // №
-        ws.Column(2).Width = 9;    // Növ
-        ws.Column(3).Width = 10;   // Nömrə
-        ws.Column(4).Width = 22;   // Bina
-        ws.Column(5).Width = 30;   // Sahibi
-        for (var col = MonthStartCol; col < SummaryStartCol; col++)
+        ws.Column(1).Width = 5;                      // №
+        if (l.ShowKind) ws.Column(l.KindCol).Width = 9;
+        ws.Column(l.NumberCol).Width = 10;           // Nömrə
+        if (l.ShowBuilding) ws.Column(l.BuildingCol).Width = 22;
+        ws.Column(l.OwnerCol).Width = 30;            // Sahibi
+        for (var col = l.MonthStartCol; col < l.SummaryStartCol; col++)
         {
             ws.Column(col).Width = 5.5;
         }
-        for (var col = SummaryStartCol; col <= TotalColumns; col++)
+        for (var col = l.SummaryStartCol; col <= l.TotalColumns; col++)
         {
             ws.Column(col).Width = 14;
         }
 
         ws.SheetView.FreezeRows(HeaderRows);
-        ws.SheetView.FreezeColumns(FixedColumns);
+        ws.SheetView.FreezeColumns(l.FixedColumns);
     }
 
     private static int FillRows(
         IXLWorksheet ws,
+        Layout l,
         AnnualPaymentReportResponse report,
         IReadOnlyDictionary<Guid, PropertyExportLabel> labels)
     {
@@ -132,14 +164,16 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
         foreach (var (property, label) in ordered)
         {
             ws.Cell(row, 1).Value = serial;
-            ws.Cell(row, 2).Value = property.PropertyType == PropertyType.Garage ? "Qaraj" : "Mənzil";
-            ws.Cell(row, 3).Value = label?.Number ?? "—";
-            ws.Cell(row, 4).Value = label?.Building ?? "";
-            ws.Cell(row, 5).Value = label?.Owner ?? "";
+            if (l.ShowKind)
+                ws.Cell(row, l.KindCol).Value = property.PropertyType == PropertyType.Garage ? "Qaraj" : "Mənzil";
+            ws.Cell(row, l.NumberCol).Value = label?.Number ?? "—";
+            if (l.ShowBuilding)
+                ws.Cell(row, l.BuildingCol).Value = label?.Building ?? "";
+            ws.Cell(row, l.OwnerCol).Value = label?.Owner ?? "";
 
             foreach (var month in property.Months)
             {
-                var cell = ws.Cell(row, MonthStartCol + month.Month - 1);
+                var cell = ws.Cell(row, l.MonthStartCol + month.Month - 1);
 
                 if (month.Status is null)
                 {
@@ -173,9 +207,9 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
             totalPaid += paid;
             totalDebt += property.CurrentDebt;
 
-            ws.Cell(row, SummaryStartCol).Value = amount;
-            ws.Cell(row, SummaryStartCol + 1).Value = paid;
-            var debtCell = ws.Cell(row, SummaryStartCol + 2);
+            ws.Cell(row, l.SummaryStartCol).Value = amount;
+            ws.Cell(row, l.SummaryStartCol + 1).Value = paid;
+            var debtCell = ws.Cell(row, l.SummaryStartCol + 2);
             debtCell.Value = property.CurrentDebt;
             if (property.CurrentDebt > 0)
             {
@@ -183,16 +217,16 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
                 debtCell.Style.Font.Bold = true;
             }
 
-            var line = ws.Range(row, 1, row, TotalColumns);
+            var line = ws.Range(row, 1, row, l.TotalColumns);
             line.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             line.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-            ws.Range(row, 1, row, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            ws.Range(row, MonthStartCol, row, SummaryStartCol - 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            ws.Range(row, SummaryStartCol, row, TotalColumns).Style.NumberFormat.Format = "#,##0.00";
+            ws.Range(row, 1, row, l.NumberCol).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Range(row, l.MonthStartCol, row, l.SummaryStartCol - 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Range(row, l.SummaryStartCol, row, l.TotalColumns).Style.NumberFormat.Format = "#,##0.00";
 
             if (serial % 2 == 0)
             {
-                ws.Range(row, 1, row, FixedColumns).Style.Fill.BackgroundColor = XLColor.FromArgb(240, 248, 255);
+                ws.Range(row, 1, row, l.FixedColumns).Style.Fill.BackgroundColor = XLColor.FromArgb(240, 248, 255);
             }
 
             serial++;
@@ -200,23 +234,23 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
         }
 
         // Yekun sətri
-        ws.Range(row, 1, row, SummaryStartCol - 1).Merge();
+        ws.Range(row, 1, row, l.SummaryStartCol - 1).Merge();
         ws.Cell(row, 1).Value = "YEKUN";
         ws.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-        ws.Cell(row, SummaryStartCol).Value = totalAmount;
-        ws.Cell(row, SummaryStartCol + 1).Value = totalPaid;
-        ws.Cell(row, SummaryStartCol + 2).Value = totalDebt;
-        var total = ws.Range(row, 1, row, TotalColumns);
+        ws.Cell(row, l.SummaryStartCol).Value = totalAmount;
+        ws.Cell(row, l.SummaryStartCol + 1).Value = totalPaid;
+        ws.Cell(row, l.SummaryStartCol + 2).Value = totalDebt;
+        var total = ws.Range(row, 1, row, l.TotalColumns);
         total.Style.Font.Bold = true;
         total.Style.Fill.BackgroundColor = XLColor.LightYellow;
         total.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
         total.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-        ws.Range(row, SummaryStartCol, row, TotalColumns).Style.NumberFormat.Format = "#,##0.00";
+        ws.Range(row, l.SummaryStartCol, row, l.TotalColumns).Style.NumberFormat.Format = "#,##0.00";
 
         return row;
     }
 
-    private static void AddLegendTable(IXLWorksheet ws, int startRow)
+    private static void AddLegendTable(IXLWorksheet ws, Layout l, int startRow)
     {
         var legend = new[]
         {
@@ -231,13 +265,13 @@ internal sealed class AnnualPaymentReportExcelExportService : IAnnualPaymentRepo
             var (description, code, color) = legend[i];
             var row = startRow + i;
 
-            ws.Range(row, 2, row, 5).Merge();
+            ws.Range(row, 2, row, l.FixedColumns).Merge();
             var descCell = ws.Cell(row, 2);
             descCell.Value = description;
             descCell.Style.Fill.BackgroundColor = color;
-            ws.Range(row, 2, row, 5).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            ws.Range(row, 2, row, l.FixedColumns).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
 
-            var codeCell = ws.Cell(row, MonthStartCol);
+            var codeCell = ws.Cell(row, l.MonthStartCol);
             codeCell.Value = code;
             codeCell.Style.Fill.BackgroundColor = color;
             codeCell.Style.Font.Bold = true;
