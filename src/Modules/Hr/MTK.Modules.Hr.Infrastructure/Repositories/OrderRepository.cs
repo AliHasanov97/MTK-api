@@ -57,6 +57,9 @@ internal sealed class OrderRepository : Repository<Order>, IOrderRepository
         return query.Where(o => ids.Contains(o.Id));
     }
 
+    // Naviqasiyalar axtarışdan sonra ayrıca LoadAsync ilə yüklənir və izləmənin fixup-ı ilə birləşir
+    protected override bool TrackSearchResults => true;
+
     public override async Task<List<Order>> SearchAsync(
         List<QueryFilter>? filters,
         SortCriteria? sortCriteria,

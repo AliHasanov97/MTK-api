@@ -16,6 +16,12 @@ public interface IVendorChargeRepository : IRepository<Charge>
     /// </summary>
     Task<bool> ExistsForPeriodAsync(Guid contractServiceId, string period, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Verilmiş dövr üçün borcu yaranmış müqavilə xidmətlərinin ID-ləri — bir sorğu ilə.
+    /// <paramref name="includeCancelled"/> true olarsa ləğv edilmiş borclar da "mövcud" sayılır.
+    /// </summary>
+    Task<HashSet<Guid>> GetBilledServiceIdsForPeriodAsync(string period, bool includeCancelled, CancellationToken cancellationToken = default);
+
     Task<List<Charge>> ListByVendorAsync(Guid vendorId, CancellationToken cancellationToken = default);
 
     Task<List<Charge>> ListByContractAsync(Guid contractId, CancellationToken cancellationToken = default);

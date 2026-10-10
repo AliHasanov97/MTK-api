@@ -84,6 +84,7 @@ internal sealed class OwnerRepository : SearchableRepository<Owner>, IOwnerRepos
         CancellationToken cancellationToken = default)
     {
         return await BuildingsContext.Owners
+            .AsNoTracking()
             .Include(o => o.OwnedApartments)
             .Include(o => o.OwnedGarages)
             .ToListAsync(cancellationToken);

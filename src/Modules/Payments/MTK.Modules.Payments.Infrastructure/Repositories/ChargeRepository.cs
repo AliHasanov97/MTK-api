@@ -100,17 +100,49 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
             .AnyAsync(c =>
                 c.OwnerId != null &&
                 (c.ApartmentId == propertyId || c.GarageId == propertyId) &&
-                c.Period == period,
+                c.Period == period &&
+                c.Status != ChargeStatus.Cancelled,
                 cancellationToken);
     }
 
-    public async Task<IEnumerable<Charge>> GetOwnerChargesByYearAsync(
+    public async Task<HashSet<Guid>> GetPropertyIdsWithChargeForPeriodAsync(
+        string period,
+        bool includeCancelled,
+        CancellationToken cancellationToken = default)
+    {
+        var query = PaymentsContext.Charges
+            .Where(c => c.OwnerId != null && c.Period == period && (includeCancelled || c.Status != ChargeStatus.Cancelled));
+
+        var apartmentIds = await query.Where(c => c.ApartmentId != null).Select(c => c.ApartmentId!.Value).ToListAsync(cancellationToken);
+        var garageIds = await query.Where(c => c.GarageId != null).Select(c => c.GarageId!.Value).ToListAsync(cancellationToken);
+
+        return [.. apartmentIds, .. garageIds];
+    }
+
+    public async Task<List<OwnerChargeYearItem>> GetOwnerChargeItemsByYearAsync(
         int year,
+        IReadOnlyCollection<Guid>? propertyIds = null,
         CancellationToken cancellationToken = default)
     {
         var prefix = $"{year}-";
-        return await PaymentsContext.Charges
-            .Where(c => c.OwnerId != null && c.Period != null && c.Period.StartsWith(prefix))
+        var query = PaymentsContext.Charges
+            .AsNoTracking()
+            .Where(c => c.OwnerId != null && c.Period != null && c.Period.StartsWith(prefix));
+
+        if (propertyIds is not null)
+        {
+            var ids = propertyIds.ToList();
+            query = query.Where(c => (c.ApartmentId != null && ids.Contains(c.ApartmentId.Value)) ||
+                                     (c.GarageId != null && ids.Contains(c.GarageId.Value)));
+        }
+
+        return await query
+            .Select(c => new OwnerChargeYearItem(
+                (c.ApartmentId ?? c.GarageId)!.Value,
+                c.Period!,
+                c.Amount,
+                c.PaidAmount,
+                c.Status))
             .ToListAsync(cancellationToken);
     }
 

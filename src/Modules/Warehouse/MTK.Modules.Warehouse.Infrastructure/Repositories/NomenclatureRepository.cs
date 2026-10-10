@@ -14,6 +14,24 @@ internal sealed class NomenclatureRepository : SearchableRepository<Nomenclature
     {
     }
 
+    public async Task<List<Nomenclature>> GetPagedAsync(
+        bool? isActive,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Nomenclature> query = WarehouseContext.Nomenclatures.AsNoTracking();
+
+        if (isActive.HasValue)
+            query = query.Where(n => n.IsActive == isActive.Value);
+
+        return await query
+            .OrderBy(n => n.Code)
+            .Skip(Math.Max(0, pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Nomenclature?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
         return await WarehouseContext.Nomenclatures

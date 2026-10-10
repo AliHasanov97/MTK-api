@@ -13,6 +13,12 @@ public interface IPaymentRepository : IRepository<Payment>
     /// Tərəfə (sakin və ya tədarükçü) aid bütün ödənişlər. Avansın yüklənməsi hər
     /// iki tərəf üçün eyni mexanizmlə işləsin deyə ümumi metoddur.
     /// </summary>
+    /// <summary>
+    /// Verilmiş tərəflərin (hamısı sakin və ya hamısı tədarükçü) tamamlanmış ödənişləri — bir sorğu ilə
+    /// (avansın tətbiqində hər sahib/tədarükçü üçün ayrıca sorğu getməsin).
+    /// </summary>
+    Task<List<Payment>> GetCompletedByPartyIdsAsync(PartyType partyType, IReadOnlyCollection<Guid> partyIds, CancellationToken cancellationToken = default);
+
     Task<IEnumerable<Payment>> GetByPartyIdAsync(PartyType partyType, Guid partyId, CancellationToken cancellationToken = default);
 
     /// <summary>

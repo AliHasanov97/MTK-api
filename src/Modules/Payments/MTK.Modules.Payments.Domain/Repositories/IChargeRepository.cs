@@ -31,14 +31,26 @@ public interface IChargeRepository : IRepository<Charge>
     /// üçün təkrar haqq yaradardı (əvvəllər məhz bu baş vermişdi: ownerId-ə görə
     /// scope edilmiş yoxlama transferi "yeni dövr" kimi görürdü).
     /// </summary>
+    /// <summary>Ləğv edilməmiş (Cancelled olmayan) sakin borcu bu mənzil/qaraj və dövr üçün varmı? (Unikal indekslə eyni qayda.)</summary>
     Task<bool> ChargeExistsForPeriodAsync(Guid propertyId, string period, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Verilmiş dövr üçün sakin borcu olan mənzil/qaraj ID-ləri — bir sorğu ilə (generasiyada hər əmlak üçün ayrıca sorğu getməsin).
+    /// <paramref name="includeCancelled"/> true olarsa ləğv edilmiş borclar da "mövcud" sayılır.
+    /// </summary>
+    Task<HashSet<Guid>> GetPropertyIdsWithChargeForPeriodAsync(string period, bool includeCancelled, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Bütün sakin borcları — Period-u "{year}-" ilə başlayan (illik hesabat üçün).
     /// Period-un "yyyy-MM" formatına uyğunluğu çağıran tərəfdə yoxlanılır, çünki
     /// manual borclar fərqli bir dövr teqi daşıya bilər.
     /// </summary>
-    Task<IEnumerable<Charge>> GetOwnerChargesByYearAsync(int year, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// İl üzrə sakin borcları, yalnız hesabat üçün lazım olan sahələrlə (izləməsiz, proyeksiya).
+    /// <paramref name="propertyIds"/> verilərsə yalnız həmin mənzil/qarajlar üçün.
+    /// </summary>
+    Task<List<OwnerChargeYearItem>> GetOwnerChargeItemsByYearAsync(
+        int year, IReadOnlyCollection<Guid>? propertyIds = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Hər əmlak üzrə bütün dövrlər üzrə qalıq borc (Amount - PaidAmount cəmi,

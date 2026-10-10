@@ -34,6 +34,10 @@ internal sealed class BulkCreateCalendarDaysCommandHandler
         var created = new List<CalendarDay>();
         var skipped = new List<DateOnly>();
 
+        // Mövcud günlər bir sorğu ilə yüklənir (hər gün üçün ayrıca sorğu getməsin)
+        var existing = await _repository.GetByDateRangeAsync(
+            command.Days.Min(d => d.Date), command.Days.Max(d => d.Date), cancellationToken);
+
         foreach (var item in command.Days)
         {
             // Eyni sorğu daxilində təkrar və bazada mövcud olan tarixlər
@@ -41,8 +45,12 @@ internal sealed class BulkCreateCalendarDaysCommandHandler
                 (c.ApplicableWorkingDays == null || item.ApplicableWorkingDays == null ||
                  c.ApplicableWorkingDays == item.ApplicableWorkingDays));
 
-            if (duplicateInBatch ||
-                await _repository.ExistsByDateAsync(item.Date, item.ApplicableWorkingDays, cancellationToken: cancellationToken))
+            // Eyni qayda: hamıya aid gün hər şeylə, qrafikə aid gün isə hamıya aid və ya eyni qrafikli gün ilə toqquşur
+            bool existsInDb = existing.Any(e => e.Date == item.Date &&
+                (e.ApplicableWorkingDays == null || item.ApplicableWorkingDays == null ||
+                 e.ApplicableWorkingDays == item.ApplicableWorkingDays));
+
+            if (duplicateInBatch || existsInDb)
             {
                 skipped.Add(item.Date);
                 continue;

@@ -102,20 +102,21 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
         builder.HasIndex(c => new { c.OwnerId, c.IssuedOn });
         builder.HasIndex(c => new { c.VendorId, c.IssuedOn });
 
+        // Ləğv edilmiş (Cancelled) borc unikallığa daxil deyil: səhv borcu ləğv edib eyni dövr üçün düzgününü yaratmaq olar.
         // Sakin borcu: eyni mənzil/qaraj + dövr üçün ikinci borc yaranmasın. İki ayrı
         // filtrlənmiş unikal indeks (əvvəlki tək PartyType='Owner' indeksinin yerinə) —
         // ApartmentId/GarageId qarşılıqlı müstəsna olduğu üçün bir-birinə mane olmur.
         builder.HasIndex(c => new { c.OwnerId, c.ApartmentId, c.Period })
             .IsUnique()
-            .HasFilter("\"ApartmentId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
+            .HasFilter("\"ApartmentId\" IS NOT NULL AND \"DeletedAt\" IS NULL AND \"Status\" <> 'Cancelled'");
         builder.HasIndex(c => new { c.OwnerId, c.GarageId, c.Period })
             .IsUnique()
-            .HasFilter("\"GarageId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
+            .HasFilter("\"GarageId\" IS NOT NULL AND \"DeletedAt\" IS NULL AND \"Status\" <> 'Cancelled'");
 
         // Tədarükçü borcu (idempotentlik): eyni xidmət + dövr və eyni mal + qaimə.
         builder.HasIndex(c => new { c.ContractServiceId, c.Period })
             .IsUnique()
-            .HasFilter("\"ContractServiceId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
+            .HasFilter("\"ContractServiceId\" IS NOT NULL AND \"DeletedAt\" IS NULL AND \"Status\" <> 'Cancelled'");
 
         // Naviqasiyalar — Restrict: bir shadow (Owner/Apartment/Garage) və ya Vendor
         // silinsə belə, ona istinad edən maliyyə tarixçəsi (Charge) itirilməməlidir.

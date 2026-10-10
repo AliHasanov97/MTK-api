@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.Extensions.Logging;
 using MTK.Modules.Payments.Application.Charges.Services;
 using MTK.Modules.Payments.Application.OwnerBalances.Services;
@@ -20,7 +19,10 @@ internal sealed class ChargeGenerationService(
     IOwnerBalanceService ownerBalanceService,
     ILogger<ChargeGenerationService> logger) : IChargeGenerationService
 {
-    public async Task<int> GenerateMonthlyChargesAsync(string period, CancellationToken cancellationToken = default)
+    public async Task<ChargeGenerationResult> GenerateMonthlyChargesAsync(
+        string period,
+        bool regenerateCancelled = false,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting monthly charge generation for period {Period}", period);
 
@@ -28,6 +30,13 @@ internal sealed class ChargeGenerationService(
         Rate? apartmentRate = await rateRepository.GetCurrentRateAsync(RateType.PerSquareMeter, cancellationToken);
 
         int chargesCreated = 0;
+        int apartmentsSkippedNoRate = 0;
+        int garagesSkippedNoRate = 0;
+
+        // Bu dövr üçün borcu olan əmlaklar bir sorğu ilə yüklənir (hər əmlak üçün ayrıca sorğu yoxdur).
+        // Planlı iş ləğv edilmiş borcu da "mövcud" sayır və onu təkrar yaratmır; əl ilə bərpa isə ləğv edilmişləri nəzərə almır.
+        HashSet<Guid> billedPropertyIds = await chargeRepository.GetPropertyIdsWithChargeForPeriodAsync(
+            period, includeCancelled: !regenerateCancelled, cancellationToken);
 
         // Avansla bağlama ikinci keçiddə, borclar yazıldıqdan sonra aparılır. Borcların
         // özü (referansları) saxlanılır — Id-nin EF tərəfindən nə vaxt verilməsindən
@@ -35,7 +44,7 @@ internal sealed class ChargeGenerationService(
         var createdCharges = new List<Charge>();
         var affectedOwnerIds = new HashSet<Guid>();
 
-        DateTimeOffset issuedOn = IssuedOnFromPeriod(period);
+        DateTimeOffset issuedOn = ChargePeriod.FirstDay(period);
 
         // Get apartments with owners from PropertyOwnership read model
         List<PropertyOwnership> apartments = await propertyOwnershipRepository
@@ -50,12 +59,7 @@ internal sealed class ChargeGenerationService(
                 decimal area = ownership.Apartment!.AreaSquareMeters;
 
                 // Check if charge already exists for this period
-                bool chargeExists = await chargeRepository.ChargeExistsForPeriodAsync(
-                    apartmentId,
-                    period,
-                    cancellationToken);
-
-                if (chargeExists)
+                if (billedPropertyIds.Contains(apartmentId))
                 {
                     logger.LogDebug("Charge already exists for apartment {ApartmentId} in period {Period}",
                         apartmentId, period);
@@ -84,6 +88,17 @@ internal sealed class ChargeGenerationService(
 
                 logger.LogDebug("Created charge for apartment {ApartmentId}, owner {OwnerId}, amount {Amount}",
                     apartmentId, ownership.OwnerId, chargeAmount);
+            }
+        }
+
+        else
+        {
+            apartmentsSkippedNoRate = apartments.Count(o => !billedPropertyIds.Contains(o.ApartmentId!.Value));
+            if (apartmentsSkippedNoRate > 0)
+            {
+                logger.LogWarning(
+                    "No active PerSquareMeter rate found for period {Period}; {Count} apartment(s) were NOT charged",
+                    period, apartmentsSkippedNoRate);
             }
         }
 
@@ -123,24 +138,20 @@ internal sealed class ChargeGenerationService(
                 garageRate = defaultGarageRate;
             }
 
-            if (garageRate is null)
-            {
-                logger.LogWarning(
-                    "No active FixedGarage rate found for garage type {GarageType} (garage {GarageId}); skipping",
-                    garageType, garageId);
-                continue;
-            }
-
-            // Check if charge already exists for this period
-            bool chargeExists = await chargeRepository.ChargeExistsForPeriodAsync(
-                garageId,
-                period,
-                cancellationToken);
-
-            if (chargeExists)
+            // Bu dövr üçün borcu artıq olan qaraj tarifdən asılı olmayaraq atlanır
+            if (billedPropertyIds.Contains(garageId))
             {
                 logger.LogDebug("Charge already exists for garage {GarageId} in period {Period}",
                     garageId, period);
+                continue;
+            }
+
+            if (garageRate is null)
+            {
+                garagesSkippedNoRate++;
+                logger.LogWarning(
+                    "No active FixedGarage rate found for garage type {GarageType} (garage {GarageId}); skipping",
+                    garageType, garageId);
                 continue;
             }
 
@@ -169,7 +180,7 @@ internal sealed class ChargeGenerationService(
         if (chargesCreated == 0)
         {
             logger.LogInformation("Monthly charge generation completed for period {Period}. No new charges", period);
-            return 0;
+            return new ChargeGenerationResult(0, apartmentsSkippedNoRate, garagesSkippedNoRate);
         }
 
         // Borcların yazılması, avansdan bağlanması və balansın yenilənməsi bir
@@ -189,7 +200,10 @@ internal sealed class ChargeGenerationService(
             logger.LogError(
                 "Advance settlement failed for period {Period} ({Code}: {Message}); generation rolled back",
                 period, advanceResult.Error.Code, advanceResult.Error.Message);
-            return 0;
+
+            // Səssiz "0 borc yaradıldı" əvəzinə xəta kimi görünsün: job uğursuz sayılır, növbəti işləmədə təkrar cəhd olunur.
+            throw new InvalidOperationException(
+                $"Avansla bağlama uğursuz oldu, '{period}' dövrü üçün generasiya geri qaytarıldı ({advanceResult.Error.Code}: {advanceResult.Error.Message}).");
         }
 
         // Balans aqreqatdan mütləq yenidən hesablanır (artırmalı yanaşma yoxdur).
@@ -201,22 +215,6 @@ internal sealed class ChargeGenerationService(
         logger.LogInformation("Monthly charge generation completed for period {Period}. Created {Count} charges",
             period, chargesCreated);
 
-        return chargesCreated;
-    }
-
-    /// <summary>
-    /// "yyyy-MM" dövrünü borcun yaşına çevirir — dövrün ilk günü. Format tanınmasa
-    /// (gözlənilməyən dəyər) borc indi yaranmış sayılır.
-    /// </summary>
-    private static DateTimeOffset IssuedOnFromPeriod(string period)
-    {
-        return DateTimeOffset.TryParseExact(
-            period + "-01",
-            "yyyy-MM-dd",
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-            out DateTimeOffset parsed)
-            ? parsed
-            : DateTimeOffset.UtcNow;
+        return new ChargeGenerationResult(chargesCreated, apartmentsSkippedNoRate, garagesSkippedNoRate);
     }
 }

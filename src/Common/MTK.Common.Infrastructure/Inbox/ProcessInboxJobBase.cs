@@ -30,8 +30,6 @@ public abstract class ProcessInboxJobBase(
 
     public async Task Execute(IJobExecutionContext context)
     {
-        logger.LogInformation("{Module} - Beginning to process inbox messages", ModuleName);
-
         DbConnection connection;
         try
         {
@@ -51,14 +49,24 @@ public abstract class ProcessInboxJobBase(
             IReadOnlyList<InboxMessageResponse> inboxMessages =
                 await GetInboxMessagesAsync(connection, transaction);
 
+            if (inboxMessages.Count == 0)
+            {
+                // Boş işləmə: heç nə loglanmır (hər 5 saniyədə səs-küy yaratmasın)
+                await transaction.CommitAsync(context.CancellationToken);
+                return;
+            }
+
+            logger.LogInformation("{Module} - Processing {Count} inbox message(s)", ModuleName, inboxMessages.Count);
+
             foreach (InboxMessageResponse inboxMessage in inboxMessages)
             {
                 Exception? exception = null;
 
                 try
                 {
-                    logger.LogInformation(
-                        "{Module} - Processing inbox message {MessageId}. Content: {Content}",
+                    // Tam məzmun yalnız Debug səviyyəsində (şəxsi məlumat ola bilər)
+                    logger.LogDebug(
+                        "{Module} - Inbox message {MessageId} content: {Content}",
                         ModuleName,
                         inboxMessage.Id,
                         inboxMessage.Content);
@@ -69,11 +77,6 @@ public abstract class ProcessInboxJobBase(
                         inboxMessage.Content,
                         SerializerSettings.Instance)!;
 
-                    logger.LogInformation(
-                        "{Module} - Deserialized integration event of type {EventType}",
-                        ModuleName,
-                        integrationEvent.GetType().Name);
-
                     using IServiceScope scope = serviceScopeFactory.CreateScope();
 
                     IEnumerable<IIntegrationEventHandler> handlers = GetHandlers(
@@ -81,35 +84,41 @@ public abstract class ProcessInboxJobBase(
                         scope.ServiceProvider,
                         HandlerAssembly);
 
-                    logger.LogInformation(
-                        "{Module} - Found {HandlerCount} handlers for event type {EventType}",
-                        ModuleName,
-                        handlers.Count(),
-                        integrationEvent.GetType().Name);
-
                     foreach (IIntegrationEventHandler integrationEventHandler in handlers)
                     {
-                        logger.LogInformation(
-                            "{Module} - Executing handler {HandlerType}",
-                            ModuleName,
-                            integrationEventHandler.GetType().Name);
+                        string consumerName = integrationEventHandler.GetType().FullName!;
+
+                        // Eyni handler eyni mesajı təkrar icra etməsin (inbox_message_consumers)
+                        if (await ConsumerAlreadyHandledAsync(connection, transaction, inboxMessage.Id, consumerName))
+                        {
+                            logger.LogInformation(
+                                "{Module} - Handler {HandlerType} already handled message {MessageId}, skipping",
+                                ModuleName,
+                                integrationEventHandler.GetType().Name,
+                                inboxMessage.Id);
+                            continue;
+                        }
 
                         await integrationEventHandler.Handle(integrationEvent, context.CancellationToken);
 
-                        logger.LogInformation(
-                            "{Module} - Handler {HandlerType} completed successfully",
-                            ModuleName,
-                            integrationEventHandler.GetType().Name);
+                        // Uğurlu icra dərhal qeyd olunur
+                        await InsertConsumerAsync(connection, transaction, inboxMessage.Id, consumerName);
+
                     }
+
+                    logger.LogInformation(
+                        "{Module} - Inbox message {MessageId} ({EventType}) processed",
+                        ModuleName,
+                        inboxMessage.Id,
+                        integrationEvent.GetType().Name);
                 }
                 catch (Exception caughtException)
                 {
                     logger.LogError(
                         caughtException,
-                        "{Module} - Exception while processing inbox message {MessageId}. Content: {Content}",
+                        "{Module} - Exception while processing inbox message {MessageId}",
                         ModuleName,
-                        inboxMessage.Id,
-                        inboxMessage.Content);
+                        inboxMessage.Id);
 
                     exception = caughtException;
                 }
@@ -118,7 +127,6 @@ public abstract class ProcessInboxJobBase(
             }
 
             await transaction.CommitAsync(context.CancellationToken);
-            logger.LogInformation("{Module} - Completed processing inbox messages", ModuleName);
         }
         catch (Exception ex)
         {
@@ -173,6 +181,38 @@ public abstract class ProcessInboxJobBase(
                 ProcessedOnUtc = dateTimeProvider.UtcNow,
                 Error = exception?.ToString()
             },
+            transaction: transaction);
+    }
+
+    private async Task<bool> ConsumerAlreadyHandledAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        Guid inboxMessageId,
+        string consumerName)
+    {
+        return await connection.ExecuteScalarAsync<bool>(
+            $"""
+            SELECT EXISTS (
+                SELECT 1 FROM {Schema}.inbox_message_consumers
+                WHERE "InboxMessageId" = @InboxMessageId AND "Name" = @Name)
+            """,
+            new { InboxMessageId = inboxMessageId, Name = consumerName },
+            transaction: transaction);
+    }
+
+    private async Task InsertConsumerAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        Guid inboxMessageId,
+        string consumerName)
+    {
+        await connection.ExecuteAsync(
+            $"""
+            INSERT INTO {Schema}.inbox_message_consumers ("InboxMessageId", "Name")
+            VALUES (@InboxMessageId, @Name)
+            ON CONFLICT DO NOTHING
+            """,
+            new { InboxMessageId = inboxMessageId, Name = consumerName },
             transaction: transaction);
     }
 

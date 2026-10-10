@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using MTK.Common.Domain.Abstractions;
 using MTK.Common.Domain.Queries;
 using Microsoft.EntityFrameworkCore;
@@ -300,10 +300,17 @@ public class Repository<T>: IRepository<T> where T : Entity
         return query;
     }
     
+    /// <summary>
+    /// Axtarış/say sorğuları yalnız oxumadır — dəyişiklik izləməsi (change tracking) lazım deyil və siyahılarda
+    /// yaddaş və CPU sərf edir. Axtarışdan sonra naviqasiyaları ayrıca <c>LoadAsync</c> ilə doldurub izləmənin
+    /// "fixup"-ına güvənən repository-lər bunu <c>true</c> etməlidir.
+    /// </summary>
+    protected virtual bool TrackSearchResults => false;
+
     protected virtual IQueryable<T> ApplyFiltersAndSort(List<QueryFilter>? filters, SortCriteria? sortCriteria)
     {
-        return DbItem
-            .ApplyFiltersAndSort(filters, sortCriteria);
+        var query = DbItem.ApplyFiltersAndSort(filters, sortCriteria);
+        return TrackSearchResults ? query : query.AsNoTracking();
     }
 
     public virtual Task AddAsync(T entity, CancellationToken cancellationToken = default)

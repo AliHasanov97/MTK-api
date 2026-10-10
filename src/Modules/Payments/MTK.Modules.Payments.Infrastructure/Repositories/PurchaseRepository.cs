@@ -14,6 +14,25 @@ internal sealed class PurchaseRepository : SearchableRepository<Purchase>, IPurc
     {
     }
 
+    public async Task<Dictionary<Guid, string?>> GetInvoiceNumbersAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        var list = ids.Distinct().ToList();
+        var rows = await PaymentsContext.Purchases
+            .AsNoTracking()
+            .Where(p => list.Contains(p.Id))
+            .Select(p => new { p.Id, p.InvoiceNumber })
+            .ToListAsync(cancellationToken);
+
+        return rows.ToDictionary(r => r.Id, r => r.InvoiceNumber);
+    }
+
     public Task<Purchase?> GetWithLinesAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return PaymentsContext.Purchases

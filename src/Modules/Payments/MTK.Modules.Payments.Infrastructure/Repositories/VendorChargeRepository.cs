@@ -43,6 +43,23 @@ internal sealed class VendorChargeRepository : SearchableRepository<Charge>, IVe
                 cancellationToken);
     }
 
+    public async Task<HashSet<Guid>> GetBilledServiceIdsForPeriodAsync(
+        string period,
+        bool includeCancelled,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = await PaymentsContext.Charges
+            .Where(c =>
+                c.VendorId != null &&
+                c.ContractServiceId != null &&
+                c.Period == period &&
+                (includeCancelled || c.Status != ChargeStatus.Cancelled))
+            .Select(c => c.ContractServiceId!.Value)
+            .ToListAsync(cancellationToken);
+
+        return [.. ids];
+    }
+
     public Task<List<Charge>> ListByVendorAsync(
         Guid vendorId,
         CancellationToken cancellationToken = default)

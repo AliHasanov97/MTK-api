@@ -33,7 +33,6 @@ public sealed class ContractService : Entity
 
     /// <summary>Null olduqda müqavilənin bitmə tarixi tətbiq olunur.</summary>
     public DateTimeOffset? ServiceEndDate { get; private set; }
-
     /// <summary>Ödəniş müddəti (gün) — yaranan borcun son ödəniş tarixi bu qədər sonraya düşür.</summary>
     public int? PaymentTermDays { get; private set; }
 
@@ -135,15 +134,16 @@ public sealed class ContractService : Entity
 
         // Hər iki tərəf AY səviyyəsində ölçülür, gün səviyyəsində yox — xidmətin/
         // müqavilənin başladığı/bitdiyi günün özü əhəmiyyətsizdir, yalnız ayı önəmlidir.
+        // Bitmə ayı daxildir: 1 Yanvar - 31 Dekabr = 12 ay (0-dan 11-ə qədər = 12 dəyər).
         var monthsSinceStart = (periodStart.Year - from.Year) * 12 + (periodStart.Month - from.Month);
-        var totalMonths = (to.Year - from.Year) * 12 + (to.Month - from.Month);
+        var totalMonths = (to.Year - from.Year) * 12 + (to.Month - from.Month) + 1;
 
-        // Dövr xidmətin başladığı aydan əvvəl ola bilməz, VƏ bitdiyi aya "çatmamış"
-        // olmalıdır — fence-post: 12 aylıq (Sentyabr→Sentyabr) rüblük müqavilədə
-        // düz 4 hesablanma olmalıdır (ay 0, 3, 6, 9), 5-ci (ay 12) artıq sayılmır,
-        // çünki o, elə müqavilənin bağlandığı anın özüdür — yeni rübün başlanğıcı
-        // deyil. Bitmə AYININ özü ("to"-nun ayı) bərabər olanda da buraxılır,
-        // əvvəlki versiyada bu sərhəd daxil edilib 5-ci haqq səhvən yaranırdı.
+        // Dövr xidmətin başladığı aydan əvvəl ola bilməz, VƏ bitdiyi aydan sonra ola bilməz.
+        // Nümunə: 1 Sentyabr 2026 - 31 Avqust 2027 (12 ay, totalMonths=12):
+        //   - Rüblük: ay 0, 3, 6, 9 (4 charge) - düzgün
+        //   - ay 12 və sonrası: >= 12, buraxılır
+        // Nümunə: 1 Yanvar 2026 - 31 Dekabr 2026 (12 ay, totalMonths=12):
+        //   - Aylıq: ay 0-11 (12 charge) - Dekabr (ay 11) daxildir
         if (monthsSinceStart < 0 || monthsSinceStart >= totalMonths)
             return false;
 

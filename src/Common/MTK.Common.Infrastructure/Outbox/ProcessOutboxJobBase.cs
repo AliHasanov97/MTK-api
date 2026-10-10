@@ -17,6 +17,15 @@ using System.Reflection;
 
 namespace MTK.Common.Infrastructure.Outbox;
 
+/// <summary>
+/// Outbox mesajlarını işləyir.
+///
+/// - Hər handler üçün icra qeydi <c>outbox_message_consumers</c> cədvəlində saxlanılır: təkrar cəhddə artıq
+///   uğurla bitmiş handler yenidən icra olunmur.
+/// - Xəta olan mesaj artan fasilə ilə (<see cref="OutboxOptions.RetryBaseDelaySeconds"/> × 4^n) təkrar cəhd olunur;
+///   <see cref="OutboxOptions.MaxAttempts"/> cəhddən sonra "ölü" (dead-letter) qeyd edilir (ProcessedOnUtc + Error).
+/// - Mesaj olmayan işləmələr log yazmır; mesaj məzmunu yalnız Debug səviyyəsində loglanır.
+/// </summary>
 [DisallowConcurrentExecution]
 public abstract class ProcessOutboxJobBase(
     IDbConnectionFactory dbConnectionFactory,
@@ -33,8 +42,6 @@ public abstract class ProcessOutboxJobBase(
 
     public async Task Execute(IJobExecutionContext context)
     {
-        logger.LogInformation("{Module} - Beginning to process outbox messages", ModuleName);
-
         DbConnection connection;
         try
         {
@@ -54,14 +61,25 @@ public abstract class ProcessOutboxJobBase(
             IReadOnlyList<OutboxMessageResponse> outboxMessages =
                 await GetOutboxMessagesAsync(connection, transaction);
 
+            if (outboxMessages.Count == 0)
+            {
+                // Boş işləmə: heç nə loglanmır (hər 5 saniyədə səs-küy yaratmasın)
+                await transaction.CommitAsync(context.CancellationToken);
+                return;
+            }
+
+            logger.LogInformation("{Module} - Processing {Count} outbox message(s)", ModuleName, outboxMessages.Count);
+
             foreach (OutboxMessageResponse outboxMessage in outboxMessages)
             {
                 Exception? exception = null;
+                string eventTypeName = "unknown";
 
                 try
                 {
-                    logger.LogInformation(
-                        "{Module} - Processing outbox message {MessageId}. Content: {Content}",
+                    // MessageId + hadisə növü Information-da, tam məzmun yalnız Debug-da (şəxsi məlumat ola bilər)
+                    logger.LogDebug(
+                        "{Module} - Outbox message {MessageId} content: {Content}",
                         ModuleName,
                         outboxMessage.Id,
                         outboxMessage.Content);
@@ -72,10 +90,7 @@ public abstract class ProcessOutboxJobBase(
                         outboxMessage.Content,
                         SerializerSettings.Instance)!;
 
-                    logger.LogInformation(
-                        "{Module} - Deserialized domain event of type {EventType}",
-                        ModuleName,
-                        domainEvent.GetType().Name);
+                    eventTypeName = domainEvent.GetType().Name;
 
                     using IServiceScope scope = serviceScopeFactory.CreateScope();
 
@@ -87,35 +102,39 @@ public abstract class ProcessOutboxJobBase(
                         scope.ServiceProvider,
                         HandlerAssembly);
 
-                    logger.LogInformation(
-                        "{Module} - Found {HandlerCount} handlers for event type {EventType}",
-                        ModuleName,
-                        handlers.Count(),
-                        domainEvent.GetType().Name);
-
                     foreach (IDomainEventHandler domainEventHandler in handlers)
                     {
-                        logger.LogInformation(
-                            "{Module} - Executing handler {HandlerType}",
-                            ModuleName,
-                            domainEventHandler.GetType().Name);
+                        string consumerName = domainEventHandler.GetType().FullName!;
+
+                        // Təkrar cəhddə artıq uğurla bitmiş handler atlanır
+                        if (await ConsumerAlreadyHandledAsync(connection, transaction, outboxMessage.Id, consumerName))
+                        {
+                            logger.LogDebug(
+                                "{Module} - Handler {Handler} already handled message {MessageId}, skipping",
+                                ModuleName, consumerName, outboxMessage.Id);
+                            continue;
+                        }
 
                         await domainEventHandler.Handle(domainEvent, context.CancellationToken);
 
-                        logger.LogInformation(
-                            "{Module} - Handler {HandlerType} completed successfully",
-                            ModuleName,
-                            domainEventHandler.GetType().Name);
+                        // Uğurlu icra dərhal qeyd olunur: sonrakı handler xəta versə də bu təkrar işləməsin
+                        await InsertConsumerAsync(connection, transaction, outboxMessage.Id, consumerName);
                     }
+
+                    logger.LogInformation(
+                        "{Module} - Outbox message {MessageId} ({EventType}) processed",
+                        ModuleName, outboxMessage.Id, eventTypeName);
                 }
                 catch (Exception caughtException)
                 {
                     logger.LogError(
                         caughtException,
-                        "{Module} - Exception while processing outbox message {MessageId}. Content: {Content}",
+                        "{Module} - Exception while processing outbox message {MessageId} ({EventType}), attempt {Attempt}/{MaxAttempts}",
                         ModuleName,
                         outboxMessage.Id,
-                        outboxMessage.Content);
+                        eventTypeName,
+                        outboxMessage.Attempts + 1,
+                        _outboxOptions.MaxAttempts);
 
                     exception = caughtException;
                 }
@@ -133,7 +152,6 @@ public abstract class ProcessOutboxJobBase(
             }
 
             await transaction.CommitAsync(context.CancellationToken);
-            logger.LogInformation("{Module} - Completed processing outbox messages", ModuleName);
         }
         catch (Exception ex)
         {
@@ -147,14 +165,17 @@ public abstract class ProcessOutboxJobBase(
         DbConnection connection,
         DbTransaction transaction)
     {
+        // Növbəti cəhd vaxtı gəlməyən (təkrar gözləyən) mesajlar buraxılır
         string sql =
             $"""
              SELECT
                 "Id" AS {nameof(OutboxMessageResponse.Id)},
                 "Content" AS {nameof(OutboxMessageResponse.Content)},
-                "TriggeredByUserId" AS {nameof(OutboxMessageResponse.TriggeredByUserId)}
+                "TriggeredByUserId" AS {nameof(OutboxMessageResponse.TriggeredByUserId)},
+                "Attempts" AS {nameof(OutboxMessageResponse.Attempts)}
              FROM {Schema}.outbox_messages
              WHERE "ProcessedOnUtc" IS NULL
+               AND ("NextAttemptOnUtc" IS NULL OR "NextAttemptOnUtc" <= @Now)
              ORDER BY "OccurredOnUtc"
              LIMIT {_outboxOptions.BatchSize}
              FOR UPDATE
@@ -162,6 +183,7 @@ public abstract class ProcessOutboxJobBase(
 
         IEnumerable<OutboxMessageResponse> outboxMessages = await connection.QueryAsync<OutboxMessageResponse>(
             sql,
+            new { Now = dateTimeProvider.UtcNow },
             transaction: transaction);
 
         return outboxMessages.AsList();
@@ -173,22 +195,92 @@ public abstract class ProcessOutboxJobBase(
         OutboxMessageResponse outboxMessage,
         Exception? exception)
     {
-        string sql =
-            $"""
-            UPDATE {Schema}.outbox_messages
-            SET "ProcessedOnUtc" = @ProcessedOnUtc,
-                "Error" = @Error
-            WHERE "Id" = @Id
-            """;
+        DateTimeOffset now = dateTimeProvider.UtcNow;
+
+        if (exception is null)
+        {
+            // Uğurlu: işlənmiş kimi qeyd olunur
+            await connection.ExecuteAsync(
+                $"""
+                UPDATE {Schema}.outbox_messages
+                SET "ProcessedOnUtc" = @ProcessedOnUtc,
+                    "Error" = NULL,
+                    "NextAttemptOnUtc" = NULL
+                WHERE "Id" = @Id
+                """,
+                new { outboxMessage.Id, ProcessedOnUtc = now },
+                transaction: transaction);
+            return;
+        }
+
+        int attempts = outboxMessage.Attempts + 1;
+
+        if (attempts >= _outboxOptions.MaxAttempts)
+        {
+            // Son cəhd də uğursuz: "ölü" (dead-letter) — işlənmiş kimi bağlanır, amma Error dolu qalır
+            logger.LogError(
+                "{Module} - Outbox message {MessageId} failed {Attempts} times and is marked as dead",
+                ModuleName, outboxMessage.Id, attempts);
+
+            await connection.ExecuteAsync(
+                $"""
+                UPDATE {Schema}.outbox_messages
+                SET "ProcessedOnUtc" = @ProcessedOnUtc,
+                    "Attempts" = @Attempts,
+                    "NextAttemptOnUtc" = NULL,
+                    "Error" = @Error
+                WHERE "Id" = @Id
+                """,
+                new { outboxMessage.Id, ProcessedOnUtc = now, Attempts = attempts, Error = exception.ToString() },
+                transaction: transaction);
+            return;
+        }
+
+        // Təkrar cəhd: ProcessedOnUtc boş qalır, növbəti cəhd vaxtı artan fasilə ilə təyin olunur
+        double delaySeconds = _outboxOptions.RetryBaseDelaySeconds * Math.Pow(4, attempts - 1);
+        DateTimeOffset nextAttempt = now.AddSeconds(delaySeconds);
 
         await connection.ExecuteAsync(
-            sql,
-            new
-            {
-                outboxMessage.Id,
-                ProcessedOnUtc = dateTimeProvider.UtcNow,
-                Error = exception?.ToString()
-            },
+            $"""
+            UPDATE {Schema}.outbox_messages
+            SET "Attempts" = @Attempts,
+                "NextAttemptOnUtc" = @NextAttemptOnUtc,
+                "Error" = @Error
+            WHERE "Id" = @Id
+            """,
+            new { outboxMessage.Id, Attempts = attempts, NextAttemptOnUtc = nextAttempt, Error = exception.ToString() },
+            transaction: transaction);
+    }
+
+    private async Task<bool> ConsumerAlreadyHandledAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        Guid outboxMessageId,
+        string consumerName)
+    {
+        return await connection.ExecuteScalarAsync<bool>(
+            $"""
+            SELECT EXISTS (
+                SELECT 1 FROM {Schema}.outbox_message_consumers
+                WHERE "OutboxMessageId" = @OutboxMessageId AND "Name" = @Name)
+            """,
+            new { OutboxMessageId = outboxMessageId, Name = consumerName },
+            transaction: transaction);
+    }
+
+    private async Task InsertConsumerAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        Guid outboxMessageId,
+        string consumerName)
+    {
+        await connection.ExecuteAsync(
+            $"""
+            INSERT INTO {Schema}.outbox_message_consumers ("OutboxMessageId", "Name")
+            VALUES (@OutboxMessageId, @Name)
+            ON CONFLICT DO NOTHING
+            """,
+            new { OutboxMessageId = outboxMessageId, Name = consumerName },
             transaction: transaction);
     }
 
@@ -218,5 +310,5 @@ public abstract class ProcessOutboxJobBase(
         return handlers;
     }
 
-    private sealed record OutboxMessageResponse(Guid Id, string Content, Guid? TriggeredByUserId);
+    private sealed record OutboxMessageResponse(Guid Id, string Content, Guid? TriggeredByUserId, int Attempts);
 }

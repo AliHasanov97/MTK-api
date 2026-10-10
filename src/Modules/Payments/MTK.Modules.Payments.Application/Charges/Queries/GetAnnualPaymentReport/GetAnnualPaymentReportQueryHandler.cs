@@ -35,18 +35,18 @@ internal sealed partial class GetAnnualPaymentReportQueryHandler
             ? await _propertyOwnershipRepository.GetByPropertyTypeAsync(propertyType, cancellationToken)
             : await _propertyOwnershipRepository.GetAllWithOwnersAsync(cancellationToken);
 
-        var charges = await _chargeRepository.GetOwnerChargesByYearAsync(request.Year, cancellationToken);
+        var charges = await _chargeRepository.GetOwnerChargeItemsByYearAsync(request.Year, cancellationToken: cancellationToken);
         var outstandingByProperty = await _chargeRepository.GetOutstandingAmountByPropertyIdsAsync(
             properties.Select(p => (p.ApartmentId ?? p.GarageId)!.Value).ToList(), cancellationToken);
 
         // Period-u tam "yyyy-MM" formatına uyğun olanlar — manual borclar fərqli bir
         // teq daşıya bilər (məs. "MANUAL-...") və bu hesabatda nəzərə alınmır.
         var chargesByPropertyAndMonth = charges
-            .Where(c => (c.ApartmentId ?? c.GarageId) is not null && PeriodPattern().IsMatch(c.Period!))
-            .GroupBy(c => (c.ApartmentId ?? c.GarageId)!.Value)
+            .Where(c => PeriodPattern().IsMatch(c.Period))
+            .GroupBy(c => c.PropertyId)
             .ToDictionary(
                 g => g.Key,
-                g => g.GroupBy(c => int.Parse(c.Period![5..7])).ToDictionary(mg => mg.Key, mg => mg.ToList()));
+                g => g.GroupBy(c => int.Parse(c.Period[5..7])).ToDictionary(mg => mg.Key, mg => mg.ToList()));
 
         var rows = properties
             .Select(ownership =>

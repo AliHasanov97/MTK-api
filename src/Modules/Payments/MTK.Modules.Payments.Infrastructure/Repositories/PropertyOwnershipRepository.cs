@@ -29,7 +29,7 @@ internal sealed class PropertyOwnershipRepository : Repository<PropertyOwnership
             .Include(p => p.Apartment).ThenInclude(a => a!.Building)
             .Include(p => p.Garage)
             .Include(p => p.Owner)
-            .AsQueryable();
+            .AsNoTracking();
 
         query = propertyType == PropertyType.Apartment
             ? query.Where(p => p.ApartmentId != null)

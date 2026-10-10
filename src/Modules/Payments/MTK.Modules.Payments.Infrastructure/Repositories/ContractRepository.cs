@@ -23,9 +23,10 @@ internal sealed class ContractRepository : SearchableRepository<Contract>, ICont
 
     public Task<List<Contract>> ListActiveWithServicesAsync(CancellationToken cancellationToken = default)
     {
+        var now = DateTimeOffset.UtcNow.Date;
         return PaymentsContext.Contracts
             .Include(c => c.Services)
-            .Where(c => c.Status == ContractStatus.Active)
+            .Where(c => c.Status == ContractStatus.Active && c.EndDate.Date >= now)
             .OrderBy(c => c.EndDate)
             .ToListAsync(cancellationToken);
     }

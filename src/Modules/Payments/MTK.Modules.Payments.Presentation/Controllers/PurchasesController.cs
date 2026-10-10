@@ -123,4 +123,5 @@ public class PurchasesController(ISender sender) : BaseController(sender)
             ? Success("Alış silindi")
             : BadRequest(result.Error);
     }
+
 }

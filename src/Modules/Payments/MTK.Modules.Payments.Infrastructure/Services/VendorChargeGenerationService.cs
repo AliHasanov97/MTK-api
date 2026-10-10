@@ -13,8 +13,9 @@ namespace MTK.Modules.Payments.Infrastructure.Services;
 ///
 /// Tədarükçü borcları da eyni <c>Charge</c> aqreqatındadır (PartyType == Vendor);
 /// sakin generasiyasından fərqli olaraq burada OwnerBalance yoxdur — borclar öz
-/// PaidAmount sahəsində izlənir. İdempotentlik həm ExistsForPeriodAsync yoxlaması,
-/// həm də bazadakı unikal index ilə qorunur (job təkrar işləsə belə borc ikilənmir).
+/// PaidAmount sahəsində izlənir. İdempotentlik həm "bu dövrdə borcu olan xidmətlər"
+/// siyahısı (bir sorğu ilə), həm də bazadakı unikal index ilə qorunur (job təkrar
+/// işləsə belə borc ikilənmir). Borcların yazılması və avansla bağlanması bir tranzaksiyadadır.
 /// </summary>
 internal sealed class VendorChargeGenerationService(
     IContractRepository contractRepository,
@@ -23,11 +24,21 @@ internal sealed class VendorChargeGenerationService(
     IUnitOfWork unitOfWork,
     ILogger<VendorChargeGenerationService> logger) : IVendorChargeGenerationService
 {
-    public async Task<int> GenerateScheduledChargesAsync(string period, CancellationToken cancellationToken = default)
+    public async Task<int> GenerateScheduledChargesAsync(
+        string period,
+        bool regenerateCancelled = false,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting vendor charge generation for period {Period}", period);
 
         List<Contract> contracts = await contractRepository.ListActiveWithServicesAsync(cancellationToken);
+
+        // Planlı iş ləğv edilmiş borcu "mövcud" sayır (təkrar yaratmır); əl ilə bərpa isə ləğv edilmişləri nəzərə almır.
+        HashSet<Guid> billedServiceIds = await vendorChargeRepository.GetBilledServiceIdsForPeriodAsync(
+            period, includeCancelled: !regenerateCancelled, cancellationToken);
+
+        // Borcun tarixi dövrün ilk günüdür (sakin borcları ilə eyni); gec işləsə də dövrə uyğun qalır.
+        DateTimeOffset chargeDate = ChargePeriod.FirstDay(period);
 
         var createdCharges = new List<(Contract Contract, ContractService Service, Charge Charge)>();
 
@@ -40,15 +51,10 @@ internal sealed class VendorChargeGenerationService(
                     continue;
                 }
 
-                bool alreadyBilled = await vendorChargeRepository.ExistsForPeriodAsync(
-                    service.Id, period, cancellationToken);
-
-                if (alreadyBilled)
+                if (billedServiceIds.Contains(service.Id))
                 {
                     continue;
                 }
-
-                var chargeDate = DateTimeOffset.UtcNow;
 
                 Charge charge = Charge.ForServiceSchedule(contract, service, period, chargeDate);
                 vendorChargeRepository.Add(charge);
@@ -56,27 +62,30 @@ internal sealed class VendorChargeGenerationService(
             }
         }
 
-        // Add yalnız ChangeTracker-ə yazır — SaveChanges olmadan INSERT getmir
-        // və job-ın scope-u bitəndə dəyişikliklər itkə düşür.
         if (createdCharges.Count > 0)
         {
+            // Borcların yazılması və avansla bağlanması bir tranzaksiyadır: avans uğursuz olsa borclar da geri qaytarılır
+            // və növbəti işləmədə təkrar cəhd olunur (əks halda borc "var" sayılıb avans ona heç vaxt bağlanmazdı).
+            await using var transaction = await vendorChargeRepository.BeginTransactionAsync(cancellationToken);
+
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Sakin generasiyası ilə eyni qayda: yeni yaranmış borcları tədarükçünün
-            // əvvəlki ödənişlərindən qalan avansla bağla (varsa).
             var advanceResult = await paymentAllocationService.ApplyAdvanceToChargesAsync(
                 createdCharges.Select(c => c.Charge).ToList(), cancellationToken);
 
             if (advanceResult.IsFailure)
             {
+                await transaction.RollbackAsync(cancellationToken);
                 logger.LogError(
-                    "Vendor advance settlement failed for period {Period} ({Code}: {Message})",
+                    "Vendor advance settlement failed for period {Period} ({Code}: {Message}); generation rolled back",
                     period, advanceResult.Error.Code, advanceResult.Error.Message);
+
+                throw new InvalidOperationException(
+                    $"Tədarükçü avansı ilə bağlama uğursuz oldu, '{period}' dövrü üçün generasiya geri qaytarıldı ({advanceResult.Error.Code}: {advanceResult.Error.Message}).");
             }
-            else
-            {
-                await unitOfWork.SaveChangesAsync(cancellationToken);
-            }
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
 
         foreach (var (contract, service, charge) in createdCharges)

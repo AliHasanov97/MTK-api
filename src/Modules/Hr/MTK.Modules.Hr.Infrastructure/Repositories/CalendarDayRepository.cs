@@ -16,6 +16,7 @@ internal sealed class CalendarDayRepository : Repository<CalendarDay>, ICalendar
         CancellationToken cancellationToken = default)
     {
         return await Context.Set<CalendarDay>()
+            .AsNoTracking()
             .Where(c => c.Year == year)
             .OrderBy(c => c.Date)
             .ToListAsync(cancellationToken);
@@ -56,6 +57,7 @@ internal sealed class CalendarDayRepository : Repository<CalendarDay>, ICalendar
         CancellationToken cancellationToken = default)
     {
         return await Context.Set<CalendarDay>()
+            .AsNoTracking()
             .Where(c => c.Date >= startDate && c.Date <= endDate)
             .OrderBy(c => c.Date)
             .ToListAsync(cancellationToken);

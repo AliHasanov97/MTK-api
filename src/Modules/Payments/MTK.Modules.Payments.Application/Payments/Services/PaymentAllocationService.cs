@@ -54,16 +54,69 @@ internal sealed class PaymentAllocationService(
         IReadOnlyCollection<Charge> charges,
         CancellationToken cancellationToken)
     {
-        var openChargesByParty = charges
-            .Where(charge => charge.OutstandingAmount > 0)
-            .GroupBy(charge => charge.OwnerId.HasValue
-                ? (PartyType: PartyType.Owner, PartyId: charge.OwnerId.Value)
-                : (PartyType: PartyType.Vendor, PartyId: charge.VendorId!.Value));
-
-        foreach (var partyCharges in openChargesByParty)
+        var openCharges = charges.Where(charge => charge.OutstandingAmount > 0).ToList();
+        if (openCharges.Count == 0)
         {
-            // Tərəf üzrə avans bir dəfə oxunur; bölgü tam yaddaşda aparılır.
-            var advance = await LoadAdvanceAsync(partyCharges.Key.PartyType, partyCharges.Key.PartyId, cancellationToken);
+            return Result.Success();
+        }
+
+        // Sahiblər və tədarükçülər ayrı-ayrı toplu yüklənir: tərəf sayından asılı olmayaraq sabit sayda sorğu
+        await ApplyAdvanceForPartiesAsync(
+            PartyType.Owner,
+            openCharges.Where(charge => charge.OwnerId.HasValue).GroupBy(charge => charge.OwnerId!.Value),
+            cancellationToken);
+
+        await ApplyAdvanceForPartiesAsync(
+            PartyType.Vendor,
+            openCharges.Where(charge => !charge.OwnerId.HasValue).GroupBy(charge => charge.VendorId!.Value),
+            cancellationToken);
+
+        return Result.Success();
+    }
+
+    private async Task ApplyAdvanceForPartiesAsync(
+        PartyType partyType,
+        IEnumerable<IGrouping<Guid, Charge>> chargesByParty,
+        CancellationToken cancellationToken)
+    {
+        var groups = chargesByParty.ToList();
+        if (groups.Count == 0)
+        {
+            return;
+        }
+
+        // 1) Bütün tərəflərin tamamlanmış ödənişləri bir sorğu ilə
+        var payments = await paymentRepository.GetCompletedByPartyIdsAsync(
+            partyType, groups.Select(group => group.Key).ToList(), cancellationToken);
+        if (payments.Count == 0)
+        {
+            return;
+        }
+
+        // 2) Həmin ödənişlərə bağlanmış paylanmalar bir sorğu ilə; bölgü tam yaddaşda aparılır
+        var allocations = await paymentAllocationRepository.GetByPaymentIdsAsync(
+            payments.Select(payment => payment.Id).ToList(), cancellationToken);
+        var allocatedByPayment = allocations
+            .GroupBy(allocation => allocation.PaymentId)
+            .ToDictionary(group => group.Key, group => group.Sum(allocation => allocation.Amount));
+
+        var paymentsByParty = payments
+            .GroupBy(payment => partyType == PartyType.Owner ? payment.OwnerId!.Value : payment.VendorId!.Value)
+            .ToDictionary(group => group.Key, group => group.OrderBy(payment => payment.PaymentDate).ToList());
+
+        foreach (var partyCharges in groups)
+        {
+            if (!paymentsByParty.TryGetValue(partyCharges.Key, out var partyPayments))
+            {
+                continue;
+            }
+
+            // Tərəfin xərclənməmiş pulu: ödənişdən ona artıq bağlanmış paylanmalar çıxıldıqdan sonra qalan hissə, ən köhnə əvvəl
+            var advance = partyPayments
+                .Select(payment => (Payment: payment, Available: payment.Amount - allocatedByPayment.GetValueOrDefault(payment.Id)))
+                .Where(entry => entry.Available > 0)
+                .ToList();
+
             if (advance.Count == 0)
             {
                 continue;
@@ -71,8 +124,6 @@ internal sealed class PaymentAllocationService(
 
             ApplyAdvance(advance, OrderByDebtAge(partyCharges));
         }
-
-        return Result.Success();
     }
 
     /// <summary>
@@ -87,37 +138,6 @@ internal sealed class PaymentAllocationService(
             .ThenBy(c => c.CreatedAt)
             .ThenBy(c => c.ApartmentId ?? c.GarageId)
             .ThenBy(c => c.Id)
-            .ToList();
-    }
-
-    /// <summary>
-    /// Tərəfin xərclənməmiş pulu: hər tamamlanmış ödənişdən ona artıq bağlanmış
-    /// paylanmalar çıxıldıqdan sonra qalan hissə, ən köhnə ödəniş əvvəl.
-    /// </summary>
-    private async Task<List<(Payment Payment, decimal Available)>> LoadAdvanceAsync(
-        PartyType partyType,
-        Guid partyId,
-        CancellationToken cancellationToken)
-    {
-        var payments = (await paymentRepository.GetByPartyIdAsync(partyType, partyId, cancellationToken))
-            .Where(payment => payment.Status == PaymentStatus.Completed)
-            .OrderBy(payment => payment.PaymentDate)
-            .ToList();
-
-        if (payments.Count == 0)
-        {
-            return [];
-        }
-
-        var allocations = await paymentAllocationRepository.GetByPaymentIdsAsync(
-            payments.Select(payment => payment.Id).ToList(), cancellationToken);
-        var allocatedByPayment = allocations
-            .GroupBy(allocation => allocation.PaymentId)
-            .ToDictionary(group => group.Key, group => group.Sum(allocation => allocation.Amount));
-
-        return payments
-            .Select(payment => (Payment: payment, Available: payment.Amount - allocatedByPayment.GetValueOrDefault(payment.Id)))
-            .Where(entry => entry.Available > 0)
             .ToList();
     }
 

@@ -48,6 +48,28 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<Payment>> GetCompletedByPartyIdsAsync(
+        PartyType partyType,
+        IReadOnlyCollection<Guid> partyIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (partyIds.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = partyIds.ToList();
+        var query = partyType == PartyType.Owner
+            ? PaymentsContext.Payments.Where(p => p.OwnerId != null && ids.Contains(p.OwnerId.Value))
+            : PaymentsContext.Payments.Where(p => p.VendorId != null && ids.Contains(p.VendorId.Value));
+
+        // Ödənişin özü dəyişdirilmir (yalnız paylanma yazılır) — izləməyə ehtiyac yoxdur
+        return await query
+            .AsNoTracking()
+            .Where(p => p.Status == PaymentStatus.Completed)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Payment>> GetByPartyIdAsync(
         PartyType partyType,
         Guid partyId,

@@ -67,6 +67,7 @@ internal sealed class ApartmentRepository : SearchableRepository<Apartment>, IAp
         CancellationToken cancellationToken = default)
     {
         return await BuildingsContext.Apartments
+            .AsNoTracking()
             .Include(a => a.Building)
             .Include(a => a.CurrentOwner)
             .ToListAsync(cancellationToken);

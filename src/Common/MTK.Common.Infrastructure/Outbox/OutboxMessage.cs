@@ -9,6 +9,11 @@ public sealed class OutboxMessage
     public DateTimeOffset? ProcessedOnUtc { get; init; }
     public string? Error { get; init; }
 
+    // Xəta olduqda təkrar cəhd sayğacı və növbəti cəhdin vaxtı (artan fasilə ilə). MaxAttempts-dən sonra mesaj
+    // "ölü" qeyd olunur: ProcessedOnUtc və Error dolu, NextAttemptOnUtc boş.
+    public int Attempts { get; init; }
+    public DateTimeOffset? NextAttemptOnUtc { get; init; }
+
     // Who triggered the original SaveChanges that raised this domain event (resolved
     // from HttpContext at capture time) — replayed into IAuditActorAccessor before the
     // event's handler runs in the outbox job's own scope, so audit logs for entities

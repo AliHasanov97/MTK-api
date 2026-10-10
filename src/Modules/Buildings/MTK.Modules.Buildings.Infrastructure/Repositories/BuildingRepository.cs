@@ -18,6 +18,7 @@ internal sealed class BuildingRepository : SearchableRepository<Building>, IBuil
         CancellationToken cancellationToken = default)
     {
         return await BuildingsContext.Buildings
+            .AsNoTracking()
             .Include(b => b.Apartments)
             .ToListAsync(cancellationToken);
     }

@@ -2,13 +2,25 @@ namespace MTK.Modules.Payments.Infrastructure.Jobs;
 
 internal sealed class MonthlyChargeGenerationOptions
 {
-    // Cron expression: "0 0 1 * * ?"
-    // Mənası: Hər ayın 1-i, saat 00:00-da (gecə yarısı) işləyir
-    // 0 = 0 saniyə
-    // 0 = 0 dəqiqə
-    // 1 = Saat 1 (gecə yarısından sonra 1-ci saat, yəni 00:00)
-    // * = Hər ayın
-    // * = 1-ci günü
-    // ? = İstənilən həftənin günü
-    public string CronExpression { get; init; } = "0 0 1 * * ?";
+    // Quartz cron (saniyə dəqiqə saat ayın-günü ay həftənin-günü). Susmaya görə hər gün 00:30:
+    // iş idempotentdir — cari dövr üçün hələ borcu olmayan mənzil/qarajlara borc yaradır. Beləliklə
+    // API-nin dayandığı gün, sonradan təyin olunan sahib və ya əlavə olunan tarif növbəti işləmədə tutulur.
+    public string CronExpression { get; init; } = "0 30 0 * * ?";
+
+    // Cron-un və dövrün ("yyyy-MM") hesablandığı vaxt qurşağı. Server harada işləyirsə işləsin
+    // ayın sərhədi eyni olsun deyə açıq göstərilir.
+    public string TimeZoneId { get; init; } = "Asia/Baku";
+
+    public TimeZoneInfo ResolveTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+        }
+        catch (TimeZoneNotFoundException ex)
+        {
+            throw new InvalidOperationException(
+                $"Payments:MonthlyChargeGeneration:TimeZoneId '{TimeZoneId}' tapılmadı (məs. 'Asia/Baku').", ex);
+        }
+    }
 }

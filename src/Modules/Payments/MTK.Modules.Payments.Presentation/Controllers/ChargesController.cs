@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
 using MTK.Modules.Payments.Application.Charges.Commands.CreateCharge;
 using MTK.Modules.Payments.Application.Charges.Commands.CreateOneTimeServiceExpense;
+using MTK.Modules.Payments.Application.Charges.Commands.GenerateChargesForPeriod;
 using MTK.Modules.Payments.Application.Charges.Queries.ExportAnnualPaymentReport;
 using MTK.Modules.Payments.Application.Charges.Queries.GetAnnualPaymentReport;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargeAllocations;
@@ -109,4 +110,22 @@ public class ChargesController(ISender sender) : BaseController(sender)
             ? Success(result.Value, "Xərc uğurla daxil edildi")
             : BadRequest(result.Error);
     }
+
+    /// <summary>
+    /// Verilmiş dövr üçün borcları əl ilə yaradır (dayanma səbəbindən buraxılmış ayı bərpa etmək üçün).
+    /// İdempotentdir: borcu olan əmlaklara toxunmur; ləğv edilmiş borcun əmlakı üçün yenidən yaradır.
+    /// </summary>
+    [HttpPost("generate")]
+    [RequireAnyRole(Roles.Admin)]
+    public async Task<IActionResult> GenerateChargesForPeriod(
+        [FromBody] GenerateChargesForPeriodCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value, "Borclar yaradıldı")
+            : BadRequest(result.Error);
+    }
+
 }
