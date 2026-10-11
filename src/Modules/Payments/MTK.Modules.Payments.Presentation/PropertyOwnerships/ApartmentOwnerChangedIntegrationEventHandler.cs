@@ -4,10 +4,13 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
 using MTK.Modules.Payments.Application.Apartments.Commands.UpdateApartmentDetails;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
+using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
 
 namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
-internal sealed class ApartmentOwnerChangedIntegrationEventHandler(ISender sender)
+internal sealed class ApartmentOwnerChangedIntegrationEventHandler(
+    ISender sender,
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
     : IntegrationEventHandler<ApartmentOwnerChangedIntegrationEvent>
 {
     public override async Task Handle(
@@ -42,5 +45,8 @@ internal sealed class ApartmentOwnerChangedIntegrationEventHandler(ISender sende
             throw new InvalidOperationException(
                 $"Failed to sync apartment ownership: {result.Error}");
         }
+
+        // Invalidate PropertyOwnership cache after owner change (OwnerId is in cache!)
+        await cachedPropertyOwnershipService.InvalidateCacheAsync(cancellationToken);
     }
 }

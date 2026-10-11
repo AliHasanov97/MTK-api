@@ -69,10 +69,33 @@ services:
       - mtk-network
     restart: unless-stopped
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: mtk-redis
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - mtk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
 volumes:
   rabbitmq_data:
   postgres_data:
   keycloak_postgres_data:
+  redis_data:
 
 networks:
   mtk-network:

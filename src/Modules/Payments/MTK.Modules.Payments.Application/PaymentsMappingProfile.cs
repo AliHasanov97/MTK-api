@@ -4,18 +4,24 @@ using MTK.Modules.Payments.Application.Charges.Queries.SearchCharges;
 using MTK.Modules.Payments.Application.CompanyBalances.Queries.GetCompanyBalance;
 using MTK.Modules.Payments.Application.Nomenclatures.Queries.SearchNomenclatureShadows;
 using MTK.Modules.Payments.Application.OwnerBalances.Queries.GetOwnerBalance;
+using MTK.Modules.Payments.Application.Owners;
 using MTK.Modules.Payments.Application.Payments.Queries.GetPaymentsByOwner;
 using MTK.Modules.Payments.Application.Payments.Queries.SearchPayments;
+using MTK.Modules.Payments.Application.PropertyOwnerships;
 using MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates;
 using MTK.Modules.Payments.Application.Transactions.Queries.SearchTransactions;
 using MTK.Modules.Payments.Application.VendorCharges.Queries.SearchVendorCharges;
 using MTK.Modules.Payments.Application.Vendors.Queries.GetVendorById;
 using MTK.Modules.Payments.Application.Vendors.Queries.SearchVendors;
+using MTK.Modules.Payments.Domain.Apartments;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.CompanyBalances;
+using MTK.Modules.Payments.Domain.Garages;
 using MTK.Modules.Payments.Domain.Nomenclatures;
 using MTK.Modules.Payments.Domain.OwnerBalances;
+using MTK.Modules.Payments.Domain.Owners;
 using MTK.Modules.Payments.Domain.Payments;
+using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Rates;
 using MTK.Modules.Payments.Domain.Transactions;
 using MTK.Modules.Payments.Domain.Vendors;
@@ -34,6 +40,7 @@ public sealed class PaymentsMappingProfile : Profile
     public PaymentsMappingProfile()
     {
         CreateMap<Rate, RateResponse>();
+        CreateMap<Owner, OwnerResponse>();
         CreateMap<OwnerBalance, OwnerBalanceResponse>();
         CreateMap<CompanyBalance, CompanyBalanceResponse>();
         CreateMap<Transaction, TransactionSearchResult>();
@@ -53,5 +60,10 @@ public sealed class PaymentsMappingProfile : Profile
 
         CreateMap<Payment, PaymentResponse>();
         CreateMap<Payment, PaymentSearchResult>();
+
+        // PropertyOwnership cache mappings - flatten navigation properties for Redis storage
+        CreateMap<Apartment, ApartmentData>();
+        CreateMap<Garage, GarageData>();
+        CreateMap<PropertyOwnership, PropertyOwnershipResponse>();
     }
 }

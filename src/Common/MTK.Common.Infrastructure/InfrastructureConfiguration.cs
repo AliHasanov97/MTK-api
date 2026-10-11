@@ -7,11 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MTK.Common.Application.Auditing;
+using MTK.Common.Application.Caching;
 using MTK.Common.Application.Data;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Application.Storage;
 using MTK.Common.Infrastructure.Auditing;
+using MTK.Common.Infrastructure.Caching;
 using MTK.Common.Infrastructure.Database;
 using MTK.Common.Infrastructure.EventBus;
 using MTK.Common.Infrastructure.Messaging;
@@ -138,6 +140,33 @@ public static class InfrastructureConfiguration
                 cfg.ConfigureEndpoints(context);
             });
         });
+
+        // Redis Distributed Cache Configuration
+        string? redisConnectionString = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            try
+            {
+                var redis = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConnectionString);
+                services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redis);
+                services.AddStackExchangeRedisCache(options =>
+                {
+                    options.ConnectionMultiplexerFactory = () => Task.FromResult<StackExchange.Redis.IConnectionMultiplexer>(redis);
+                });
+            }
+            catch
+            {
+                // Redis connection failed - fallback to in-memory cache
+                services.AddDistributedMemoryCache();
+            }
+        }
+        else
+        {
+            // No Redis configured - use in-memory cache
+            services.AddDistributedMemoryCache();
+        }
+
+        services.TryAddSingleton<ICacheService, CacheService>();
 
         return services;
     }

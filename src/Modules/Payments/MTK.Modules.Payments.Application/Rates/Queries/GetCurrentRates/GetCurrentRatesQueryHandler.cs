@@ -1,27 +1,25 @@
-using AutoMapper;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
-using MTK.Modules.Payments.Domain.Repositories;
+using MTK.Modules.Payments.Application.Rates.Services;
 
 namespace MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates;
 
 internal sealed class GetCurrentRatesQueryHandler : IQueryHandler<GetCurrentRatesQuery, IReadOnlyCollection<RateResponse>>
 {
-    private readonly IRateRepository _rateRepository;
-    private readonly IMapper _mapper;
+    private readonly ICachedRateService _cachedRateService;
 
-    public GetCurrentRatesQueryHandler(IRateRepository rateRepository, IMapper mapper)
+    public GetCurrentRatesQueryHandler(ICachedRateService cachedRateService)
     {
-        _rateRepository = rateRepository;
-        _mapper = mapper;
+        _cachedRateService = cachedRateService;
     }
 
     public async Task<Result<IReadOnlyCollection<RateResponse>>> Handle(
         GetCurrentRatesQuery request,
         CancellationToken cancellationToken)
     {
-        var rates = await _rateRepository.GetActiveRatesAsync(cancellationToken);
+        // Get active rates from cache (30-minute TTL)
+        IReadOnlyCollection<RateResponse> rates = await _cachedRateService.GetActiveRatesAsync(cancellationToken);
 
-        return _mapper.Map<List<RateResponse>>(rates);
+        return Result.Success(rates);
     }
 }

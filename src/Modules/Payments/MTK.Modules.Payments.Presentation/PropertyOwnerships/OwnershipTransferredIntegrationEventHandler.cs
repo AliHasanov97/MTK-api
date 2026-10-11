@@ -1,4 +1,5 @@
 using MediatR;
+using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
@@ -9,7 +10,9 @@ namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 /// <summary>
 /// Mənzil transferi zamanı PropertyOwnership-i yeni owner-ə update edir
 /// </summary>
-internal sealed class OwnershipTransferredIntegrationEventHandler(ISender sender)
+internal sealed class OwnershipTransferredIntegrationEventHandler(
+    ISender sender,
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
     : IntegrationEventHandler<OwnershipTransferredIntegrationEvent>
 {
     public override async Task Handle(
@@ -29,5 +32,8 @@ internal sealed class OwnershipTransferredIntegrationEventHandler(ISender sender
             throw new InvalidOperationException(
                 $"Failed to sync ownership transfer: {result.Error}");
         }
+
+        // Invalidate PropertyOwnership cache after property ownership change
+        await cachedPropertyOwnershipService.InvalidateCacheAsync(cancellationToken);
     }
 }

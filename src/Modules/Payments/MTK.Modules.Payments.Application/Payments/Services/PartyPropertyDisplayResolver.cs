@@ -1,3 +1,4 @@
+using MTK.Modules.Payments.Application.Owners.Services;
 using MTK.Modules.Payments.Domain.Repositories;
 
 namespace MTK.Modules.Payments.Application.Payments.Services;
@@ -21,7 +22,7 @@ internal static class PartyPropertyDisplayResolver
         Func<T, Guid?> vendorId,
         Func<T, Guid?> apartmentId,
         Func<T, Guid?> garageId,
-        IOwnerRepository ownerRepository,
+        ICachedOwnerService cachedOwnerService,
         IVendorRepository vendorRepository,
         IApartmentRepository apartmentRepository,
         IGarageRepository garageRepository,
@@ -33,7 +34,7 @@ internal static class PartyPropertyDisplayResolver
         var garageIds = items.Select(garageId).Where(x => x.HasValue).Select(x => x!.Value).Distinct().ToList();
 
         var ownerNames = ownerIds.Count > 0
-            ? (await ownerRepository.ListFromIdsAsync(ownerIds, cancellationToken)).ToDictionary(o => o.Id, o => o.FullName)
+            ? (await cachedOwnerService.GetByIdsAsync(ownerIds, cancellationToken)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value.FullName)
             : new Dictionary<Guid, string>();
         var vendorNames = vendorIds.Count > 0
             ? (await vendorRepository.ListFromIdsAsync(vendorIds, cancellationToken)).ToDictionary(v => v.Id, v => v.Name)

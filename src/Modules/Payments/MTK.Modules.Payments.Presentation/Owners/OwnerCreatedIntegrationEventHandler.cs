@@ -3,10 +3,13 @@ using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Owners;
 using MTK.Modules.Payments.Application.Owners.Commands.SyncOwner;
+using MTK.Modules.Payments.Application.Owners.Services;
 
 namespace MTK.Modules.Payments.Presentation.Owners;
 
-internal sealed class OwnerCreatedIntegrationEventHandler(ISender sender)
+internal sealed class OwnerCreatedIntegrationEventHandler(
+    ISender sender,
+    ICachedOwnerService cachedOwnerService)
     : IntegrationEventHandler<OwnerCreatedIntegrationEvent>
 {
     public override async Task Handle(
@@ -20,5 +23,8 @@ internal sealed class OwnerCreatedIntegrationEventHandler(ISender sender)
         {
             throw new InvalidOperationException($"Failed to sync owner: {result.Error}");
         }
+
+        // Invalidate Owner cache after owner creation
+        await cachedOwnerService.InvalidateCacheAsync(integrationEvent.OwnerId, cancellationToken);
     }
 }

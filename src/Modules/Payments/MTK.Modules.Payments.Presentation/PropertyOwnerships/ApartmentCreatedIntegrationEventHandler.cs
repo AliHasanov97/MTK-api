@@ -4,6 +4,7 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
 using MTK.Modules.Payments.Application.Apartments.Commands.SyncApartment;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
+using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Repositories;
@@ -12,7 +13,8 @@ namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
 internal sealed class ApartmentCreatedIntegrationEventHandler(
     ISender sender,
-    IPropertyOwnershipRepository propertyOwnershipRepository)
+    IPropertyOwnershipRepository propertyOwnershipRepository,
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
     : IntegrationEventHandler<ApartmentCreatedIntegrationEvent>
 {
     public override async Task Handle(
@@ -56,5 +58,8 @@ internal sealed class ApartmentCreatedIntegrationEventHandler(
                     $"Failed to sync apartment area: {result.Error}");
             }
         }
+
+        // Invalidate PropertyOwnership cache after apartment creation
+        await cachedPropertyOwnershipService.InvalidateCacheAsync(cancellationToken);
     }
 }

@@ -1,3 +1,4 @@
+using MTK.Modules.Payments.Application.Owners.Services;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
@@ -7,18 +8,18 @@ namespace MTK.Modules.Payments.Application.Payments.Services;
 
 internal sealed class PaymentDisplayEnricher : IPaymentDisplayEnricher
 {
-    private readonly IOwnerRepository _ownerRepository;
+    private readonly ICachedOwnerService _cachedOwnerService;
     private readonly IVendorRepository _vendorRepository;
     private readonly IApartmentRepository _apartmentRepository;
     private readonly IGarageRepository _garageRepository;
 
     public PaymentDisplayEnricher(
-        IOwnerRepository ownerRepository,
+        ICachedOwnerService cachedOwnerService,
         IVendorRepository vendorRepository,
         IApartmentRepository apartmentRepository,
         IGarageRepository garageRepository)
     {
-        _ownerRepository = ownerRepository;
+        _cachedOwnerService = cachedOwnerService;
         _vendorRepository = vendorRepository;
         _apartmentRepository = apartmentRepository;
         _garageRepository = garageRepository;
@@ -35,7 +36,7 @@ internal sealed class PaymentDisplayEnricher : IPaymentDisplayEnricher
             p => p.VendorId,
             p => p.ApartmentId,
             p => p.GarageId,
-            _ownerRepository,
+            _cachedOwnerService,
             _vendorRepository,
             _apartmentRepository,
             _garageRepository,

@@ -2,6 +2,9 @@ using Microsoft.Extensions.Logging;
 using MTK.Modules.Payments.Application.Charges.Services;
 using MTK.Modules.Payments.Application.OwnerBalances.Services;
 using MTK.Modules.Payments.Application.Payments.Services;
+using MTK.Modules.Payments.Application.PropertyOwnerships;
+using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
+using MTK.Modules.Payments.Application.Rates.Services;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Rates;
@@ -12,9 +15,9 @@ namespace MTK.Modules.Payments.Infrastructure.Services;
 
 internal sealed class ChargeGenerationService(
     PaymentsDbContext dbContext,
-    IRateRepository rateRepository,
+    ICachedRateService cachedRateService,
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService,
     IChargeRepository chargeRepository,
-    IPropertyOwnershipRepository propertyOwnershipRepository,
     IPaymentAllocationService paymentAllocationService,
     IOwnerBalanceService ownerBalanceService,
     ILogger<ChargeGenerationService> logger) : IChargeGenerationService
@@ -26,8 +29,9 @@ internal sealed class ChargeGenerationService(
     {
         logger.LogInformation("Starting monthly charge generation for period {Period}", period);
 
-        // Get active rates
-        Rate? apartmentRate = await rateRepository.GetCurrentRateAsync(RateType.PerSquareMeter, cancellationToken);
+        // Get current apartment rate (cached in Redis for 1 hour)
+        var apartmentRateResponse = await cachedRateService.GetCurrentRateAsync(
+            RateType.PerSquareMeter, cancellationToken);
 
         int chargesCreated = 0;
         int apartmentsSkippedNoRate = 0;
@@ -46,14 +50,14 @@ internal sealed class ChargeGenerationService(
 
         DateTimeOffset issuedOn = ChargePeriod.FirstDay(period);
 
-        // Get apartments with owners from PropertyOwnership read model
-        List<PropertyOwnership> apartments = await propertyOwnershipRepository
+        // Get apartments with owners from PropertyOwnership read model (cached for 10 min)
+        List<PropertyOwnershipResponse> apartments = await cachedPropertyOwnershipService
             .GetByPropertyTypeAsync(PropertyType.Apartment, cancellationToken);
 
         // Generate charges for apartments
-        if (apartmentRate is not null)
+        if (apartmentRateResponse is not null)
         {
-            foreach (PropertyOwnership ownership in apartments)
+            foreach (PropertyOwnershipResponse ownership in apartments)
             {
                 Guid apartmentId = ownership.ApartmentId!.Value;
                 decimal area = ownership.Apartment!.AreaSquareMeters;
@@ -67,7 +71,7 @@ internal sealed class ChargeGenerationService(
                 }
 
                 // Calculate charge amount: rate per m² × area
-                decimal chargeAmount = apartmentRate.Amount * area;
+                decimal chargeAmount = apartmentRateResponse.Amount * area;
 
                 // Create charge with snapshot data
                 Charge charge = Charge.CreateForApartment(
@@ -76,9 +80,9 @@ internal sealed class ChargeGenerationService(
                     period,
                     issuedOn,
                     chargeAmount,
-                    apartmentRate.Amount,     // Snapshot: rate at time of creation
-                    RateType.PerSquareMeter,  // Snapshot: rate type
-                    area);                    // Snapshot: area at time of creation
+                    apartmentRateResponse.Amount,     // Snapshot: rate at time of creation
+                    RateType.PerSquareMeter,          // Snapshot: rate type
+                    area);                            // Snapshot: area at time of creation
 
                 chargeRepository.Add(charge);
                 createdCharges.Add(charge);
@@ -102,40 +106,40 @@ internal sealed class ChargeGenerationService(
             }
         }
 
-        // Get garages with owners from PropertyOwnership read model
-        List<PropertyOwnership> garages = await propertyOwnershipRepository
+        // Get garages with owners from PropertyOwnership read model (cached for 10 min)
+        List<PropertyOwnershipResponse> garages = await cachedPropertyOwnershipService
             .GetByPropertyTypeAsync(PropertyType.Garage, cancellationToken);
 
         // Rate resolution is per garage type (falls back to the type-less default rate),
-        // cached here so we don't re-query the same type for every garage. "null" (no
-        // specific garage type) is tracked as its own cache key via HasRateFor.
-        var garageRateByType = new Dictionary<GarageType, Rate?>();
-        Rate? defaultGarageRate = null;
+        // cached here so we don't re-query the same type for every garage. Redis cache
+        // handles the actual caching (1-hour TTL per garage type).
+        var garageRateByType = new Dictionary<GarageType, MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates.RateResponse?>();
+        MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates.RateResponse? defaultGarageRate = null;
         bool defaultGarageRateResolved = false;
 
-        foreach (PropertyOwnership ownership in garages)
+        foreach (PropertyOwnershipResponse ownership in garages)
         {
             Guid garageId = ownership.GarageId!.Value;
             GarageType? garageType = ownership.Garage!.GarageType;
-            Rate? garageRate;
+            MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates.RateResponse? garageRateResponse;
 
             if (garageType is { } specificType)
             {
-                if (!garageRateByType.TryGetValue(specificType, out garageRate))
+                if (!garageRateByType.TryGetValue(specificType, out garageRateResponse))
                 {
-                    garageRate = await rateRepository.GetCurrentGarageRateAsync(specificType, cancellationToken);
-                    garageRateByType[specificType] = garageRate;
+                    garageRateResponse = await cachedRateService.GetCurrentGarageRateAsync(specificType, cancellationToken);
+                    garageRateByType[specificType] = garageRateResponse;
                 }
             }
             else
             {
                 if (!defaultGarageRateResolved)
                 {
-                    defaultGarageRate = await rateRepository.GetCurrentGarageRateAsync(null, cancellationToken);
+                    defaultGarageRate = await cachedRateService.GetCurrentGarageRateAsync(null, cancellationToken);
                     defaultGarageRateResolved = true;
                 }
 
-                garageRate = defaultGarageRate;
+                garageRateResponse = defaultGarageRate;
             }
 
             // Bu dövr üçün borcu artıq olan qaraj tarifdən asılı olmayaraq atlanır
@@ -146,7 +150,7 @@ internal sealed class ChargeGenerationService(
                 continue;
             }
 
-            if (garageRate is null)
+            if (garageRateResponse is null)
             {
                 garagesSkippedNoRate++;
                 logger.LogWarning(
@@ -155,7 +159,7 @@ internal sealed class ChargeGenerationService(
                 continue;
             }
 
-            decimal chargeAmount = garageRate.Amount;
+            decimal chargeAmount = garageRateResponse.Amount;
 
             // Create charge with snapshot data
             Charge charge = Charge.CreateForGarage(
@@ -164,8 +168,8 @@ internal sealed class ChargeGenerationService(
                 period,
                 issuedOn,
                 chargeAmount,
-                garageRate.Amount,     // Snapshot: rate at time of creation
-                RateType.FixedGarage); // Snapshot: rate type (no area for garages)
+                garageRateResponse.Amount,     // Snapshot: rate at time of creation
+                RateType.FixedGarage);         // Snapshot: rate type (no area for garages)
 
             chargeRepository.Add(charge);
             createdCharges.Add(charge);

@@ -1,4 +1,5 @@
 using MediatR;
+using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
 using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Garages;
@@ -9,7 +10,9 @@ using PaymentsGarageType = MTK.Modules.Payments.Domain.PropertyOwnerships.Garage
 
 namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
-internal sealed class GarageCreatedIntegrationEventHandler(ISender sender)
+internal sealed class GarageCreatedIntegrationEventHandler(
+    ISender sender,
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
     : IntegrationEventHandler<GarageCreatedIntegrationEvent>
 {
     public override async Task Handle(
@@ -46,5 +49,8 @@ internal sealed class GarageCreatedIntegrationEventHandler(ISender sender)
                     $"Failed to sync garage creation: {result.Error}");
             }
         }
+
+        // Invalidate PropertyOwnership cache after property ownership change
+        await cachedPropertyOwnershipService.InvalidateCacheAsync(cancellationToken);
     }
 }
