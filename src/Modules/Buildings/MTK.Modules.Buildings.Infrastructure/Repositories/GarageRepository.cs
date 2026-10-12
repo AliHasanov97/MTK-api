@@ -39,6 +39,12 @@ internal sealed class GarageRepository : SearchableRepository<Garage>, IGarageRe
         return await query.ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<Garage>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await BuildingsContext.Garages
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Garage>> GetByOwnerIdAsync(
         Guid ownerId,
         CancellationToken cancellationToken = default)
