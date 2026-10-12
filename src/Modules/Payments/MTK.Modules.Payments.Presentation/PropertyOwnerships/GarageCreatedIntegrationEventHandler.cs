@@ -4,6 +4,7 @@ using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Garages;
 using MTK.Modules.Payments.Application.Garages.Commands.SyncGarage;
+using MTK.Modules.Payments.Application.Garages.Services;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
 using MTK.Modules.Payments.Domain.Charges;
 using PaymentsGarageType = MTK.Modules.Payments.Domain.PropertyOwnerships.GarageType;
@@ -12,7 +13,8 @@ namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
 internal sealed class GarageCreatedIntegrationEventHandler(
     ISender sender,
-    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService,
+    ICachedGarageService cachedGarageService)
     : IntegrationEventHandler<GarageCreatedIntegrationEvent>
 {
     public override async Task Handle(
@@ -32,6 +34,9 @@ internal sealed class GarageCreatedIntegrationEventHandler(
             throw new InvalidOperationException(
                 $"Failed to sync garage shadow: {garageResult.Error}");
         }
+
+        // Invalidate Garage cache after garage sync (GarageNumber may have changed)
+        await cachedGarageService.InvalidateCacheAsync(integrationEvent.GarageId, cancellationToken);
 
         // Only sync ownership if garage has an owner
         if (integrationEvent.OwnerId.HasValue)

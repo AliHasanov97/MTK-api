@@ -3,13 +3,15 @@ using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
 using MTK.Modules.Payments.Application.Apartments.Commands.UpdateApartmentDetails;
+using MTK.Modules.Payments.Application.Apartments.Services;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
 
 namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
 internal sealed class ApartmentUpdatedIntegrationEventHandler(
     ISender sender,
-    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService,
+    ICachedApartmentService cachedApartmentService)
     : IntegrationEventHandler<ApartmentUpdatedIntegrationEvent>
 {
     public override async Task Handle(
@@ -28,6 +30,9 @@ internal sealed class ApartmentUpdatedIntegrationEventHandler(
         {
             throw new InvalidOperationException($"Failed to update apartment details: {result.Error}");
         }
+
+        // Invalidate Apartment cache after apartment update (AreaSquareMeters may have changed)
+        await cachedApartmentService.InvalidateCacheAsync(integrationEvent.ApartmentId, cancellationToken);
 
         // Invalidate PropertyOwnership cache after apartment area update (area is in cache!)
         await cachedPropertyOwnershipService.InvalidateCacheAsync(cancellationToken);

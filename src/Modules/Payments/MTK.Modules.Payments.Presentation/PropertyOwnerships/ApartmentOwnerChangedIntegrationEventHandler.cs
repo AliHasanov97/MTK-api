@@ -3,6 +3,7 @@ using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
 using MTK.Modules.Payments.Application.Apartments.Commands.UpdateApartmentDetails;
+using MTK.Modules.Payments.Application.Apartments.Services;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
 
@@ -10,7 +11,8 @@ namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 
 internal sealed class ApartmentOwnerChangedIntegrationEventHandler(
     ISender sender,
-    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService,
+    ICachedApartmentService cachedApartmentService)
     : IntegrationEventHandler<ApartmentOwnerChangedIntegrationEvent>
 {
     public override async Task Handle(
@@ -32,6 +34,9 @@ internal sealed class ApartmentOwnerChangedIntegrationEventHandler(
             throw new InvalidOperationException(
                 $"Failed to update apartment shadow: {apartmentResult.Error}");
         }
+
+        // Invalidate Apartment cache after apartment update (ApartmentNumber may have changed)
+        await cachedApartmentService.InvalidateCacheAsync(integrationEvent.ApartmentId, cancellationToken);
 
         var command = new SyncPropertyOwnershipCommand(
             ApartmentId: integrationEvent.ApartmentId,

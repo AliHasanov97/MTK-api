@@ -3,6 +3,8 @@ using MTK.Common.Application.EventBus;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Buildings.IntegrationEvents.Apartments;
 using MTK.Modules.Payments.Application.Apartments.Commands.SyncApartment;
+using MTK.Modules.Payments.Application.Apartments.Services;
+using MTK.Modules.Payments.Application.Buildings.Services;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Commands.SyncPropertyOwnership;
 using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
 using MTK.Modules.Payments.Domain.Charges;
@@ -14,7 +16,9 @@ namespace MTK.Modules.Payments.Presentation.PropertyOwnerships;
 internal sealed class ApartmentCreatedIntegrationEventHandler(
     ISender sender,
     IPropertyOwnershipRepository propertyOwnershipRepository,
-    ICachedPropertyOwnershipService cachedPropertyOwnershipService)
+    ICachedPropertyOwnershipService cachedPropertyOwnershipService,
+    ICachedBuildingService cachedBuildingService,
+    ICachedApartmentService cachedApartmentService)
     : IntegrationEventHandler<ApartmentCreatedIntegrationEvent>
 {
     public override async Task Handle(
@@ -37,6 +41,11 @@ internal sealed class ApartmentCreatedIntegrationEventHandler(
             throw new InvalidOperationException(
                 $"Failed to sync apartment shadow: {apartmentResult.Error}");
         }
+
+        // Invalidate Building and Apartment caches after apartment sync
+        // (SyncApartmentCommand upserts both Building and Apartment)
+        await cachedBuildingService.InvalidateCacheAsync(integrationEvent.BuildingId, cancellationToken);
+        await cachedApartmentService.InvalidateCacheAsync(integrationEvent.ApartmentId, cancellationToken);
 
         // Check if property ownership record exists (might have been created by owner assignment event)
         PropertyOwnership? propertyOwnership = await propertyOwnershipRepository

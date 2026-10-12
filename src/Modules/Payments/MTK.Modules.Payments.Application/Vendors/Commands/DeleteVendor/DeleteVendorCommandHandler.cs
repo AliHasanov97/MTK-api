@@ -1,6 +1,7 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Abstractions.Data;
+using MTK.Modules.Payments.Application.Vendors.Services;
 using MTK.Modules.Payments.Domain.Repositories;
 
 namespace MTK.Modules.Payments.Application.Vendors.Commands.DeleteVendor;
@@ -8,13 +9,16 @@ namespace MTK.Modules.Payments.Application.Vendors.Commands.DeleteVendor;
 internal sealed class DeleteVendorCommandHandler : ICommandHandler<DeleteVendorCommand>
 {
     private readonly IVendorRepository _vendorRepository;
+    private readonly ICachedVendorService _cachedVendorService;
     private readonly IUnitOfWork _unitOfWork;
 
     public DeleteVendorCommandHandler(
         IVendorRepository vendorRepository,
+        ICachedVendorService cachedVendorService,
         IUnitOfWork unitOfWork)
     {
         _vendorRepository = vendorRepository;
+        _cachedVendorService = cachedVendorService;
         _unitOfWork = unitOfWork;
     }
 
@@ -43,6 +47,9 @@ internal sealed class DeleteVendorCommandHandler : ICommandHandler<DeleteVendorC
         vendor.Delete();
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate Vendor cache after deletion
+        await _cachedVendorService.InvalidateCacheAsync(request.VendorId, cancellationToken);
 
         return Result.Success();
     }

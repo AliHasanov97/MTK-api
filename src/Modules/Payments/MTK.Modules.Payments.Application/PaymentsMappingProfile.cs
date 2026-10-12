@@ -1,5 +1,8 @@
 using AutoMapper;
+using MTK.Modules.Payments.Application.Apartments;
+using MTK.Modules.Payments.Application.Buildings;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargesByOwner;
+using MTK.Modules.Payments.Application.Garages;
 using MTK.Modules.Payments.Application.Charges.Queries.SearchCharges;
 using MTK.Modules.Payments.Application.CompanyBalances.Queries.GetCompanyBalance;
 using MTK.Modules.Payments.Application.Nomenclatures.Queries.SearchNomenclatureShadows;
@@ -11,9 +14,11 @@ using MTK.Modules.Payments.Application.PropertyOwnerships;
 using MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates;
 using MTK.Modules.Payments.Application.Transactions.Queries.SearchTransactions;
 using MTK.Modules.Payments.Application.VendorCharges.Queries.SearchVendorCharges;
-using MTK.Modules.Payments.Application.Vendors.Queries.GetVendorById;
+using MTK.Modules.Payments.Application.Vendors;
+using GetVendorByIdVendorResponse = MTK.Modules.Payments.Application.Vendors.Queries.GetVendorById.VendorResponse;
 using MTK.Modules.Payments.Application.Vendors.Queries.SearchVendors;
 using MTK.Modules.Payments.Domain.Apartments;
+using MTK.Modules.Payments.Domain.Buildings;
 using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.CompanyBalances;
 using MTK.Modules.Payments.Domain.Garages;
@@ -41,11 +46,15 @@ public sealed class PaymentsMappingProfile : Profile
     {
         CreateMap<Rate, RateResponse>();
         CreateMap<Owner, OwnerResponse>();
+        CreateMap<Building, BuildingResponse>();
+        CreateMap<Apartment, ApartmentResponse>();
+        CreateMap<Garage, GarageResponse>();
+        CreateMap<Vendor, VendorResponse>();
         CreateMap<OwnerBalance, OwnerBalanceResponse>();
         CreateMap<CompanyBalance, CompanyBalanceResponse>();
         CreateMap<Transaction, TransactionSearchResult>();
 
-        CreateMap<Vendor, VendorResponse>();
+        CreateMap<Vendor, GetVendorByIdVendorResponse>();
         CreateMap<Vendor, VendorSearchResult>();
 
         CreateMap<NomenclatureShadow, NomenclatureShadowSearchResult>();

@@ -1,5 +1,8 @@
+using MTK.Modules.Payments.Application.Apartments.Services;
+using MTK.Modules.Payments.Application.Buildings.Services;
+using MTK.Modules.Payments.Application.Garages.Services;
 using MTK.Modules.Payments.Application.Owners.Services;
-using MTK.Modules.Payments.Domain.Repositories;
+using MTK.Modules.Payments.Application.Vendors.Services;
 
 namespace MTK.Modules.Payments.Application.Payments.Services;
 
@@ -23,9 +26,10 @@ internal static class PartyPropertyDisplayResolver
         Func<T, Guid?> apartmentId,
         Func<T, Guid?> garageId,
         ICachedOwnerService cachedOwnerService,
-        IVendorRepository vendorRepository,
-        IApartmentRepository apartmentRepository,
-        IGarageRepository garageRepository,
+        ICachedBuildingService cachedBuildingService,
+        ICachedVendorService cachedVendorService,
+        ICachedApartmentService cachedApartmentService,
+        ICachedGarageService cachedGarageService,
         CancellationToken cancellationToken)
     {
         var ownerIds = items.Select(ownerId).Where(x => x.HasValue).Select(x => x!.Value).Distinct().ToList();
@@ -37,15 +41,31 @@ internal static class PartyPropertyDisplayResolver
             ? (await cachedOwnerService.GetByIdsAsync(ownerIds, cancellationToken)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value.FullName)
             : new Dictionary<Guid, string>();
         var vendorNames = vendorIds.Count > 0
-            ? (await vendorRepository.ListFromIdsAsync(vendorIds, cancellationToken)).ToDictionary(v => v.Id, v => v.Name)
+            ? (await cachedVendorService.GetByIdsAsync(vendorIds, cancellationToken)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Name)
             : new Dictionary<Guid, string>();
-        var apartmentLabels = apartmentIds.Count > 0
-            ? (await apartmentRepository.ListFromIdsWithBuildingAsync(apartmentIds, cancellationToken))
-                .ToDictionary(a => a.Id, a => $"Mənzil {a.ApartmentNumber} — {a.Building.Name}")
-            : new Dictionary<Guid, string>();
+
+        // Apartment labels - yük apartmentləri və building-ləri cache ilə
+        Dictionary<Guid, string> apartmentLabels;
+        if (apartmentIds.Count > 0)
+        {
+            var apartmentsById = await cachedApartmentService.GetByIdsAsync(apartmentIds, cancellationToken);
+            var buildingIds = apartmentsById.Values.Select(a => a.BuildingId).Distinct().ToList();
+            var buildingsById = await cachedBuildingService.GetByIdsAsync(buildingIds, cancellationToken);
+
+            apartmentLabels = apartmentsById.ToDictionary(
+                kvp => kvp.Key,
+                kvp => buildingsById.TryGetValue(kvp.Value.BuildingId, out var building)
+                    ? $"Mənzil {kvp.Value.ApartmentNumber} — {building.Name}"
+                    : $"Mənzil {kvp.Value.ApartmentNumber}");
+        }
+        else
+        {
+            apartmentLabels = new Dictionary<Guid, string>();
+        }
+
         var garageLabels = garageIds.Count > 0
-            ? (await garageRepository.ListFromIdsAsync(garageIds, cancellationToken))
-                .ToDictionary(g => g.Id, g => $"Qaraj {g.GarageNumber}")
+            ? (await cachedGarageService.GetByIdsAsync(garageIds, cancellationToken))
+                .ToDictionary(kvp => kvp.Key, kvp => $"Qaraj {kvp.Value.GarageNumber}")
             : new Dictionary<Guid, string>();
 
         var result = new Dictionary<Guid, PartyPropertyDisplayInfo>();

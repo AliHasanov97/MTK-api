@@ -110,6 +110,10 @@ public static class PaymentsModule
         services.AddScoped<MTK.Modules.Payments.Application.Rates.Services.ICachedRateService, MTK.Modules.Payments.Infrastructure.Services.CachedRateService>();
         services.AddScoped<MTK.Modules.Payments.Application.PropertyOwnerships.Services.ICachedPropertyOwnershipService, MTK.Modules.Payments.Infrastructure.Services.CachedPropertyOwnershipService>();
         services.AddScoped<MTK.Modules.Payments.Application.Owners.Services.ICachedOwnerService, MTK.Modules.Payments.Infrastructure.Services.CachedOwnerService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Buildings.Services.ICachedBuildingService, MTK.Modules.Payments.Infrastructure.Services.CachedBuildingService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Apartments.Services.ICachedApartmentService, MTK.Modules.Payments.Infrastructure.Services.CachedApartmentService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Garages.Services.ICachedGarageService, MTK.Modules.Payments.Infrastructure.Services.CachedGarageService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Vendors.Services.ICachedVendorService, MTK.Modules.Payments.Infrastructure.Services.CachedVendorService>();
 
         // Outbox & Inbox Configuration
         services.Configure<OutboxOptions>(configuration.GetSection("Payments:Outbox"));

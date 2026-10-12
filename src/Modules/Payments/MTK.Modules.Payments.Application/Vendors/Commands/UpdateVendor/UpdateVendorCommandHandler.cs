@@ -1,6 +1,7 @@
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Abstractions.Data;
+using MTK.Modules.Payments.Application.Vendors.Services;
 using MTK.Modules.Payments.Domain.Repositories;
 
 namespace MTK.Modules.Payments.Application.Vendors.Commands.UpdateVendor;
@@ -8,13 +9,16 @@ namespace MTK.Modules.Payments.Application.Vendors.Commands.UpdateVendor;
 internal sealed class UpdateVendorCommandHandler : ICommandHandler<UpdateVendorCommand>
 {
     private readonly IVendorRepository _vendorRepository;
+    private readonly ICachedVendorService _cachedVendorService;
     private readonly IUnitOfWork _unitOfWork;
 
     public UpdateVendorCommandHandler(
         IVendorRepository vendorRepository,
+        ICachedVendorService cachedVendorService,
         IUnitOfWork unitOfWork)
     {
         _vendorRepository = vendorRepository;
+        _cachedVendorService = cachedVendorService;
         _unitOfWork = unitOfWork;
     }
 
@@ -44,6 +48,9 @@ internal sealed class UpdateVendorCommandHandler : ICommandHandler<UpdateVendorC
             request.Note);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate Vendor cache after update (Name may have changed!)
+        await _cachedVendorService.InvalidateCacheAsync(request.VendorId, cancellationToken);
 
         return Result.Success();
     }
