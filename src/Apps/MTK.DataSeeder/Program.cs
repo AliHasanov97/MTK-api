@@ -12,13 +12,19 @@ using MTK.Modules.Warehouse.Infrastructure;
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) =>
     {
-        // API-dakı appsettings.json istifadə et (duplicate config yox!)
+        // API-dakı appsettings istifadə et (duplicate config yox!)
         // AppContext.BaseDirectory = bin/Debug/net9.0/ qovluğudur
-        var baseDir = AppContext.BaseDirectory;
-        var apiAppSettingsPath = Path.Combine(baseDir, "..", "..", "..", "..", "MTK.Api", "appsettings.Production.json");
-        var fullPath = Path.GetFullPath(apiAppSettingsPath);
+        var apiDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "MTK.Api"));
 
-        config.AddJsonFile(fullPath, optional: false, reloadOnChange: true);
+        // Mühit API-nin launchSettings.json faylından götürülür (Production/Development).
+        // ASPNETCORE_ENVIRONMENT artıq təyin olunubsa, o üstünlük təşkil edir.
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+            ?? ReadLaunchSettingsEnvironment(Path.Combine(apiDir, "Properties", "launchSettings.json"))
+            ?? "Production";
+        Console.WriteLine($"DataSeeder mühiti: {environmentName} (appsettings.{environmentName}.json)");
+
+        config.AddJsonFile(Path.Combine(apiDir, "appsettings.json"), optional: false, reloadOnChange: true);
+        config.AddJsonFile(Path.Combine(apiDir, $"appsettings.{environmentName}.json"), optional: true, reloadOnChange: true);
     })
     .ConfigureServices((context, services) =>
     {
@@ -424,4 +430,29 @@ static async Task ShowStatistics(IServiceProvider services, ILogger logger)
     }
 
     logger.LogInformation("");
+}
+
+static string? ReadLaunchSettingsEnvironment(string launchSettingsPath)
+{
+    if (!File.Exists(launchSettingsPath))
+        return null;
+
+    using var doc = System.Text.Json.JsonDocument.Parse(
+        File.ReadAllText(launchSettingsPath),
+        new System.Text.Json.JsonDocumentOptions { CommentHandling = System.Text.Json.JsonCommentHandling.Skip, AllowTrailingCommas = true });
+
+    if (!doc.RootElement.TryGetProperty("profiles", out var profiles))
+        return null;
+
+    foreach (var profile in profiles.EnumerateObject())
+    {
+        if (profile.Value.TryGetProperty("environmentVariables", out var vars)
+            && vars.TryGetProperty("ASPNETCORE_ENVIRONMENT", out var env)
+            && env.ValueKind == System.Text.Json.JsonValueKind.String)
+        {
+            return env.GetString();
+        }
+    }
+
+    return null;
 }
