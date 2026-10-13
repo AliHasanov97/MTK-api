@@ -29,6 +29,52 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
             .Where(c => c.OwnerId != null);
     }
 
+    // Axtarış sakinin adı, mənzil/qaraj nömrəsi, dövr və təsvir üzrə işləyir (yalnız
+    // Period/Description-dan ibarət tsvector kifayət etmir). Sözlər arasında AND:
+    // hər söz bu sahələrdən ən azı birində olmalıdır.
+    public override async Task<List<Charge>> SearchAsync(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria,
+        string? searchTerm,
+        int? page,
+        int? pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ApplySearchTerm(ApplyFiltersAndSort(filters, sortCriteria), searchTerm);
+        query = ApplyPages(query, page, pageSize);
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    public override async Task<int> CountAsync(
+        List<QueryFilter>? filters,
+        SortCriteria? sortCriteria,
+        string? searchTerm,
+        CancellationToken cancellationToken = default)
+    {
+        return await ApplySearchTerm(ApplyFiltersAndSort(filters, sortCriteria), searchTerm)
+            .CountAsync(cancellationToken);
+    }
+
+    private static IQueryable<Charge> ApplySearchTerm(IQueryable<Charge> query, string? searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return query;
+
+        foreach (var word in searchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var escaped = word.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
+            var pattern = $"%{escaped}%";
+            query = query.Where(c =>
+                (c.Owner != null && EF.Functions.ILike(c.Owner.FullName, pattern))
+                || (c.Apartment != null && EF.Functions.ILike(c.Apartment.ApartmentNumber, pattern))
+                || (c.Garage != null && EF.Functions.ILike(c.Garage.GarageNumber, pattern))
+                || (c.Period != null && EF.Functions.ILike(c.Period, pattern))
+                || (c.Description != null && EF.Functions.ILike(c.Description, pattern)));
+        }
+
+        return query;
+    }
+
     public async Task<IEnumerable<Charge>> GetByOwnerIdAsync(
         Guid ownerId,
         CancellationToken cancellationToken = default)

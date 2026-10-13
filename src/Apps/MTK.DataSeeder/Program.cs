@@ -15,7 +15,7 @@ var host = Host.CreateDefaultBuilder(args)
         // API-dakı appsettings.json istifadə et (duplicate config yox!)
         // AppContext.BaseDirectory = bin/Debug/net9.0/ qovluğudur
         var baseDir = AppContext.BaseDirectory;
-        var apiAppSettingsPath = Path.Combine(baseDir, "..", "..", "..", "..", "MTK.Api", "appsettings.json");
+        var apiAppSettingsPath = Path.Combine(baseDir, "..", "..", "..", "..", "MTK.Api", "appsettings.Production.json");
         var fullPath = Path.GetFullPath(apiAppSettingsPath);
 
         config.AddJsonFile(fullPath, optional: false, reloadOnChange: true);
