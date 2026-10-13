@@ -27,7 +27,7 @@ public sealed class GarageSeeder
     public async Task SeedAsync()
     {
         // Əvvəlcə bütün mövcud qarajları bazadan oxu
-        var existingGarages = await _garageRepository.GetAllAsync();
+        var existingGarages = await _garageRepository.ListAsync();
         GarageIds.Clear();
         GarageIds.AddRange(existingGarages.Select(g => g.Id));
 

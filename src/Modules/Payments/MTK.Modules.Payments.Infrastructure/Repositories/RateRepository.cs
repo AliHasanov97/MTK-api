@@ -27,6 +27,18 @@ internal sealed class RateRepository : SearchableRepository<Rate>, IRateReposito
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Rate?> GetRateAtDateAsync(
+        RateType rateType,
+        DateTimeOffset asOf,
+        CancellationToken cancellationToken = default)
+    {
+        return await PaymentsContext.Rates
+            .Where(r => r.RateType == rateType)
+            .Where(r => r.EffectiveFrom <= asOf && (r.EffectiveTo == null || r.EffectiveTo > asOf))
+            .OrderByDescending(r => r.EffectiveFrom)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<Rate?> GetCurrentGarageRateAsync(
         GarageType? garageType,
         CancellationToken cancellationToken = default)
@@ -52,6 +64,35 @@ internal sealed class RateRepository : SearchableRepository<Rate>, IRateReposito
 
         // Fallback: the type-less default rate applies to any garage type without its own rate.
         return await CurrentFixedGarageRates()
+            .Where(r => r.GarageType == null)
+            .OrderByDescending(r => r.EffectiveFrom)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<Rate?> GetGarageRateAtDateAsync(
+        GarageType? garageType,
+        DateTimeOffset asOf,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Rate> FixedGarageRatesAtDate() => PaymentsContext.Rates
+            .Where(r => r.RateType == RateType.FixedGarage)
+            .Where(r => r.EffectiveFrom <= asOf && (r.EffectiveTo == null || r.EffectiveTo > asOf));
+
+        if (garageType is not null)
+        {
+            Rate? specific = await FixedGarageRatesAtDate()
+                .Where(r => r.GarageType == garageType)
+                .OrderByDescending(r => r.EffectiveFrom)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (specific is not null)
+            {
+                return specific;
+            }
+        }
+
+        // Fallback: the type-less default rate applies to any garage type without its own rate.
+        return await FixedGarageRatesAtDate()
             .Where(r => r.GarageType == null)
             .OrderByDescending(r => r.EffectiveFrom)
             .FirstOrDefaultAsync(cancellationToken);

@@ -27,7 +27,7 @@ public sealed class OwnerSeeder
     public async Task SeedAsync()
     {
         // Əvvəlcə bütün mövcud sakinləri bazadan oxu
-        var existingOwners = await _ownerRepository.GetAllAsync();
+        var existingOwners = await _ownerRepository.ListAsync();
         OwnerIds.Clear();
         OwnerIds.AddRange(existingOwners.Select(o => o.Id)); // Owner.Id istifadə et, UserId deyil!
 

@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Application -->
+    <PackageVersion Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageVersion Include="AWSSDK.S3" Version="4.0.104.1" />
     <PackageVersion Include="FluentValidation" Version="11.12.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.12.0" />

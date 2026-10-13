@@ -103,7 +103,13 @@ public static class PaymentsModule
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeDisplayEnricher, MTK.Modules.Payments.Application.Charges.Services.ChargeDisplayEnricher>();
         services.AddScoped<MTK.Modules.Payments.Application.OwnerBalances.Services.IOwnerBalanceService, MTK.Modules.Payments.Application.OwnerBalances.Services.OwnerBalanceService>();
         services.AddScoped<MTK.Modules.Payments.Application.CompanyBalances.Services.ICompanyBalanceService, MTK.Modules.Payments.Application.CompanyBalances.Services.CompanyBalanceService>();
+
+        // Charge generation services (refactored into separate classes)
+        services.AddScoped<MTK.Modules.Payments.Infrastructure.Services.RateProvider>();
+        services.AddScoped<MTK.Modules.Payments.Infrastructure.Services.ApartmentChargeGenerator>();
+        services.AddScoped<MTK.Modules.Payments.Infrastructure.Services.GarageChargeGenerator>();
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.ChargeGenerationService>();
+
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IVendorChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.VendorChargeGenerationService>();
 
         // Cached services (Redis)

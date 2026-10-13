@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Bogus" />
@@ -15,6 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Modules\Buildings\MTK.Modules.Buildings.Infrastructure\MTK.Modules.Buildings.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Payments\MTK.Modules.Payments.Infrastructure\MTK.Modules.Payments.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Warehouse\MTK.Modules.Warehouse.Infrastructure\MTK.Modules.Warehouse.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Identity\MTK.Modules.Identity.Application\MTK.Modules.Identity.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Identity\MTK.Modules.Identity.Infrastructure\MTK.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Common\MTK.Common.Infrastructure\MTK.Common.Infrastructure.csproj" />

@@ -1,22 +1,21 @@
 using Microsoft.Extensions.Logging;
+using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Charges.Services;
 using MTK.Modules.Payments.Application.OwnerBalances.Services;
 using MTK.Modules.Payments.Application.Payments.Services;
-using MTK.Modules.Payments.Application.PropertyOwnerships;
-using MTK.Modules.Payments.Application.PropertyOwnerships.Services;
-using MTK.Modules.Payments.Application.Rates.Services;
 using MTK.Modules.Payments.Domain.Charges;
-using MTK.Modules.Payments.Domain.PropertyOwnerships;
-using MTK.Modules.Payments.Domain.Rates;
 using MTK.Modules.Payments.Domain.Repositories;
 using MTK.Modules.Payments.Infrastructure.Database;
 
 namespace MTK.Modules.Payments.Infrastructure.Services;
 
+/// <summary>
+/// Aylıq borcların generasiyasını koordinasiya edən əsas servis
+/// </summary>
 internal sealed class ChargeGenerationService(
+    ApartmentChargeGenerator apartmentChargeGenerator,
+    GarageChargeGenerator garageChargeGenerator,
     PaymentsDbContext dbContext,
-    ICachedRateService cachedRateService,
-    ICachedPropertyOwnershipService cachedPropertyOwnershipService,
     IChargeRepository chargeRepository,
     IPaymentAllocationService paymentAllocationService,
     IOwnerBalanceService ownerBalanceService,
@@ -29,174 +28,53 @@ internal sealed class ChargeGenerationService(
     {
         logger.LogInformation("Starting monthly charge generation for period {Period}", period);
 
-        // Get current apartment rate (cached in Redis for 1 hour)
-        var apartmentRateResponse = await cachedRateService.GetCurrentRateAsync(
-            RateType.PerSquareMeter, cancellationToken);
+        DateTimeOffset issuedOn = ChargePeriod.FirstDay(period);
 
-        int chargesCreated = 0;
-        int apartmentsSkippedNoRate = 0;
-        int garagesSkippedNoRate = 0;
-
-        // Bu dövr üçün borcu olan əmlaklar bir sorğu ilə yüklənir (hər əmlak üçün ayrıca sorğu yoxdur).
-        // Planlı iş ləğv edilmiş borcu da "mövcud" sayır və onu təkrar yaratmır; əl ilə bərpa isə ləğv edilmişləri nəzərə almır.
+        // Bu dövr üçün artıq borcu olan əmlakları yüklə
         HashSet<Guid> billedPropertyIds = await chargeRepository.GetPropertyIdsWithChargeForPeriodAsync(
             period, includeCancelled: !regenerateCancelled, cancellationToken);
 
-        // Avansla bağlama ikinci keçiddə, borclar yazıldıqdan sonra aparılır. Borcların
-        // özü (referansları) saxlanılır — Id-nin EF tərəfindən nə vaxt verilməsindən
-        // asılı olmasın deyə.
         var createdCharges = new List<Charge>();
         var affectedOwnerIds = new HashSet<Guid>();
 
-        DateTimeOffset issuedOn = ChargePeriod.FirstDay(period);
+        // 1. Mənzil borclarını yarat
+        var apartmentResult = await apartmentChargeGenerator.GenerateChargesAsync(
+            period, issuedOn, billedPropertyIds, createdCharges, affectedOwnerIds, cancellationToken);
 
-        // Get apartments with owners from PropertyOwnership read model (cached for 10 min)
-        List<PropertyOwnershipResponse> apartments = await cachedPropertyOwnershipService
-            .GetByPropertyTypeAsync(PropertyType.Apartment, cancellationToken);
+        // 2. Qaraj borclarını yarat
+        var garageResult = await garageChargeGenerator.GenerateChargesAsync(
+            period, issuedOn, billedPropertyIds, createdCharges, affectedOwnerIds, cancellationToken);
 
-        // Generate charges for apartments
-        if (apartmentRateResponse is not null)
-        {
-            foreach (PropertyOwnershipResponse ownership in apartments)
-            {
-                Guid apartmentId = ownership.ApartmentId!.Value;
-                decimal area = ownership.Apartment!.AreaSquareMeters;
+        int totalChargesCreated = apartmentResult.Created + garageResult.Created;
 
-                // Check if charge already exists for this period
-                if (billedPropertyIds.Contains(apartmentId))
-                {
-                    logger.LogDebug("Charge already exists for apartment {ApartmentId} in period {Period}",
-                        apartmentId, period);
-                    continue;
-                }
-
-                // Calculate charge amount: rate per m² × area
-                decimal chargeAmount = apartmentRateResponse.Amount * area;
-
-                // Create charge with snapshot data
-                Charge charge = Charge.CreateForApartment(
-                    ownership.OwnerId,
-                    apartmentId,
-                    period,
-                    issuedOn,
-                    chargeAmount,
-                    apartmentRateResponse.Amount,     // Snapshot: rate at time of creation
-                    RateType.PerSquareMeter,          // Snapshot: rate type
-                    area);                            // Snapshot: area at time of creation
-
-                chargeRepository.Add(charge);
-                createdCharges.Add(charge);
-                affectedOwnerIds.Add(ownership.OwnerId);
-
-                chargesCreated++;
-
-                logger.LogDebug("Created charge for apartment {ApartmentId}, owner {OwnerId}, amount {Amount}",
-                    apartmentId, ownership.OwnerId, chargeAmount);
-            }
-        }
-
-        else
-        {
-            apartmentsSkippedNoRate = apartments.Count(o => !billedPropertyIds.Contains(o.ApartmentId!.Value));
-            if (apartmentsSkippedNoRate > 0)
-            {
-                logger.LogWarning(
-                    "No active PerSquareMeter rate found for period {Period}; {Count} apartment(s) were NOT charged",
-                    period, apartmentsSkippedNoRate);
-            }
-        }
-
-        // Get garages with owners from PropertyOwnership read model (cached for 10 min)
-        List<PropertyOwnershipResponse> garages = await cachedPropertyOwnershipService
-            .GetByPropertyTypeAsync(PropertyType.Garage, cancellationToken);
-
-        // Rate resolution is per garage type (falls back to the type-less default rate),
-        // cached here so we don't re-query the same type for every garage. Redis cache
-        // handles the actual caching (1-hour TTL per garage type).
-        var garageRateByType = new Dictionary<GarageType, MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates.RateResponse?>();
-        MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates.RateResponse? defaultGarageRate = null;
-        bool defaultGarageRateResolved = false;
-
-        foreach (PropertyOwnershipResponse ownership in garages)
-        {
-            Guid garageId = ownership.GarageId!.Value;
-            GarageType? garageType = ownership.Garage!.GarageType;
-            MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates.RateResponse? garageRateResponse;
-
-            if (garageType is { } specificType)
-            {
-                if (!garageRateByType.TryGetValue(specificType, out garageRateResponse))
-                {
-                    garageRateResponse = await cachedRateService.GetCurrentGarageRateAsync(specificType, cancellationToken);
-                    garageRateByType[specificType] = garageRateResponse;
-                }
-            }
-            else
-            {
-                if (!defaultGarageRateResolved)
-                {
-                    defaultGarageRate = await cachedRateService.GetCurrentGarageRateAsync(null, cancellationToken);
-                    defaultGarageRateResolved = true;
-                }
-
-                garageRateResponse = defaultGarageRate;
-            }
-
-            // Bu dövr üçün borcu artıq olan qaraj tarifdən asılı olmayaraq atlanır
-            if (billedPropertyIds.Contains(garageId))
-            {
-                logger.LogDebug("Charge already exists for garage {GarageId} in period {Period}",
-                    garageId, period);
-                continue;
-            }
-
-            if (garageRateResponse is null)
-            {
-                garagesSkippedNoRate++;
-                logger.LogWarning(
-                    "No active FixedGarage rate found for garage type {GarageType} (garage {GarageId}); skipping",
-                    garageType, garageId);
-                continue;
-            }
-
-            decimal chargeAmount = garageRateResponse.Amount;
-
-            // Create charge with snapshot data
-            Charge charge = Charge.CreateForGarage(
-                ownership.OwnerId,
-                garageId,
-                period,
-                issuedOn,
-                chargeAmount,
-                garageRateResponse.Amount,     // Snapshot: rate at time of creation
-                RateType.FixedGarage);         // Snapshot: rate type (no area for garages)
-
-            chargeRepository.Add(charge);
-            createdCharges.Add(charge);
-            affectedOwnerIds.Add(ownership.OwnerId);
-
-            chargesCreated++;
-
-            logger.LogDebug("Created charge for garage {GarageId} (type {GarageType}), owner {OwnerId}, amount {Amount}",
-                garageId, garageType, ownership.OwnerId, chargeAmount);
-        }
-
-        if (chargesCreated == 0)
+        if (totalChargesCreated == 0)
         {
             logger.LogInformation("Monthly charge generation completed for period {Period}. No new charges", period);
-            return new ChargeGenerationResult(0, apartmentsSkippedNoRate, garagesSkippedNoRate);
+            return new ChargeGenerationResult(0, apartmentResult.SkippedNoRate, garageResult.SkippedNoRate);
         }
 
-        // Borcların yazılması, avansdan bağlanması və balansın yenilənməsi bir
-        // tranzaksiyadır: yarımçıq vəziyyətdə qala bilməz.
+        // 3. Saxla və avans tətbiq et
+        await SaveAndApplyAdvanceAsync(period, createdCharges, affectedOwnerIds, cancellationToken);
+
+        logger.LogInformation("Monthly charge generation completed for period {Period}. Created {Count} charges",
+            period, totalChargesCreated);
+
+        return new ChargeGenerationResult(totalChargesCreated, apartmentResult.SkippedNoRate, garageResult.SkippedNoRate);
+    }
+
+    private async Task SaveAndApplyAdvanceAsync(
+        string period,
+        List<Charge> createdCharges,
+        HashSet<Guid> affectedOwnerIds,
+        CancellationToken cancellationToken)
+    {
         await using var transaction = await chargeRepository.BeginTransactionAsync(cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // İkinci keçid: yeni borcları sahibin qalan avansından bağla. Bütün borclar bir
-        // çağırışda gedir — sahib üzrə avans bir dəfə oxunur (əvvəllər hər borc üçün
-        // ayrı oxuma + ayrı SaveChanges olurdu).
-        var advanceResult = await paymentAllocationService.ApplyAdvanceToChargesAsync(createdCharges, cancellationToken);
+        // Avansla bağla
+        Result advanceResult = await paymentAllocationService.ApplyAdvanceToChargesAsync(
+            createdCharges, cancellationToken);
 
         if (advanceResult.IsFailure)
         {
@@ -205,20 +83,15 @@ internal sealed class ChargeGenerationService(
                 "Advance settlement failed for period {Period} ({Code}: {Message}); generation rolled back",
                 period, advanceResult.Error.Code, advanceResult.Error.Message);
 
-            // Səssiz "0 borc yaradıldı" əvəzinə xəta kimi görünsün: job uğursuz sayılır, növbəti işləmədə təkrar cəhd olunur.
             throw new InvalidOperationException(
                 $"Avansla bağlama uğursuz oldu, '{period}' dövrü üçün generasiya geri qaytarıldı ({advanceResult.Error.Code}: {advanceResult.Error.Message}).");
         }
 
-        // Balans aqreqatdan mütləq yenidən hesablanır (artırmalı yanaşma yoxdur).
+        // Balansı yenilə
         await ownerBalanceService.RecalculateAsync(affectedOwnerIds, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
-
-        logger.LogInformation("Monthly charge generation completed for period {Period}. Created {Count} charges",
-            period, chargesCreated);
-
-        return new ChargeGenerationResult(chargesCreated, apartmentsSkippedNoRate, garagesSkippedNoRate);
     }
 }
+

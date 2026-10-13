@@ -27,7 +27,7 @@ public sealed class ApartmentSeeder
     public async Task SeedAsync()
     {
         // Əvvəlcə bütün mövcud mənzilləri bazadan oxu
-        var existingApartments = await _apartmentRepository.GetAllAsync();
+        var existingApartments = await _apartmentRepository.ListAsync();
         ApartmentIds.Clear();
         ApartmentIds.AddRange(existingApartments.Select(a => a.Id));
 

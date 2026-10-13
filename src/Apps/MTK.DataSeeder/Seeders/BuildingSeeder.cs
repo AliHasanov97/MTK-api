@@ -27,7 +27,7 @@ public sealed class BuildingSeeder
     public async Task SeedAsync()
     {
         // Əvvəlcə bütün mövcud binaları bazadan oxu
-        var existingBuildings = await _buildingRepository.GetAllAsync();
+        var existingBuildings = await _buildingRepository.ListAsync();
         BuildingIds.Clear();
         BuildingIds.AddRange(existingBuildings.Select(b => b.Id));
 
