@@ -44,8 +44,6 @@ internal sealed class CreateBuildingCommandHandler
         var building = Building.Create(
             request.Name,
             address,
-            request.TotalFloors,
-            request.ApartmentsPerFloor,
             request.Description);
 
         _buildingRepository.Add(building);

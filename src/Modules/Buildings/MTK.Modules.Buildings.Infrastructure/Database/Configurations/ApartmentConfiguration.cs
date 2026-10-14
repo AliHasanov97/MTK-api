@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MTK.Modules.Buildings.Domain.Apartments;
+using MTK.Modules.Buildings.Domain.ApartmentTypes;
 
 namespace MTK.Modules.Buildings.Infrastructure.Database.Configurations;
 
@@ -32,6 +33,13 @@ internal sealed class ApartmentConfiguration : IEntityTypeConfiguration<Apartmen
 
         builder.Property(a => a.RoomCount)
             .IsRequired();
+
+        builder.Property(a => a.ApartmentTypeId);
+
+        builder.HasOne<ApartmentType>()
+            .WithMany()
+            .HasForeignKey(a => a.ApartmentTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(a => a.Status)
             .HasConversion<string>()

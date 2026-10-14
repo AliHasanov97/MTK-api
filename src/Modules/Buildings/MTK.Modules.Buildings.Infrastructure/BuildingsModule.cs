@@ -62,6 +62,7 @@ public static class BuildingsModule
         // Repositories
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
+        services.AddScoped<IApartmentTypeRepository, ApartmentTypeRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IGarageRepository, GarageRepository>();
         services.AddScoped<IOwnershipHistoryRepository, OwnershipHistoryRepository>();

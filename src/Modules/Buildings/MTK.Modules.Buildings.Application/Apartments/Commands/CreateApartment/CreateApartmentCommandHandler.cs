@@ -10,15 +10,18 @@ internal sealed class CreateApartmentCommandHandler
     : ICommandHandler<CreateApartmentCommand, Guid>
 {
     private readonly IApartmentRepository _apartmentRepository;
+    private readonly IApartmentTypeRepository _apartmentTypeRepository;
     private readonly IBuildingRepository _buildingRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateApartmentCommandHandler(
         IApartmentRepository apartmentRepository,
+        IApartmentTypeRepository apartmentTypeRepository,
         IBuildingRepository buildingRepository,
         IUnitOfWork unitOfWork)
     {
         _apartmentRepository = apartmentRepository;
+        _apartmentTypeRepository = apartmentTypeRepository;
         _buildingRepository = buildingRepository;
         _unitOfWork = unitOfWork;
     }
@@ -38,6 +41,17 @@ internal sealed class CreateApartmentCommandHandler
                 $"Bina tapılmadı: {request.BuildingId}"));
         }
 
+        var apartmentType = await _apartmentTypeRepository.GetByIdAsync(
+            request.ApartmentTypeId,
+            cancellationToken);
+
+        if (apartmentType is null || apartmentType.BuildingId != request.BuildingId)
+        {
+            return Result.Failure<Guid>(new Error(
+                "ApartmentType.NotFound",
+                "Mənzil tipi bu binada tapılmadı"));
+        }
+
         var exists = await _apartmentRepository.ExistsByNumberAsync(
             request.BuildingId,
             request.ApartmentNumber,
@@ -54,8 +68,9 @@ internal sealed class CreateApartmentCommandHandler
             request.BuildingId,
             request.ApartmentNumber,
             request.Floor,
-            request.AreaSquareMeters,
-            request.RoomCount);
+            apartmentType.AreaSquareMeters,
+            apartmentType.RoomCount,
+            apartmentType.Id);
 
         _apartmentRepository.Add(apartment);
 

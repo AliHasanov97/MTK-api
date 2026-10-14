@@ -21,12 +21,8 @@ internal sealed class CreateApartmentCommandValidator
             .GreaterThanOrEqualTo(0)
             .WithMessage("Mərtəbə 0 və ya daha böyük olmalıdır");
 
-        RuleFor(x => x.AreaSquareMeters)
-            .GreaterThan(0)
-            .WithMessage("Sahə müsbət olmalıdır");
-
-        RuleFor(x => x.RoomCount)
-            .GreaterThan(0)
-            .WithMessage("Otaq sayı müsbət olmalıdır");
+        RuleFor(x => x.ApartmentTypeId)
+            .NotEmpty()
+            .WithMessage("Mənzil tipi seçilməlidir");
     }
 }

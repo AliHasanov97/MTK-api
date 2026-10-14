@@ -43,27 +43,21 @@ public sealed class BuildingSeeder
                 Name = "Yasamal Residence A",
                 Street = "H.Əliyev prospekti 123",
                 City = "Bakı",
-                District = "Yasamal rayonu",
-                TotalFloors = 17,
-                ApartmentsPerFloor = 6
+                District = "Yasamal rayonu"
             },
             new
             {
                 Name = "Yasamal Residence B",
                 Street = "H.Əliyev prospekti 125",
                 City = "Bakı",
-                District = "Yasamal rayonu",
-                TotalFloors = 17,
-                ApartmentsPerFloor = 6
+                District = "Yasamal rayonu"
             },
             new
             {
                 Name = "Yasamal Residence C",
                 Street = "H.Əliyev prospekti 127",
                 City = "Bakı",
-                District = "Yasamal rayonu",
-                TotalFloors = 17,
-                ApartmentsPerFloor = 6
+                District = "Yasamal rayonu"
             }
         };
 
@@ -74,8 +68,6 @@ public sealed class BuildingSeeder
                 building.Street,
                 building.City,
                 building.District,
-                building.TotalFloors,
-                building.ApartmentsPerFloor,
                 Description: null);
 
             var result = await _sender.Send(command);

@@ -7,6 +7,4 @@ public sealed record CreateBuildingCommand(
     string Street,
     string City,
     string? District,
-    int TotalFloors,
-    int ApartmentsPerFloor,
     string? Description = null) : ICommand<Guid>;

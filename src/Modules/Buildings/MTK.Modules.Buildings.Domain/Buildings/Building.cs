@@ -16,14 +16,10 @@ public sealed class Building : SearchableEntity
     private Building(
         Guid id,
         string name,
-        Address address,
-        int totalFloors,
-        int apartmentsPerFloor) : base(id)
+        Address address) : base(id)
     {
         Name = name;
         Address = address;
-        TotalFloors = totalFloors;
-        ApartmentsPerFloor = apartmentsPerFloor;
         Status = BuildingStatus.Active;
     }
 
@@ -34,9 +30,6 @@ public sealed class Building : SearchableEntity
 
     public string Name { get; private set; } = string.Empty;
     public Address Address { get; private set; } = null!;
-    public int TotalFloors { get; private set; }
-    public int ApartmentsPerFloor { get; private set; }
-    public int TotalApartments => TotalFloors * ApartmentsPerFloor;
     public BuildingStatus Status { get; private set; }
     public string? Description { get; private set; }
 
@@ -46,16 +39,12 @@ public sealed class Building : SearchableEntity
     public static Building Create(
         string name,
         Address address,
-        int totalFloors,
-        int apartmentsPerFloor,
         string? description = null)
     {
         var building = new Building(
             Guid.NewGuid(),
             name,
-            address,
-            totalFloors,
-            apartmentsPerFloor)
+            address)
         {
             Description = description
         };

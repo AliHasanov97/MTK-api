@@ -46,12 +46,6 @@ internal sealed class BuildingConfiguration : IEntityTypeConfiguration<Building>
                 .HasColumnName("Country");
         });
 
-        builder.Property(b => b.TotalFloors)
-            .IsRequired();
-
-        builder.Property(b => b.ApartmentsPerFloor)
-            .IsRequired();
-
         builder.Property(b => b.Status)
             .HasConversion<string>()
             .IsRequired()

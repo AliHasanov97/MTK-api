@@ -36,6 +36,7 @@ public sealed class Apartment : SearchableEntity
     public int Floor { get; private set; }
     public decimal AreaSquareMeters { get; private set; }
     public int RoomCount { get; private set; }
+    public Guid? ApartmentTypeId { get; private set; }
     public ApartmentStatus Status { get; private set; }
 
     // Current owner (nullable - can be vacant)
@@ -50,7 +51,8 @@ public sealed class Apartment : SearchableEntity
         string apartmentNumber,
         int floor,
         decimal areaSquareMeters,
-        int roomCount)
+        int roomCount,
+        Guid? apartmentTypeId = null)
     {
         var apartment = new Apartment(
             Guid.NewGuid(),
@@ -59,7 +61,8 @@ public sealed class Apartment : SearchableEntity
             floor,
             areaSquareMeters)
         {
-            RoomCount = roomCount
+            RoomCount = roomCount,
+            ApartmentTypeId = apartmentTypeId
         };
 
         apartment.SetCreatedAt();

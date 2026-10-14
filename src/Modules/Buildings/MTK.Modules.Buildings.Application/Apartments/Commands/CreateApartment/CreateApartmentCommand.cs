@@ -6,5 +6,4 @@ public sealed record CreateApartmentCommand(
     Guid BuildingId,
     string ApartmentNumber,
     int Floor,
-    decimal AreaSquareMeters,
-    int RoomCount) : ICommand<Guid>;
+    Guid ApartmentTypeId) : ICommand<Guid>;

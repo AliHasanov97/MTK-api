@@ -20,13 +20,5 @@ internal sealed class CreateBuildingCommandValidator
         RuleFor(x => x.City)
             .NotEmpty()
             .WithMessage("Şəhər adı boş ola bilməz");
-
-        RuleFor(x => x.TotalFloors)
-            .GreaterThan(0)
-            .WithMessage("Mərtəbə sayı müsbət olmalıdır");
-
-        RuleFor(x => x.ApartmentsPerFloor)
-            .GreaterThan(0)
-            .WithMessage("Mərtəbə başına mənzil sayı müsbət olmalıdır");
     }
 }

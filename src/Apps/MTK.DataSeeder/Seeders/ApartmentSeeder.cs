@@ -2,6 +2,7 @@ using Bogus;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using MTK.Modules.Buildings.Application.Apartments.Commands.CreateApartment;
+using MTK.Modules.Buildings.Application.ApartmentTypes.Commands.CreateApartmentType;
 using MTK.Modules.Buildings.Domain.Repositories;
 
 namespace MTK.DataSeeder.Seeders;
@@ -43,21 +44,36 @@ public sealed class ApartmentSeeder
             var buildingIndex = BuildingSeeder.BuildingIds.IndexOf(buildingId) + 1;
             _logger.LogInformation("  🏢 Blok {Index} üçün mənzillər yaradılır...", buildingIndex);
 
+            // Binanın konfiqurasiyası: mənzil tipləri
+            var typeIds = new List<Guid>();
+            foreach (var (typeRooms, typeArea) in new[] { (1, 45m), (2, 65m), (3, 90m) })
+            {
+                var typeResult = await _sender.Send(new CreateApartmentTypeCommand(typeRooms, typeArea) { BuildingId = buildingId });
+                if (typeResult.IsSuccess)
+                {
+                    typeIds.Add(typeResult.Value);
+                }
+                else
+                {
+                    _logger.LogError("  ❌ Mənzil tipi yaradıla bilmədi: {Error}", typeResult.Error);
+                }
+            }
+
+            if (typeIds.Count == 0) continue;
+
             // Hər blokda 102 mənzil (17 mərtəbə × 6 mənzil)
             for (int floor = 1; floor <= 17; floor++)
             {
                 for (int apt = 1; apt <= 6; apt++)
                 {
                     var apartmentNumber = $"{floor}{apt}"; // 11, 12, ..., 16, 21, ...
-                    var areaSquareMeters = faker.Random.Decimal(45, 150); // 45-150 m²
-                    var roomCount = faker.Random.Int(1, 4); // 1-4 otaq
+                    var apartmentTypeId = faker.PickRandom(typeIds);
 
                     var command = new CreateApartmentCommand(
                         buildingId,
                         apartmentNumber,
                         floor,
-                        areaSquareMeters,
-                        roomCount);
+                        apartmentTypeId);
 
                     var result = await _sender.Send(command);
 

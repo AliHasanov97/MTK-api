@@ -9,6 +9,7 @@ using MTK.Common.Infrastructure.Inbox;
 using MTK.Common.Infrastructure.Outbox;
 using IUnitOfWork = MTK.Modules.Buildings.Application.Abstractions.Data.IUnitOfWork;
 using MTK.Modules.Buildings.Domain.Apartments;
+using MTK.Modules.Buildings.Domain.ApartmentTypes;
 using MTK.Modules.Buildings.Domain.Buildings;
 using MTK.Modules.Buildings.Domain.Garages;
 using MTK.Modules.Buildings.Domain.Owners;
@@ -41,6 +42,7 @@ public sealed class BuildingsDbContext : DbContext, IUnitOfWork, IHasAuditActor
 
     public DbSet<Building> Buildings { get; set; }
     public DbSet<Apartment> Apartments { get; set; }
+    public DbSet<ApartmentType> ApartmentTypes => Set<ApartmentType>();
     public DbSet<Owner> Owners { get; set; }
     public DbSet<Garage> Garages { get; set; }
     public DbSet<OwnershipHistory> OwnershipHistories { get; set; }
