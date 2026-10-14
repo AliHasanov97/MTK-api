@@ -41,5 +41,8 @@ RuleFor(x => x.JobId)
         RuleFor(x => x.CurrentAddress)
             .MaximumLength(500).WithMessage("Ünvan maksimum 500 simvol ola bilər.")
             .When(x => x.CurrentAddress is not null);
+
+        RuleFor(x => x.BaseSalary)
+            .GreaterThanOrEqualTo(0).WithMessage("Əmək haqqı 0-dan kiçik ola bilməz.");
     }
 }

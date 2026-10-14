@@ -44,6 +44,7 @@ internal sealed class UpdateEmployeeCommandHandler : ICommandHandler<UpdateEmplo
                 request.ContractNumber,
                 request.SalaryBankName,
                 request.EmployeeBankAccountNumber,
+                request.BaseSalary,
                 request.MaritalStatus,
                 request.NumberOfChildren,
                 request.ChildrenUnder14Count,

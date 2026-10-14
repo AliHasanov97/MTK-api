@@ -64,6 +64,11 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired(false)
             .HasMaxLength(50);
 
+        builder.Property(e => e.BaseSalary)
+            .IsRequired()
+            .HasColumnType("decimal(18,2)")
+            .HasDefaultValue(0m);
+
         builder.Property(e => e.MaritalStatus)
             .IsRequired(false)
             .HasConversion<int?>();

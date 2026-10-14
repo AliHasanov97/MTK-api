@@ -59,6 +59,7 @@ internal sealed class AddEmployeeCommandHandler : ICommandHandler<AddEmployeeCom
                 // Bank Info
                 salaryBankName: request.SalaryBankName,
                 employeeBankAccountNumber: request.EmployeeBankAccountNumber,
+                baseSalary: request.BaseSalary,
                 // Family Info
                 maritalStatus: request.MaritalStatus,
                 numberOfChildren: request.NumberOfChildren,

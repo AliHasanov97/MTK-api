@@ -25,6 +25,7 @@ public sealed class AddEmployeeCommand : ICommand<AddEmployeeResponse>
     // Bank Info
     public string? SalaryBankName { get; set; }
     public string? EmployeeBankAccountNumber { get; set; }
+    public decimal BaseSalary { get; set; }
 
     // Family Info
     public MaritalStatus? MaritalStatus { get; set; }

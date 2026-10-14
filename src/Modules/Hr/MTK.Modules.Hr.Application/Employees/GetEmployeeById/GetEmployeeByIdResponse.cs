@@ -21,6 +21,7 @@ public class GetEmployeeByIdResponse
     public string? ContractNumber { get; set; }
     public string? SalaryBankName { get; set; }
     public string? EmployeeBankAccountNumber { get; set; }
+    public decimal BaseSalary { get; set; }
     public MaritalStatus? MaritalStatus { get; set; }
     public int? NumberOfChildren { get; set; }
     public int? ChildrenUnder14Count { get; set; }

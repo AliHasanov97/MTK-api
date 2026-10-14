@@ -28,6 +28,7 @@ public sealed class Employee : SearchableEntity
     public string? ContractNumber { get; private set; }
     public string? SalaryBankName { get; private set; }
     public string? EmployeeBankAccountNumber { get; private set; }
+    public decimal BaseSalary { get; private set; }
     public MaritalStatus? MaritalStatus { get; private set; }
     public int? NumberOfChildren { get; private set; }
     public MilitaryService? MilitaryService { get; private set; }
@@ -102,6 +103,7 @@ public sealed class Employee : SearchableEntity
         // Bank Info
         string? salaryBankName = null,
         string? employeeBankAccountNumber = null,
+        decimal baseSalary = 0m,
         // Family Info
         MaritalStatus? maritalStatus = null,
         int? numberOfChildren = null,
@@ -152,6 +154,7 @@ public sealed class Employee : SearchableEntity
             // Bank Info
             SalaryBankName = salaryBankName,
             EmployeeBankAccountNumber = employeeBankAccountNumber,
+            BaseSalary = baseSalary,
             // Family Info
             MaritalStatus = maritalStatus,
             NumberOfChildren = numberOfChildren,
@@ -198,6 +201,7 @@ public sealed class Employee : SearchableEntity
         string? contractNumber,
         string? salaryBankName,
         string? employeeBankAccountNumber,
+        decimal? baseSalary,
         MaritalStatus? maritalStatus,
         int? numberOfChildren,
         int? childrenUnder14Count,
@@ -232,6 +236,7 @@ public sealed class Employee : SearchableEntity
         if (contractNumber is not null) ContractNumber = string.IsNullOrWhiteSpace(contractNumber) ? null : contractNumber;
         if (salaryBankName is not null) SalaryBankName = string.IsNullOrWhiteSpace(salaryBankName) ? null : salaryBankName;
         if (employeeBankAccountNumber is not null) EmployeeBankAccountNumber = string.IsNullOrWhiteSpace(employeeBankAccountNumber) ? null : employeeBankAccountNumber;
+        if (baseSalary.HasValue) BaseSalary = baseSalary.Value;
         if (maritalStatus.HasValue) MaritalStatus = maritalStatus.Value;
         if (numberOfChildren.HasValue) NumberOfChildren = numberOfChildren.Value;
         if (childrenUnder14Count.HasValue) ChildrenUnder14Count = childrenUnder14Count.Value;

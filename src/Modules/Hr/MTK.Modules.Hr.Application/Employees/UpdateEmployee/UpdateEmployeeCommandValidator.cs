@@ -57,6 +57,10 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
             .MaximumLength(500).WithMessage("Faktiki ünvan maksimum 500 simvol ola bilər.")
             .When(x => x.CurrentAddress is not null);
 
+        RuleFor(x => x.BaseSalary)
+            .GreaterThanOrEqualTo(0).WithMessage("Əmək haqqı 0-dan kiçik ola bilməz.")
+            .When(x => x.BaseSalary.HasValue);
+
         RuleFor(x => x.NumberOfChildren)
             .GreaterThanOrEqualTo(0).WithMessage("Uşaqların sayı 0-dan kiçik ola bilməz.")
             .When(x => x.NumberOfChildren.HasValue);
