@@ -3,6 +3,7 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Hr.Application.Abstractions.Authentication;
 using MTK.Modules.Hr.Application.Abstractions.Data;
 using MTK.Modules.Hr.Application.Services;
+using MTK.Modules.Hr.Application.VacationBalances.Services;
 using MTK.Modules.Hr.Domain.Applications;
 using MTK.Modules.Hr.Domain.Orders;
 using MTK.Modules.Hr.Domain.VacationApplications;
@@ -17,6 +18,7 @@ internal sealed class ConvertVacationToOrderCommandHandler
     private readonly IVacationApplicationRepository _vacationApplicationRepository;
     private readonly IVacationOrderRepository _vacationOrderRepository;
     private readonly ReturnToWorkDateService _returnToWorkDateService;
+    private readonly IVacationBalanceService _vacationBalanceService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContext _userContext;
 
@@ -24,12 +26,14 @@ internal sealed class ConvertVacationToOrderCommandHandler
         IVacationApplicationRepository vacationApplicationRepository,
         IVacationOrderRepository vacationOrderRepository,
         ReturnToWorkDateService returnToWorkDateService,
+        IVacationBalanceService vacationBalanceService,
         IUnitOfWork unitOfWork,
         IUserContext userContext)
     {
         _vacationApplicationRepository = vacationApplicationRepository;
         _vacationOrderRepository = vacationOrderRepository;
         _returnToWorkDateService = returnToWorkDateService;
+        _vacationBalanceService = vacationBalanceService;
         _unitOfWork = unitOfWork;
         _userContext = userContext;
     }
@@ -76,6 +80,14 @@ internal sealed class ConvertVacationToOrderCommandHandler
 
         // 5. Application statusunu yenilə
         application.MarkAsConvertedToOrder();
+
+        // 5.5. Balansdan günləri çıx (iş ili məzuniyyətin başladığı tarixə görə)
+        var balanceResult = await _vacationBalanceService.EnsureCurrentAsync(
+            application.EmployeeId, application.StartDate, cancellationToken);
+        if (balanceResult.IsFailure)
+            return Result.Failure<ConvertVacationToOrderResponse>(balanceResult.Error);
+
+        balanceResult.Value.RegisterUsedDays(application.TotalRequestedDays);
 
         // 6. Saxla
         await _vacationOrderRepository.AddAsync(order, cancellationToken);

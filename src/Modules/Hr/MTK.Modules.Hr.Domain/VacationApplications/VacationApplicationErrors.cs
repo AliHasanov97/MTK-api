@@ -32,4 +32,8 @@ public static class VacationApplicationErrors
     public static readonly Error CannotUpdateNonPendingApplication = new Error(
         "VacationApplication.CannotUpdateNonPendingApplication",
         "Yalnız 'Gözləyir' statusunda olan ərizələr dəyişdirilə bilər");
+
+    public static Error ExceedsBalance(int requestedDays, int remainingDays) => new Error(
+        "VacationApplication.ExceedsBalance",
+        $"Tələb olunan {requestedDays} gün qalan məzuniyyət balansından ({remainingDays} gün) çoxdur");
 }

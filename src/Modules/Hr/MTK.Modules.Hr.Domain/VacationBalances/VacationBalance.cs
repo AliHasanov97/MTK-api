@@ -71,4 +71,30 @@ public sealed class VacationBalance : Entity
             CarriedOverDays = carriedOverDays
         };
     }
+
+    /// <summary>VacationOrder yaradılanda çağırılır — balansın "istifadə olunmuş" tərəfini artırır.</summary>
+    public void RegisterUsedDays(int days)
+    {
+        if (days > RemainingDays)
+        {
+            throw new InvalidOperationException(
+                $"VacationBalance {Id}: {days} gün tələb olunur, amma yalnız {RemainingDays} gün qalıb");
+        }
+
+        UsedDays += days;
+        SetUpdatedAt();
+    }
+
+    /// <summary>CompensationOrder yaradılanda çağırılır — balansın "kompensasiya olunmuş" tərəfini artırır.</summary>
+    public void RegisterCompensatedDays(int days)
+    {
+        if (days > RemainingDays)
+        {
+            throw new InvalidOperationException(
+                $"VacationBalance {Id}: {days} gün tələb olunur, amma yalnız {RemainingDays} gün qalıb");
+        }
+
+        CompensatedDays += days;
+        SetUpdatedAt();
+    }
 }

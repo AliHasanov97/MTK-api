@@ -4,6 +4,7 @@ using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Hr.Application.Abstractions.Authentication;
 using MTK.Modules.Hr.Application.Abstractions.Data;
+using MTK.Modules.Hr.Application.VacationBalances.Services;
 using MTK.Modules.Hr.Domain.Employees;
 using MTK.Modules.Hr.Domain.VacationCompensationApplications;
 
@@ -14,6 +15,7 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
 {
     private readonly IVacationCompensationApplicationRepository _repository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IVacationBalanceService _vacationBalanceService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IUserContext _userContext;
@@ -21,12 +23,14 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
     public CreateVacationCompensationApplicationCommandHandler(
         IVacationCompensationApplicationRepository repository,
         IEmployeeRepository employeeRepository,
+        IVacationBalanceService vacationBalanceService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         IUserContext userContext)
     {
         _repository = repository;
         _employeeRepository = employeeRepository;
+        _vacationBalanceService = vacationBalanceService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _userContext = userContext;
@@ -41,6 +45,20 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
         if (employee == null)
             return Result.Failure<ResponseObjectWithName>(
                 Application.Employees.EmployeeErrors.NotFound);
+
+        // 1.5. Qalan məzuniyyət balansını yoxla (WorkYearStart verilibsə həmin iş ili, yoxsa cari)
+        var asOfDate = request.WorkYearStart.HasValue
+            ? new DateTimeOffset(request.WorkYearStart.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
+            : (DateTimeOffset?)null;
+
+        var balanceResult = await _vacationBalanceService.EnsureCurrentAsync(
+            request.EmployeeId, asOfDate, cancellationToken);
+        if (balanceResult.IsFailure)
+            return Result.Failure<ResponseObjectWithName>(balanceResult.Error);
+
+        if (request.RequestedDays > balanceResult.Value.RemainingDays)
+            return Result.Failure<ResponseObjectWithName>(
+                VacationCompensationApplicationErrors.ExceedsBalance(request.RequestedDays, balanceResult.Value.RemainingDays));
 
         // 2. Application yarat
         var applicationResult = VacationCompensationApplication.Create(

@@ -16,4 +16,8 @@ public static class VacationCompensationApplicationErrors
     public static readonly Error AlreadyConvertedToOrder = new Error(
         "VacationCompensationApplication.AlreadyConvertedToOrder",
         "Bu müraciət artıq əmrə çevrilmişdir");
+
+    public static Error ExceedsBalance(int requestedDays, int remainingDays) => new Error(
+        "VacationCompensationApplication.ExceedsBalance",
+        $"Tələb olunan {requestedDays} gün qalan məzuniyyət balansından ({remainingDays} gün) çoxdur");
 }
