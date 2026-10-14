@@ -85,6 +85,8 @@ public static class PaymentsModule
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+        services.AddScoped<IPayrollTaxBracketRepository, PayrollTaxBracketRepository>();
+        services.AddScoped<IPayrollRunRepository, PayrollRunRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IGarageRepository, GarageRepository>();
