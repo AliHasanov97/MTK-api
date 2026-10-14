@@ -22,6 +22,7 @@
 
     <ProjectReference Include="..\..\Identity\MTK.Modules.Identity.IntegrationEvents\MTK.Modules.Identity.IntegrationEvents.csproj" />
     <ProjectReference Include="..\..\Warehouse\MTK.Modules.Warehouse.IntegrationEvents\MTK.Modules.Warehouse.IntegrationEvents.csproj" />
+    <ProjectReference Include="..\..\Hr\MTK.Modules.Hr.IntegrationEvents\MTK.Modules.Hr.IntegrationEvents.csproj" />
   </ItemGroup>
 
 </Project>

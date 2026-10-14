@@ -6,4 +6,6 @@ public sealed record EmployeeCreatedDomainEvent : DomainEvent
 {
     public Guid EmployeeId { get; init; }
     public DateTimeOffset StartWorkDate { get; init; }
+    public string FullName { get; init; } = string.Empty;
+    public decimal BaseSalary { get; init; }
 }

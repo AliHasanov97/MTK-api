@@ -23,6 +23,7 @@ using MTK.Modules.Buildings.IntegrationEvents.OwnershipHistories;
 using MTK.Modules.Buildings.IntegrationEvents.Owners;
 using MTK.Modules.Identity.IntegrationEvents.Users;
 using MTK.Modules.Warehouse.IntegrationEvents.Nomenclatures;
+using MTK.Modules.Hr.IntegrationEvents.Employees;
 using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
 
 namespace MTK.Modules.Payments.Infrastructure;
@@ -83,6 +84,7 @@ public static class PaymentsModule
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
+        services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IGarageRepository, GarageRepository>();
@@ -197,5 +199,10 @@ public static class PaymentsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<NomenclatureCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<NomenclatureUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<NomenclatureDeletedIntegrationEvent>>();
+
+        // Register integration event consumers from Hr module — keeps this module's
+        // Employee snapshot (FullName, BaseSalary) in sync for payroll calculation.
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<EmployeeCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<EmployeeUpdatedIntegrationEvent>>();
     }
 }

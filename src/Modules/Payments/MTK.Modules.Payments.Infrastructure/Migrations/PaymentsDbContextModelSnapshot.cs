@@ -838,6 +838,34 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("OwnerBalances", "payments");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Employees.Employee", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BaseSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("employees", "payments");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Owners.Owner", b =>
                 {
                     b.Property<Guid>("Id")

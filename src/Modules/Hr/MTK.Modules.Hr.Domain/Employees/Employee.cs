@@ -56,6 +56,8 @@ public sealed class Employee : SearchableEntity
     public Guid CreatedById { get; private set; }
     public User CreatedBy { get; private set; } = null!;
 
+    public string FullName => $"{Name} {Surname}";
+
     public ICollection<FileAttachment> FileAttachments { get; private set; } = new List<FileAttachment>();
     public ICollection<EmployeeWorkHistory> WorkHistories { get; private set; } = new List<EmployeeWorkHistory>();
     public ICollection<EmployeeEducationHistory> EducationHistories { get; private set; } = new List<EmployeeEducationHistory>();
@@ -183,7 +185,9 @@ public sealed class Employee : SearchableEntity
         employee.RaiseDomainEvent(new EmployeeCreatedDomainEvent
         {
             EmployeeId = employeeId,
-            StartWorkDate = startWorkDate
+            StartWorkDate = startWorkDate,
+            FullName = employee.FullName,
+            BaseSalary = employee.BaseSalary
         });
 
         return employee;
@@ -260,7 +264,9 @@ public sealed class Employee : SearchableEntity
         // Raise domain event
         RaiseDomainEvent(new EmployeeUpdatedDomainEvent
         {
-            EmployeeId = Id
+            EmployeeId = Id,
+            FullName = FullName,
+            BaseSalary = BaseSalary
         });
     }
 
