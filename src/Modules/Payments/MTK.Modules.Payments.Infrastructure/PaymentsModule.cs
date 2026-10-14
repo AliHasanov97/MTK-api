@@ -106,6 +106,7 @@ public static class PaymentsModule
         services.AddScoped<IPaymentReceiptExportService, PaymentReceiptExportService>();
         services.AddScoped<IAnnualPaymentReportExcelExportService, AnnualPaymentReportExcelExportService>();
         services.AddScoped<IContractExportService, ContractExportService>();
+        services.AddScoped<IPayslipExportService, PayslipExportService>();
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();
