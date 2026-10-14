@@ -113,6 +113,7 @@ public static class PaymentsModule
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeDisplayEnricher, MTK.Modules.Payments.Application.Charges.Services.ChargeDisplayEnricher>();
         services.AddScoped<MTK.Modules.Payments.Application.OwnerBalances.Services.IOwnerBalanceService, MTK.Modules.Payments.Application.OwnerBalances.Services.OwnerBalanceService>();
         services.AddScoped<MTK.Modules.Payments.Application.CompanyBalances.Services.ICompanyBalanceService, MTK.Modules.Payments.Application.CompanyBalances.Services.CompanyBalanceService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Payroll.Services.IPayrollRunGenerationService, MTK.Modules.Payments.Application.Payroll.Services.PayrollRunGenerationService>();
 
         // Charge generation services (refactored into separate classes)
         services.AddScoped<MTK.Modules.Payments.Infrastructure.Services.RateProvider>();
@@ -140,10 +141,15 @@ public static class PaymentsModule
         services.Configure<Jobs.MonthlyChargeGenerationOptions>(
             configuration.GetSection("Payments:MonthlyChargeGeneration"));
 
+        // Monthly Payroll Generation Configuration
+        services.Configure<Jobs.MonthlyPayrollGenerationOptions>(
+            configuration.GetSection("Payments:MonthlyPayrollGeneration"));
+
         // Quartz Job Configurators
         services.ConfigureOptions<Outbox.ConfigureProcessOutboxJob>();
         services.ConfigureOptions<Inbox.ConfigureProcessInboxJob>();
         services.ConfigureOptions<Jobs.ConfigureMonthlyChargeGenerationJob>();
+        services.ConfigureOptions<Jobs.ConfigureMonthlyPayrollGenerationJob>();
 
         return services;
     }
