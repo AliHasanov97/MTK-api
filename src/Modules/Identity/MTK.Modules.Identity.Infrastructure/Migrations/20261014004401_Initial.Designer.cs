@@ -13,7 +13,7 @@ using NpgsqlTypes;
 namespace MTK.Modules.Identity.Infrastructure.Migrations
 {
     [DbContext(typeof(IdentityDbContext))]
-    [Migration("20261013032129_Initial")]
+    [Migration("20261014004401_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
