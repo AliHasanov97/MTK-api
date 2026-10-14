@@ -24,7 +24,9 @@ internal sealed class DeleteSalaryDeductionCommandHandler : ICommandHandler<Dele
         if (salaryDeduction is null)
             return Result.Failure(SalaryDeductionErrors.NotFound);
 
-        await _repository.DeleteAsync(salaryDeduction, null, cancellationToken);
+        // Generic repo.DeleteAsync set-DeletedAt-dən keçmir ki, domain event raise olunsun
+        // (Payments-ə SalaryDeductionDeleted sync-i üçün lazımdır) — ona görə domain metodu çağırılır.
+        salaryDeduction.Delete();
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

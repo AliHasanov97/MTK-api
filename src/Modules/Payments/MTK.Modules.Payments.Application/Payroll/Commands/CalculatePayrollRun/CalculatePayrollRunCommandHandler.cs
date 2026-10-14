@@ -11,17 +11,23 @@ internal sealed class CalculatePayrollRunCommandHandler : ICommandHandler<Calcul
     private readonly IPayrollRunRepository _payrollRunRepository;
     private readonly IPayrollTaxBracketRepository _payrollTaxBracketRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IPayrollBonusRepository _payrollBonusRepository;
+    private readonly IPayrollDeductionRepository _payrollDeductionRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CalculatePayrollRunCommandHandler(
         IPayrollRunRepository payrollRunRepository,
         IPayrollTaxBracketRepository payrollTaxBracketRepository,
         IEmployeeRepository employeeRepository,
+        IPayrollBonusRepository payrollBonusRepository,
+        IPayrollDeductionRepository payrollDeductionRepository,
         IUnitOfWork unitOfWork)
     {
         _payrollRunRepository = payrollRunRepository;
         _payrollTaxBracketRepository = payrollTaxBracketRepository;
         _employeeRepository = employeeRepository;
+        _payrollBonusRepository = payrollBonusRepository;
+        _payrollDeductionRepository = payrollDeductionRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -52,11 +58,24 @@ internal sealed class CalculatePayrollRunCommandHandler : ICommandHandler<Calcul
                 $"{request.Year}-{request.Month:D2} tarixi üçün qüvvədə olan heç bir vergi/sığorta dərəcəsi tapılmadı"));
         }
 
+        var bonuses = await _payrollBonusRepository.GetForPeriodAsync(request.Year, request.Month, cancellationToken);
+        var bonusByEmployee = bonuses
+            .GroupBy(b => b.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Sum(b => b.Amount));
+
+        var activeDeductions = await _payrollDeductionRepository.GetActiveAsync(periodStart, cancellationToken);
+        var deductionPercentageByEmployee = activeDeductions
+            .GroupBy(d => d.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Sum(d => d.PercentageSalary));
+
         var run = PayrollRun.Create(request.Year, request.Month);
 
         foreach (var employee in employees)
         {
-            var result = PayrollCalculator.Calculate(employee.BaseSalary, brackets);
+            var bonusAmount = bonusByEmployee.GetValueOrDefault(employee.Id, 0m);
+            var courtDeductionPercentage = Math.Min(100m, deductionPercentageByEmployee.GetValueOrDefault(employee.Id, 0m));
+
+            var result = PayrollCalculator.Calculate(employee.BaseSalary, bonusAmount, courtDeductionPercentage, brackets);
             run.AddPayslip(employee.Id, employee.FullName, result);
         }
 

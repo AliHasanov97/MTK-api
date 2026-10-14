@@ -14,13 +14,28 @@ namespace MTK.Modules.Payments.Domain.Payroll;
 public static class PayrollCalculator
 {
     public static PayrollCalculationResult Calculate(
-        decimal grossSalary,
+        decimal baseSalary,
+        decimal bonusAmount,
+        decimal courtDeductionPercentage,
         IReadOnlyCollection<PayrollTaxBracket> brackets)
     {
-        if (grossSalary < 0)
+        if (baseSalary < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(grossSalary), "Əmək haqqı mənfi ola bilməz");
+            throw new ArgumentOutOfRangeException(nameof(baseSalary), "Əmək haqqı mənfi ola bilməz");
         }
+
+        if (bonusAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(bonusAmount), "Bonus mənfi ola bilməz");
+        }
+
+        if (courtDeductionPercentage is < 0 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(courtDeductionPercentage), "Tutma faizi 0-100 arasında olmalıdır");
+        }
+
+        // Bonus vergiyə cəlb olunan gəlirdir — gross-a (DSMF/sığorta/vergi bazasına) daxildir.
+        var grossSalary = baseSalary + bonusAmount;
 
         var employeeDsmf = Apply(grossSalary, PayrollRateType.Dsmf, PayrollParty.Employee, brackets);
         var employeeUnemployment = Apply(grossSalary, PayrollRateType.Unemployment, PayrollParty.Employee, brackets);
@@ -31,6 +46,10 @@ public static class PayrollCalculator
 
         var netSalary = grossSalary - employeeDsmf - employeeUnemployment - employeeMedicalInsurance - incomeTax;
 
+        // Məhkəmə tutması (alimony və s.) net (vergidən sonrakı) məbləğin faizi kimi tətbiq olunur.
+        var courtDeductionAmount = Math.Round(netSalary * courtDeductionPercentage / 100m, 2, MidpointRounding.AwayFromZero);
+        var finalNetSalary = netSalary - courtDeductionAmount;
+
         var employerDsmf = Apply(grossSalary, PayrollRateType.Dsmf, PayrollParty.Employer, brackets);
         var employerUnemployment = Apply(grossSalary, PayrollRateType.Unemployment, PayrollParty.Employer, brackets);
         var employerMedicalInsurance = Apply(grossSalary, PayrollRateType.MedicalInsurance, PayrollParty.Employer, brackets);
@@ -38,6 +57,8 @@ public static class PayrollCalculator
         var totalEmployerCost = grossSalary + employerDsmf + employerUnemployment + employerMedicalInsurance;
 
         return new PayrollCalculationResult(
+            BaseSalary: baseSalary,
+            BonusAmount: bonusAmount,
             GrossSalary: grossSalary,
             EmployeeDsmf: employeeDsmf,
             EmployeeUnemployment: employeeUnemployment,
@@ -45,6 +66,9 @@ public static class PayrollCalculator
             TaxableIncome: taxableIncome,
             IncomeTax: incomeTax,
             NetSalary: netSalary,
+            CourtDeductionPercentage: courtDeductionPercentage,
+            CourtDeductionAmount: courtDeductionAmount,
+            FinalNetSalary: finalNetSalary,
             EmployerDsmf: employerDsmf,
             EmployerUnemployment: employerUnemployment,
             EmployerMedicalInsurance: employerMedicalInsurance,

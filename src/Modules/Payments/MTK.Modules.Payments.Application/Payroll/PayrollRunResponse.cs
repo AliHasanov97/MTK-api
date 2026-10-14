@@ -32,6 +32,8 @@ public sealed record PayrollRunResponse(
                 .Select(p => new PayslipResponse(
                     p.EmployeeId,
                     p.EmployeeFullName,
+                    p.BaseSalary,
+                    p.BonusAmount,
                     p.GrossSalary,
                     p.EmployeeDsmf,
                     p.EmployeeUnemployment,
@@ -39,6 +41,9 @@ public sealed record PayrollRunResponse(
                     p.TaxableIncome,
                     p.IncomeTax,
                     p.NetSalary,
+                    p.CourtDeductionPercentage,
+                    p.CourtDeductionAmount,
+                    p.FinalNetSalary,
                     p.EmployerDsmf,
                     p.EmployerUnemployment,
                     p.EmployerMedicalInsurance,

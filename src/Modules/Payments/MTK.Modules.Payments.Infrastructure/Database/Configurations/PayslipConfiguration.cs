@@ -22,6 +22,8 @@ internal sealed class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(p => p.BaseSalary).IsRequired().HasPrecision(18, 2);
+        builder.Property(p => p.BonusAmount).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.GrossSalary).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.EmployeeDsmf).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.EmployeeUnemployment).IsRequired().HasPrecision(18, 2);
@@ -29,6 +31,9 @@ internal sealed class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         builder.Property(p => p.TaxableIncome).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.IncomeTax).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.NetSalary).IsRequired().HasPrecision(18, 2);
+        builder.Property(p => p.CourtDeductionPercentage).IsRequired().HasPrecision(5, 2);
+        builder.Property(p => p.CourtDeductionAmount).IsRequired().HasPrecision(18, 2);
+        builder.Property(p => p.FinalNetSalary).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.EmployerDsmf).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.EmployerUnemployment).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.EmployerMedicalInsurance).IsRequired().HasPrecision(18, 2);

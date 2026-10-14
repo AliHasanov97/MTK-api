@@ -45,7 +45,10 @@ public sealed class BonusOrder : Order
         {
             BonusOrderId = bonusOrder.Id,
             EmployeeId = employeeId,
-            CreatedById = createdById
+            CreatedById = createdById,
+            BonusAmount = bonusQuantity,
+            SalaryMonth = salaryMonth,
+            SalaryYear = salaryYear
         });
 
         return bonusOrder;

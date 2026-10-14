@@ -1,5 +1,6 @@
 using MTK.Modules.Hr.Domain.Employees;
 using MTK.Modules.Hr.Domain.Orders;
+using MTK.Modules.Hr.Domain.SalaryDeductions.Events;
 
 namespace MTK.Modules.Hr.Domain.SalaryDeductions;
 
@@ -49,6 +50,24 @@ public sealed class SalaryDeduction : Order
             CreatedById = createdById
         };
 
+        salaryDeduction.RaiseDomainEvent(new SalaryDeductionCreatedDomainEvent
+        {
+            SalaryDeductionId = salaryDeduction.Id,
+            EmployeeId = employeeId,
+            PercentageSalary = percentageSalary,
+            StartDate = startDate
+        });
+
         return salaryDeduction;
+    }
+
+    public void Delete()
+    {
+        SetDeletedAt();
+        RaiseDomainEvent(new SalaryDeductionDeletedDomainEvent
+        {
+            SalaryDeductionId = Id,
+            EmployeeId = EmployeeId
+        });
     }
 }

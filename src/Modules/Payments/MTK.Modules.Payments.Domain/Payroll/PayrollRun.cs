@@ -27,7 +27,7 @@ public sealed class PayrollRun : Entity
     public IReadOnlyCollection<Payslip> Payslips => _payslips.AsReadOnly();
 
     public decimal TotalGross => _payslips.Sum(p => p.GrossSalary);
-    public decimal TotalNet => _payslips.Sum(p => p.NetSalary);
+    public decimal TotalNet => _payslips.Sum(p => p.FinalNetSalary);
     public decimal TotalEmployerCost => _payslips.Sum(p => p.TotalEmployerCost);
 
     public static PayrollRun Create(int year, int month)

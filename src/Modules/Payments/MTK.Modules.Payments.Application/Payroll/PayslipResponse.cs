@@ -3,6 +3,8 @@ namespace MTK.Modules.Payments.Application.Payroll;
 public sealed record PayslipResponse(
     Guid EmployeeId,
     string EmployeeFullName,
+    decimal BaseSalary,
+    decimal BonusAmount,
     decimal GrossSalary,
     decimal EmployeeDsmf,
     decimal EmployeeUnemployment,
@@ -10,6 +12,9 @@ public sealed record PayslipResponse(
     decimal TaxableIncome,
     decimal IncomeTax,
     decimal NetSalary,
+    decimal CourtDeductionPercentage,
+    decimal CourtDeductionAmount,
+    decimal FinalNetSalary,
     decimal EmployerDsmf,
     decimal EmployerUnemployment,
     decimal EmployerMedicalInsurance,

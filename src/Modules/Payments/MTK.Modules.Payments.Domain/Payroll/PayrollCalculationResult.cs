@@ -5,6 +5,8 @@ namespace MTK.Modules.Payments.Domain.Payroll;
 /// əmək haqqı hesablamasının bütün komponentləri. Entity deyil, sadəcə dəyər.
 /// </summary>
 public sealed record PayrollCalculationResult(
+    decimal BaseSalary,
+    decimal BonusAmount,
     decimal GrossSalary,
     decimal EmployeeDsmf,
     decimal EmployeeUnemployment,
@@ -12,6 +14,9 @@ public sealed record PayrollCalculationResult(
     decimal TaxableIncome,
     decimal IncomeTax,
     decimal NetSalary,
+    decimal CourtDeductionPercentage,
+    decimal CourtDeductionAmount,
+    decimal FinalNetSalary,
     decimal EmployerDsmf,
     decimal EmployerUnemployment,
     decimal EmployerMedicalInsurance,

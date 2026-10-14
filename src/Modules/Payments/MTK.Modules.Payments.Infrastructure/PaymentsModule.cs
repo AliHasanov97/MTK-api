@@ -24,6 +24,8 @@ using MTK.Modules.Buildings.IntegrationEvents.Owners;
 using MTK.Modules.Identity.IntegrationEvents.Users;
 using MTK.Modules.Warehouse.IntegrationEvents.Nomenclatures;
 using MTK.Modules.Hr.IntegrationEvents.Employees;
+using MTK.Modules.Hr.IntegrationEvents.BonusOrders;
+using MTK.Modules.Hr.IntegrationEvents.SalaryDeductions;
 using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
 
 namespace MTK.Modules.Payments.Infrastructure;
@@ -87,6 +89,8 @@ public static class PaymentsModule
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IPayrollTaxBracketRepository, PayrollTaxBracketRepository>();
         services.AddScoped<IPayrollRunRepository, PayrollRunRepository>();
+        services.AddScoped<IPayrollBonusRepository, PayrollBonusRepository>();
+        services.AddScoped<IPayrollDeductionRepository, PayrollDeductionRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IGarageRepository, GarageRepository>();
@@ -206,5 +210,8 @@ public static class PaymentsModule
         // Employee snapshot (FullName, BaseSalary) in sync for payroll calculation.
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<EmployeeCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<EmployeeUpdatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<BonusOrderCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<SalaryDeductionCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<SalaryDeductionDeletedIntegrationEvent>>();
     }
 }
