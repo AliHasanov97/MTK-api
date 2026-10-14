@@ -25,6 +25,7 @@ internal sealed class ExportPaymentReceiptQueryHandler : IQueryHandler<ExportPay
     private readonly IBuildingRepository _buildingRepository;
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ICompanyRepository _companyRepository;
     private readonly IPaymentReceiptExportService _exportService;
 
     public ExportPaymentReceiptQueryHandler(
@@ -39,6 +40,7 @@ internal sealed class ExportPaymentReceiptQueryHandler : IQueryHandler<ExportPay
         IBuildingRepository buildingRepository,
         IAuditLogRepository auditLogRepository,
         IUserRepository userRepository,
+        ICompanyRepository companyRepository,
         IPaymentReceiptExportService exportService)
     {
         _paymentRepository = paymentRepository;
@@ -52,6 +54,7 @@ internal sealed class ExportPaymentReceiptQueryHandler : IQueryHandler<ExportPay
         _buildingRepository = buildingRepository;
         _auditLogRepository = auditLogRepository;
         _userRepository = userRepository;
+        _companyRepository = companyRepository;
         _exportService = exportService;
     }
 
@@ -180,8 +183,11 @@ internal sealed class ExportPaymentReceiptQueryHandler : IQueryHandler<ExportPay
             RoleTitles.TryGetValue(actorRole, out issuerTitle);
         }
 
+        var company = await _companyRepository.GetAsync(cancellationToken);
+
         var data = new PaymentReceiptData(
             payment.Id,
+            company?.Name ?? "MTK",
             payment.Amount,
             payment.PaymentMethod,
             payment.PaymentDate,

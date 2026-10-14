@@ -20,7 +20,6 @@ namespace MTK.Modules.Payments.Infrastructure.Export;
 /// </summary>
 internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
 {
-    private const string CompanyName = "Yusifoğlu İnşaat";
     private const string DefaultIssuerTitle = "Komendantı";
 
     private static readonly string AccentColor = Colors.Blue.Darken2;
@@ -61,7 +60,7 @@ internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
                         {
                             row.RelativeItem().Column(head =>
                             {
-                                head.Item().Text(CompanyName.ToUpper(new CultureInfo("az-AZ")))
+                                head.Item().Text(data.CompanyName.ToUpper(new CultureInfo("az-AZ")))
                                     .FontSize(8f).FontColor(AccentColor).LetterSpacing(0.05f);
                                 head.Item().Text("Qəbz").FontSize(20).Bold().FontColor(Colors.Grey.Darken4);
                             });
@@ -113,7 +112,7 @@ internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
                             row.ConstantItem(150).AlignRight().Column(sig =>
                             {
                                 sig.Spacing(1f);
-                                sig.Item().AlignRight().Text($"\"{CompanyName}\" MTK-nın").FontSize(9.5f);
+                                sig.Item().AlignRight().Text($"\"{data.CompanyName}\" MTK-nın").FontSize(9.5f);
                                 sig.Item().AlignRight().Text($"{data.IssuerTitle ?? DefaultIssuerTitle}:").FontSize(9.5f);
                                 sig.Item().PaddingTop(7).AlignRight().Text(data.IssuerName ?? "—")
                                     .FontSize(12f).Bold();
@@ -147,7 +146,7 @@ internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
         if (data.Lines.Count == 0)
         {
             column.Item().Text(
-                $"Ondan ötrü ki, \"{CompanyName}\" MTK-nın hesabına {Money(data.Amount)} AZN ödəniş daxil olub. " +
+                $"Ondan ötrü ki, \"{data.CompanyName}\" MTK-nın hesabına {Money(data.Amount)} AZN ödəniş daxil olub. " +
                 "Bu məbləğ hələ heç bir haqqa tətbiq olunmayıb və sahibin hesabında avans kimi saxlanılır.")
                 .Justify().LineHeight(1.08f);
             return;
@@ -177,7 +176,7 @@ internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
                 : unitWord + " görə";
 
         column.Item().Text(
-            $"Ondan ötrü ki, {data.BuildingAddress ?? "—"} ünvanında yerləşən \"{CompanyName}\" MTK-nın inşa etdiyi " +
+            $"Ondan ötrü ki, {data.BuildingAddress ?? "—"} ünvanında yerləşən \"{data.CompanyName}\" MTK-nın inşa etdiyi " +
             $"yaşayış binasında {unitClause}").Justify().LineHeight(1.08f);
 
         if (!isBulkPayment)
@@ -231,7 +230,7 @@ internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
         if (data.Lines.Count == 0)
         {
             column.Item().Text(
-                $"Ondan ötrü ki, \"{CompanyName}\" MTK-nın hesabına {Money(data.Amount)} AZN ödəniş daxil olub. " +
+                $"Ondan ötrü ki, \"{data.CompanyName}\" MTK-nın hesabına {Money(data.Amount)} AZN ödəniş daxil olub. " +
                 "Bu məbləğ hələ heç bir xərcə tətbiq olunmayıb və tədarükçünün hesabında avans kimi saxlanılır.")
                 .Justify().LineHeight(1.08f);
             return;

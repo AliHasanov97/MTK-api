@@ -24,6 +24,7 @@ public sealed record PaymentReceiptLine(string Description, decimal Amount, stri
 /// </summary>
 public sealed record PaymentReceiptData(
     Guid PaymentId,
+    string CompanyName,
     decimal Amount,
     PaymentMethod PaymentMethod,
     DateTimeOffset PaymentDate,

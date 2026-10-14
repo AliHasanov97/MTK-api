@@ -91,6 +91,7 @@ public static class PaymentsModule
         services.AddScoped<IPayrollRunRepository, PayrollRunRepository>();
         services.AddScoped<IPayrollBonusRepository, PayrollBonusRepository>();
         services.AddScoped<IPayrollDeductionRepository, PayrollDeductionRepository>();
+        services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IGarageRepository, GarageRepository>();

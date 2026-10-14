@@ -157,5 +157,10 @@ public static class HrModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<UserDeletedIntegrationEvent>>();
+
+        // Payments-dən gələn şirkət profili event-ləri — "mühasibatlıq" tərəfi (Payments) həqiqət
+        // mənbəyidir, bu modul yalnız PDF-lərdə göstərmək üçün (bax: OrganizationInfo) güzgü saxlayır.
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.Companies.CompanyCreatedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.Companies.CompanyUpdatedIntegrationEvent>>();
     }
 }

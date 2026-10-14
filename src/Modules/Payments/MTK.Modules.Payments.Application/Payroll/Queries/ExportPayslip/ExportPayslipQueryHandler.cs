@@ -8,16 +8,17 @@ namespace MTK.Modules.Payments.Application.Payroll.Queries.ExportPayslip;
 
 internal sealed class ExportPayslipQueryHandler : IQueryHandler<ExportPayslipQuery, ExportFileResult>
 {
-    private const string CompanyName = "Yusifoğlu İnşaat";
-
     private readonly IPayrollRunRepository _payrollRunRepository;
+    private readonly ICompanyRepository _companyRepository;
     private readonly IPayslipExportService _exportService;
 
     public ExportPayslipQueryHandler(
         IPayrollRunRepository payrollRunRepository,
+        ICompanyRepository companyRepository,
         IPayslipExportService exportService)
     {
         _payrollRunRepository = payrollRunRepository;
+        _companyRepository = companyRepository;
         _exportService = exportService;
     }
 
@@ -39,8 +40,10 @@ internal sealed class ExportPayslipQueryHandler : IQueryHandler<ExportPayslipQue
                 $"Bu PayrollRun-da işçi {request.EmployeeId} üçün qəbz tapılmadı"));
         }
 
+        var company = await _companyRepository.GetAsync(cancellationToken);
+
         var data = new PayslipExportData(
-            CompanyName,
+            company?.Name ?? "MTK",
             payslip.EmployeeFullName,
             run.Year,
             run.Month,
