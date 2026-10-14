@@ -27,6 +27,7 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
 
     private readonly IPaymentRepository _paymentRepository;
     private readonly IVendorRepository _vendorRepository;
+    private readonly ICustomerRepository _customerRepository;
     private readonly IPaymentAllocationRepository _paymentAllocationRepository;
     private readonly IChargeRepository _chargeRepository;
     private readonly IPropertyOwnershipRepository _propertyOwnershipRepository;
@@ -37,6 +38,7 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
     public PaymentCompletedDomainEventHandler(
         IPaymentRepository paymentRepository,
         IVendorRepository vendorRepository,
+        ICustomerRepository customerRepository,
         IPaymentAllocationRepository paymentAllocationRepository,
         IChargeRepository chargeRepository,
         IPropertyOwnershipRepository propertyOwnershipRepository,
@@ -46,6 +48,7 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
     {
         _paymentRepository = paymentRepository;
         _vendorRepository = vendorRepository;
+        _customerRepository = customerRepository;
         _paymentAllocationRepository = paymentAllocationRepository;
         _chargeRepository = chargeRepository;
         _propertyOwnershipRepository = propertyOwnershipRepository;
@@ -66,7 +69,11 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
             return;
         }
 
-        if (payment.PartyType == PartyType.Vendor)
+        if (payment.PartyType == PartyType.Customer)
+        {
+            await PostCustomerLedgerLines(payment, cancellationToken);
+        }
+        else if (payment.PartyType == PartyType.Vendor)
         {
             await PostVendorLedgerLines(payment, cancellationToken);
         }
@@ -82,6 +89,43 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
 
         await _companyBalanceService.RecalculateAsync(cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Müştəri ödənişi — bizə mədaxil (Income). Hər borca ayrıca sətir yazılır (tədarükçü tərəfi ilə eyni naxış);
+    /// borca bölünməyən (avans) hissə üçün ayrıca sətir.
+    /// </summary>
+    private async Task PostCustomerLedgerLines(Payment payment, CancellationToken cancellationToken)
+    {
+        var customer = await _customerRepository.GetByIdAsync(payment.PartyId, cancellationToken);
+        var customerName = customer?.Name;
+
+        var allocations = await _paymentAllocationRepository.GetByPaymentIdAsync(payment.Id, cancellationToken);
+
+        if (allocations.Count == 0)
+        {
+            _transactionRepository.Add(Transaction.ForPayment(payment, customerName));
+            return;
+        }
+
+        var chargeIds = allocations.Select(a => a.ChargeId).Distinct().ToList();
+        var chargesById = (await _chargeRepository.ListFromIdsAsync(chargeIds, cancellationToken))
+            .ToDictionary(c => c.Id);
+
+        foreach (var allocation in allocations)
+        {
+            var description = chargesById.TryGetValue(allocation.ChargeId, out var charge) ? charge.Description : null;
+            _transactionRepository.Add(
+                Transaction.ForPayment(payment, customerName, description, amount: allocation.Amount));
+        }
+
+        // Ödənişin borca bölünməmiş qalığı (avans) ayrıca sətirdir.
+        decimal unallocated = payment.Amount - allocations.Sum(a => a.Amount);
+        if (unallocated > 0)
+        {
+            _transactionRepository.Add(
+                Transaction.ForPayment(payment, customerName, "Avans", amount: unallocated));
+        }
     }
 
     /// <summary>

@@ -8,6 +8,7 @@ public sealed record PaymentResponse(
     // exactly one of OwnerId/VendorId is set, matching Payment's own shape.
     Guid? OwnerId,
     Guid? VendorId,
+    Guid? CustomerId,
     decimal Amount,
     PaymentMethod PaymentMethod,
     DateTimeOffset PaymentDate,

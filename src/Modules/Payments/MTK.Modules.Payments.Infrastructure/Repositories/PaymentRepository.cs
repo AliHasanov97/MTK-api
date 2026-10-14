@@ -59,9 +59,12 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
         }
 
         var ids = partyIds.ToList();
-        var query = partyType == PartyType.Owner
-            ? PaymentsContext.Payments.Where(p => p.OwnerId != null && ids.Contains(p.OwnerId.Value))
-            : PaymentsContext.Payments.Where(p => p.VendorId != null && ids.Contains(p.VendorId.Value));
+        var query = partyType switch
+        {
+            PartyType.Owner => PaymentsContext.Payments.Where(p => p.OwnerId != null && ids.Contains(p.OwnerId.Value)),
+            PartyType.Customer => PaymentsContext.Payments.Where(p => p.CustomerId != null && ids.Contains(p.CustomerId.Value)),
+            _ => PaymentsContext.Payments.Where(p => p.VendorId != null && ids.Contains(p.VendorId.Value)),
+        };
 
         // Ödənişin özü dəyişdirilmir (yalnız paylanma yazılır) — izləməyə ehtiyac yoxdur
         return await query
@@ -75,9 +78,12 @@ internal sealed class PaymentRepository : SearchableRepository<Payment>, IPaymen
         Guid partyId,
         CancellationToken cancellationToken = default)
     {
-        var query = partyType == PartyType.Owner
-            ? PaymentsContext.Payments.Where(p => p.OwnerId == partyId)
-            : PaymentsContext.Payments.Where(p => p.VendorId == partyId);
+        var query = partyType switch
+        {
+            PartyType.Owner => PaymentsContext.Payments.Where(p => p.OwnerId == partyId),
+            PartyType.Customer => PaymentsContext.Payments.Where(p => p.CustomerId == partyId),
+            _ => PaymentsContext.Payments.Where(p => p.VendorId == partyId),
+        };
 
         return await query
             .OrderByDescending(p => p.PaymentDate)

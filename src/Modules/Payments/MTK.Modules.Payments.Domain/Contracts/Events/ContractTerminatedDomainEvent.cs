@@ -4,6 +4,6 @@ namespace MTK.Modules.Payments.Domain.Contracts.Events;
 
 public sealed record ContractTerminatedDomainEvent(
     Guid ContractId,
-    Guid VendorId,
+    Guid PartyId,
     string Number,
     DateTimeOffset TerminatedOn) : DomainEvent;

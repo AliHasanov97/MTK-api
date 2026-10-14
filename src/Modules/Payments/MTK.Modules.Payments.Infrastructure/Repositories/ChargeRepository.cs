@@ -130,9 +130,12 @@ internal sealed class ChargeRepository : SearchableRepository<Charge>, IChargeRe
         Guid partyId,
         CancellationToken cancellationToken = default)
     {
-        var query = partyType == PartyType.Owner
-            ? PaymentsContext.Charges.Where(c => c.OwnerId == partyId)
-            : PaymentsContext.Charges.Where(c => c.VendorId == partyId);
+        var query = partyType switch
+        {
+            PartyType.Owner => PaymentsContext.Charges.Where(c => c.OwnerId == partyId),
+            PartyType.Customer => PaymentsContext.Charges.Where(c => c.CustomerId == partyId),
+            _ => PaymentsContext.Charges.Where(c => c.VendorId == partyId),
+        };
 
         return await OrderedUnpaid(query).ToListAsync(cancellationToken);
     }

@@ -76,6 +76,8 @@ public static class PaymentsModule
         services.AddScoped<IPropertyOwnershipRepository, PropertyOwnershipRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IVendorRepository, VendorRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<ICustomerChargeRepository, CustomerChargeRepository>();
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IVendorChargeRepository, VendorChargeRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
@@ -111,6 +113,7 @@ public static class PaymentsModule
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.ChargeGenerationService>();
 
         services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.IVendorChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.VendorChargeGenerationService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Charges.Services.ICustomerChargeGenerationService, MTK.Modules.Payments.Infrastructure.Services.CustomerChargeGenerationService>();
 
         // Cached services (Redis)
         services.AddScoped<MTK.Modules.Payments.Application.Rates.Services.ICachedRateService, MTK.Modules.Payments.Infrastructure.Services.CachedRateService>();

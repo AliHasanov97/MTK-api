@@ -64,6 +64,23 @@ internal sealed class MonthlyChargeGenerationJob(
             failure ??= ex;
         }
 
+        try
+        {
+            using IServiceScope scope = serviceScopeFactory.CreateScope();
+            var customerChargeService = scope.ServiceProvider.GetRequiredService<ICustomerChargeGenerationService>();
+            int customerChargesCreated = await customerChargeService.GenerateScheduledChargesAsync(
+                currentPeriod, cancellationToken: context.CancellationToken);
+
+            logger.LogInformation(
+                "Payments - Customer charge generation completed for {Period}. Created {Count}",
+                currentPeriod, customerChargesCreated);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Payments - Customer charge generation failed for period {Period}", currentPeriod);
+            failure ??= ex;
+        }
+
         if (failure is not null)
         {
             ExceptionDispatchInfo.Capture(failure).Throw();

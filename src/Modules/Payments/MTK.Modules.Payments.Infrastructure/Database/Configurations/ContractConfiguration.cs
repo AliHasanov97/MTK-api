@@ -16,8 +16,9 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(c => c.VendorId)
-            .IsRequired();
+        builder.Property(c => c.VendorId);
+
+        builder.Property(c => c.CustomerId);
         
         builder.Property(c => c.CreatedByUserId);
 
@@ -61,6 +62,7 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
 
         // Indexes
         builder.HasIndex(c => c.VendorId);
+        builder.HasIndex(c => c.CustomerId);
         builder.HasIndex(c => c.Status);
         builder.HasIndex(c => c.EndDate);
         builder.HasIndex(c => new {c.Number })

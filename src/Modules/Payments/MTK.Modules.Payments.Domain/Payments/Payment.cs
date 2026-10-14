@@ -24,12 +24,16 @@ public sealed class Payment : SearchableEntity
 
     public Guid? OwnerId { get; private set; }
     public Guid? VendorId { get; private set; }
+    public Guid? CustomerId { get; private set; }
 
     [NotMapped]
-    public PartyType PartyType => OwnerId.HasValue ? PartyType.Owner : PartyType.Vendor;
+    public PartyType PartyType =>
+        OwnerId.HasValue ? PartyType.Owner
+        : CustomerId.HasValue ? PartyType.Customer
+        : PartyType.Vendor;
 
     [NotMapped]
-    public Guid PartyId => OwnerId ?? VendorId!.Value;
+    public Guid PartyId => OwnerId ?? CustomerId ?? VendorId!.Value;
 
     public decimal Amount { get; private set; }
     public PaymentMethod PaymentMethod { get; private set; }
@@ -70,6 +74,15 @@ public sealed class Payment : SearchableEntity
         string? notes)
         => Create(ownerId: null, vendorId: vendorId, amount, paymentMethod, paymentDate, notes, apartmentId: null, garageId: null);
 
+    /// <summary>Müştəridən alınan ödəniş (bizə mədaxil).</summary>
+    public static Payment CreateForCustomer(
+        Guid customerId,
+        decimal amount,
+        PaymentMethod paymentMethod,
+        DateTimeOffset paymentDate,
+        string? notes)
+        => Create(ownerId: null, vendorId: null, amount, paymentMethod, paymentDate, notes, apartmentId: null, garageId: null, customerId);
+
     private static Payment Create(
         Guid? ownerId,
         Guid? vendorId,
@@ -78,7 +91,8 @@ public sealed class Payment : SearchableEntity
         DateTimeOffset paymentDate,
         string? notes,
         Guid? apartmentId,
-        Guid? garageId)
+        Guid? garageId,
+        Guid? customerId = null)
     {
         if (amount <= 0)
             throw new ArgumentException("Payment amount must be positive");
@@ -93,7 +107,8 @@ public sealed class Payment : SearchableEntity
             Status = PaymentStatus.Pending,
             Notes = notes,
             ApartmentId = apartmentId,
-            GarageId = garageId
+            GarageId = garageId,
+            CustomerId = customerId
         };
         payment.SetCreatedAt();
         return payment;

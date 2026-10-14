@@ -20,7 +20,14 @@ public sealed class Contract : SearchableEntity
     /// <summary>Müqavilə nömrəsi, məs. "2026/045".</summary>
     public string Number { get; private set; } = string.Empty;
 
-    public Guid VendorId { get; private set; }
+    /// <summary>Tədarükçü müqaviləsində dolu olur (biz ona borcluyuq). <see cref="CustomerId"/> ilə birlikdə yalnız biri dolu olur.</summary>
+    public Guid? VendorId { get; private set; }
+
+    /// <summary>Müştəri müqaviləsində dolu olur (müştəri bizə borcludur).</summary>
+    public Guid? CustomerId { get; private set; }
+
+    /// <summary>Müqavilənin tərəfi — tədarükçü və ya müştəri.</summary>
+    public Guid PartyId => (VendorId ?? CustomerId)!.Value;
 
     // Xarici modul istinadları: FK yox, yalnız Guid (Charge.OwnerId / PropertyOwnership
     // konvensiyası). Company entity-si gələndə ya Guid saxlanılır, ya da read model sync olunur.
@@ -46,6 +53,20 @@ public sealed class Contract : SearchableEntity
     public bool IsExpired => DateTimeOffset.UtcNow.Date > EndDate.Date;
 
     public bool IsActive => Status == ContractStatus.Active && !IsExpired;
+
+    public static Contract CreateForCustomer(
+        string number,
+        Guid customerId,
+        DateTimeOffset startDate,
+        DateTimeOffset endDate,
+        Guid? createdByUserId = null,
+        string? note = null)
+    {
+        var contract = Create(number, customerId, startDate, endDate, createdByUserId, note);
+        contract.VendorId = null;
+        contract.CustomerId = customerId;
+        return contract;
+    }
 
     public static Contract Create(
         string number,
@@ -176,7 +197,7 @@ public sealed class Contract : SearchableEntity
         Status = ContractStatus.Active;
         SetUpdatedAt();
 
-        RaiseDomainEvent(new ContractActivatedDomainEvent(Id, VendorId, Number));
+        RaiseDomainEvent(new ContractActivatedDomainEvent(Id, PartyId, Number));
     }
 
     public void Suspend(string? note = null)
@@ -199,7 +220,7 @@ public sealed class Contract : SearchableEntity
         Note = note ?? Note;
         SetUpdatedAt();
 
-        RaiseDomainEvent(new ContractTerminatedDomainEvent(Id, VendorId, Number, terminatedOn));
+        RaiseDomainEvent(new ContractTerminatedDomainEvent(Id, PartyId, Number, terminatedOn));
     }
 
     /// <summary>

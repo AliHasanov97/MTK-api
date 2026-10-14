@@ -31,7 +31,9 @@ internal sealed class VendorChargeGenerationService(
     {
         logger.LogInformation("Starting vendor charge generation for period {Period}", period);
 
-        List<Contract> contracts = await contractRepository.ListActiveWithServicesAsync(cancellationToken);
+        List<Contract> contracts = (await contractRepository.ListActiveWithServicesAsync(cancellationToken))
+            .Where(c => c.VendorId.HasValue)
+            .ToList();
 
         // Planlı iş ləğv edilmiş borcu "mövcud" sayır (təkrar yaratmır); əl ilə bərpa isə ləğv edilmişləri nəzərə almır.
         HashSet<Guid> billedServiceIds = await vendorChargeRepository.GetBilledServiceIdsForPeriodAsync(

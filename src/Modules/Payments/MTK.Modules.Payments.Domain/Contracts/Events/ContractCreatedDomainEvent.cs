@@ -4,5 +4,5 @@ namespace MTK.Modules.Payments.Domain.Contracts.Events;
 
 public sealed record ContractCreatedDomainEvent(
     Guid ContractId,
-    Guid VendorId,
+    Guid PartyId,
     string Number) : DomainEvent;

@@ -2,6 +2,7 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Apartments;
 using MTK.Modules.Payments.Domain.Charges.Events;
 using MTK.Modules.Payments.Domain.Contracts;
+using MTK.Modules.Payments.Domain.Customers;
 using MTK.Modules.Payments.Domain.Garages;
 using MTK.Modules.Payments.Domain.Owners;
 using MTK.Modules.Payments.Domain.Parties;
@@ -34,6 +35,9 @@ public sealed class Charge : SearchableEntity
 
     public Guid? VendorId { get; private set; }
     public Vendor? Vendor { get; private set; }
+
+    public Guid? CustomerId { get; private set; }
+    public Customer? Customer { get; private set; }
 
     // ---- Sakinə xas sahələr (yalnız OwnerId dolu olanda mənalıdır) ----------------
 
@@ -76,7 +80,7 @@ public sealed class Charge : SearchableEntity
 
     /// <summary>Gecikmiş tədarükçü borcu (yalnız Vendor tərəfi üçün mənalıdır).</summary>
     public bool IsOverdue =>
-        VendorId.HasValue
+        (VendorId.HasValue || CustomerId.HasValue)
         && Status is ChargeStatus.Unpaid or ChargeStatus.PartiallyPaid
         && DueDate is not null
         && DueDate.Value.Date < DateTimeOffset.UtcNow.Date;
@@ -207,6 +211,69 @@ public sealed class Charge : SearchableEntity
         return charge;
     }
 
+    /// <summary>
+    /// Müştəri müqaviləsinin xidmət cədvəlindən yaranan aylıq borc (müştəri bizə borcludur).
+    /// <see cref="ForServiceSchedule"/>-in müştəri tərəfli güzgüsüdür.
+    /// </summary>
+    public static Charge ForCustomerServiceSchedule(
+        Contract contract,
+        ContractService service,
+        string period,
+        DateTimeOffset chargeDate)
+    {
+        if (contract.CustomerId is not { } customerId)
+            throw new ArgumentException("Müqavilə müştəriyə aid deyil", nameof(contract));
+        if (string.IsNullOrWhiteSpace(period))
+            throw new ArgumentException("Dövr mütləqdir", nameof(period));
+        if (service.PeriodAmount <= 0)
+            throw new ArgumentException("Charge amount must be positive", nameof(service));
+
+        var charge = new Charge
+        {
+            CustomerId = customerId,
+            ContractId = contract.Id,
+            ContractServiceId = service.Id,
+            Period = period,
+            Description = $"{service.Name} — {period}",
+            Amount = service.PeriodAmount,
+            PaidAmount = 0,
+            Status = ChargeStatus.Unpaid,
+            IssuedOn = chargeDate,
+            DueDate = service.PaymentTermDays is { } termDays ? chargeDate.AddDays(termDays) : null
+        };
+
+        charge.SetCreatedAt();
+        return charge;
+    }
+
+    /// <summary>Müştəriyə əl ilə (müqavilədən kənar) yazılan birdəfəlik borc.</summary>
+    public static Charge ForCustomer(
+        Guid customerId,
+        string description,
+        decimal amount,
+        DateTimeOffset issuedOn,
+        DateTimeOffset? dueDate)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Charge amount must be positive", nameof(amount));
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Təsvir mütləqdir", nameof(description));
+
+        var charge = new Charge
+        {
+            CustomerId = customerId,
+            Description = description.Trim(),
+            Amount = amount,
+            PaidAmount = 0,
+            Status = ChargeStatus.Unpaid,
+            IssuedOn = issuedOn,
+            DueDate = dueDate
+        };
+
+        charge.SetCreatedAt();
+        return charge;
+    }
+
     // ---- Ödəniş tətbiqi ----------------------------------------------------------
 
     /// <summary>
@@ -242,7 +309,7 @@ public sealed class Charge : SearchableEntity
     public void ApplyAdvanceFrom(Guid paymentId, decimal amount)
     {
         ApplyPayment(amount);
-        RaiseDomainEvent(new ChargeSettledFromAdvanceDomainEvent(Id, OwnerId ?? VendorId!.Value, paymentId, amount));
+        RaiseDomainEvent(new ChargeSettledFromAdvanceDomainEvent(Id, OwnerId ?? CustomerId ?? VendorId!.Value, paymentId, amount));
     }
 
     /// <summary>

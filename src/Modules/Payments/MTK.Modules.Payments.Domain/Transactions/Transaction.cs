@@ -18,6 +18,7 @@ public sealed class Transaction : SearchableEntity
     // row: the payment handlers and any reporting both key off these.
     public const string ResidentPaymentCategory = "Sakin ödənişi";
     public const string VendorPaymentCategory = "Tədarükçü ödənişi";
+    public const string CustomerPaymentCategory = "Müştəri ödənişi";
     public const string PurchaseExpenseCategory = "Satınalma";
 
     private Transaction() : base() { }
@@ -96,7 +97,16 @@ public sealed class Transaction : SearchableEntity
         string? propertyLabel = null,
         string? periodLabel = null,
         decimal? amount = null) =>
-        payment.PartyType == PartyType.Vendor
+        payment.PartyType == PartyType.Customer
+            ? Create(
+                TransactionDirection.Income,
+                // Müştərinin adı kateqoriya kimi göstərilir; tapılmayıbsa ümumi ad.
+                !string.IsNullOrWhiteSpace(vendorName) ? vendorName : CustomerPaymentCategory,
+                amount ?? payment.Amount,
+                Describe(payment, propertyLabel, periodLabel),
+                payment.PaymentDate.ToUniversalTime(),
+                payment.Id)
+        : payment.PartyType == PartyType.Vendor
             ? Create(
                 TransactionDirection.Expense,
                 // Admin faydalı kateqoriya kimi tədarükçünün adını görmək istəyir,

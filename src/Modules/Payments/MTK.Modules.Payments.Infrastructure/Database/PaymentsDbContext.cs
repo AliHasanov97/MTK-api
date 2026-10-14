@@ -17,6 +17,7 @@ using MTK.Modules.Payments.Domain.CompanyBalances;
 using MTK.Modules.Payments.Domain.AuditLogs;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Transactions;
+using MTK.Modules.Payments.Domain.Customers;
 using MTK.Modules.Payments.Domain.Vendors;
 using MTK.Modules.Payments.Domain.Contracts;
 using MTK.Modules.Payments.Domain.Users;
@@ -59,6 +60,7 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork, IHasAuditActor
     public DbSet<PropertyOwnership> PropertyOwnerships { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Vendor> Vendors { get; set; }
+    public DbSet<Customer> Customers { get; set; }
     public DbSet<Contract> Contracts { get; set; }
     public DbSet<ContractService> ContractServices { get; set; }
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

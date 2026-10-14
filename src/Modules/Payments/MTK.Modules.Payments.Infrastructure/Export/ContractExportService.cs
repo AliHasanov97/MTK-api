@@ -61,7 +61,7 @@ internal sealed class ContractExportService : IContractExportService
             column.Spacing(4);
 
             column.Item().AlignCenter().Text($"MÜQAVİLƏ № {contract.Number}").FontSize(14).Bold();
-            column.Item().AlignCenter().Text(contract.VendorName ?? "Tədarükçü təyin edilməyib").FontSize(11);
+            column.Item().AlignCenter().Text(contract.VendorName ?? contract.CustomerName ?? "Tərəf təyin edilməyib").FontSize(11);
             column.Item().PaddingTop(6).BorderBottom(1);
         });
     }

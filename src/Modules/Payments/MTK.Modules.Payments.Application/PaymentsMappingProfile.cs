@@ -14,6 +14,9 @@ using MTK.Modules.Payments.Application.PropertyOwnerships;
 using MTK.Modules.Payments.Application.Rates.Queries.GetCurrentRates;
 using MTK.Modules.Payments.Application.Transactions.Queries.SearchTransactions;
 using MTK.Modules.Payments.Application.VendorCharges.Queries.SearchVendorCharges;
+using MTK.Modules.Payments.Application.CustomerCharges.Queries.SearchCustomerCharges;
+using MTK.Modules.Payments.Application.Customers.Queries.GetCustomerById;
+using MTK.Modules.Payments.Application.Customers.Queries.SearchCustomers;
 using MTK.Modules.Payments.Application.Vendors;
 using GetVendorByIdVendorResponse = MTK.Modules.Payments.Application.Vendors.Queries.GetVendorById.VendorResponse;
 using MTK.Modules.Payments.Application.Vendors.Queries.SearchVendors;
@@ -29,6 +32,7 @@ using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.PropertyOwnerships;
 using MTK.Modules.Payments.Domain.Rates;
 using MTK.Modules.Payments.Domain.Transactions;
+using MTK.Modules.Payments.Domain.Customers;
 using MTK.Modules.Payments.Domain.Vendors;
 
 namespace MTK.Modules.Payments.Application;
@@ -57,6 +61,9 @@ public sealed class PaymentsMappingProfile : Profile
         CreateMap<Vendor, GetVendorByIdVendorResponse>();
         CreateMap<Vendor, VendorSearchResult>();
 
+        CreateMap<Customer, CustomerResponse>();
+        CreateMap<Customer, CustomerSearchResult>();
+
         CreateMap<NomenclatureShadow, NomenclatureShadowSearchResult>();
 
         // Charge/Payment now carry real OwnerId/VendorId/ApartmentId/GarageId columns
@@ -64,6 +71,8 @@ public sealed class PaymentsMappingProfile : Profile
         // straight across by name — only ChargeDate still needs an explicit rename.
         CreateMap<Charge, ChargeResponse>();
         CreateMap<Charge, ChargeSearchResult>();
+        CreateMap<Charge, CustomerChargeResponse>()
+            .ForCtorParam(nameof(CustomerChargeResponse.ChargeDate), o => o.MapFrom(s => s.IssuedOn));
         CreateMap<Charge, VendorChargeResponse>()
             .ForCtorParam(nameof(VendorChargeResponse.ChargeDate), o => o.MapFrom(s => s.IssuedOn));
 

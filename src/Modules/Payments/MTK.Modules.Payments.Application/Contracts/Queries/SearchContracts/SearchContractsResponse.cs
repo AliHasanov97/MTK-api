@@ -15,8 +15,10 @@ public sealed record SearchContractsResponse(
 public sealed record ContractListItem(
     Guid Id,
     string Number,
-    Guid VendorId,
+    Guid? VendorId,
     string? VendorName,
+    Guid? CustomerId,
+    string? CustomerName,
     DateTimeOffset StartDate,
     DateTimeOffset EndDate,
     ContractStatus Status,

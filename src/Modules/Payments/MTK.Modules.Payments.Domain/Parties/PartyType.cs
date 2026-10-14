@@ -14,5 +14,8 @@ public enum PartyType
     Owner,
 
     /// <summary>Tədarükçü.</summary>
-    Vendor
+    Vendor,
+
+    /// <summary>Müştəri — bizə ödəniş edən kənar tərəf.</summary>
+    Customer
 }

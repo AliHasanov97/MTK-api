@@ -4,5 +4,6 @@ public class QueryFilter
 {
     public string ColumnName { get; set; } = string.Empty;
     public QueryComparisonType Comparison { get; set; }
-    public object Value { get; set; } = null!;
+    /// <summary>IsNull/IsNotNull müqayisələrində tələb olunmur.</summary>
+    public object? Value { get; set; }
 }

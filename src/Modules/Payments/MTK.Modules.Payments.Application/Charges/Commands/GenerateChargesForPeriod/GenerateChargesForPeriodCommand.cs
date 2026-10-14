@@ -14,4 +14,5 @@ public sealed record GenerateChargesForPeriodResponse(
     int ResidentChargesCreated,
     int ApartmentsSkippedNoRate,
     int GaragesSkippedNoRate,
-    int VendorChargesCreated);
+    int VendorChargesCreated,
+    int CustomerChargesCreated = 0);

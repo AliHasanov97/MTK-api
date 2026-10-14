@@ -278,6 +278,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -365,6 +368,8 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("\"ContractServiceId\" IS NOT NULL AND \"DeletedAt\" IS NULL AND \"Status\" <> 'Cancelled'");
 
+                    b.HasIndex("CustomerId", "IssuedOn");
+
                     b.HasIndex("OwnerId", "IssuedOn");
 
                     b.HasIndex("VendorId", "IssuedOn");
@@ -423,6 +428,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -456,10 +464,12 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("VendorId")
+                    b.Property<Guid?>("VendorId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("EndDate");
 
@@ -535,6 +545,84 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("ContractServices", "payments");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Customers.Customer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Director")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "english")
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Name", "Voen", "Director", "Email" });
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Voen")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("SearchVector");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+
+                    b.HasIndex("Voen")
+                        .IsUnique()
+                        .HasFilter("\"Voen\" IS NOT NULL AND \"DeletedAt\" IS NULL");
+
+                    b.ToTable("Customers", "payments");
                 });
 
             modelBuilder.Entity("MTK.Modules.Payments.Domain.FileAttachments.FileAttachment", b =>
@@ -790,6 +878,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1334,6 +1425,11 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasForeignKey("ApartmentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("MTK.Modules.Payments.Domain.Customers.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MTK.Modules.Payments.Domain.Garages.Garage", "Garage")
                         .WithMany()
                         .HasForeignKey("GarageId")
@@ -1350,6 +1446,8 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Apartment");
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Garage");
 

@@ -11,9 +11,19 @@ internal sealed class CreateContractCommandValidator : AbstractValidator<CreateC
             .WithMessage("Müqavilə nömrəsi tələb olunur")
             .MaximumLength(100);
 
+        RuleFor(x => x)
+            .Must(x => x.VendorId.HasValue != x.CustomerId.HasValue)
+            .WithMessage("Müqavilə tərəfi seçilməlidir: tədarükçü və ya müştəri (ikisi birdən yox)");
+
         RuleFor(x => x.VendorId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
+            .When(x => x.VendorId.HasValue)
             .WithMessage("Tədarükçü seçilməyib");
+
+        RuleFor(x => x.CustomerId)
+            .NotEqual(Guid.Empty)
+            .When(x => x.CustomerId.HasValue)
+            .WithMessage("Müştəri seçilməyib");
 
         RuleFor(x => x.StartDate)
             .NotEmpty()

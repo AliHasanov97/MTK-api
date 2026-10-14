@@ -27,6 +27,7 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
         // [NotMapped] köməkçi xassələrdir, DB sütunu deyil).
         builder.Property(c => c.OwnerId);
         builder.Property(c => c.VendorId);
+        builder.Property(c => c.CustomerId);
 
         // Sakinə xas (nullable) — ApartmentId/GarageId-dən məhz biri dolu olur.
         builder.Property(c => c.ApartmentId);
@@ -101,6 +102,7 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
         builder.HasIndex(c => c.DueDate);
         builder.HasIndex(c => new { c.OwnerId, c.IssuedOn });
         builder.HasIndex(c => new { c.VendorId, c.IssuedOn });
+        builder.HasIndex(c => new { c.CustomerId, c.IssuedOn });
 
         // Ləğv edilmiş (Cancelled) borc unikallığa daxil deyil: səhv borcu ləğv edib eyni dövr üçün düzgününü yaratmaq olar.
         // Sakin borcu: eyni mənzil/qaraj + dövr üçün ikinci borc yaranmasın. İki ayrı
@@ -128,6 +130,11 @@ internal sealed class ChargeConfiguration : IEntityTypeConfiguration<Charge>
         builder.HasOne(c => c.Vendor)
             .WithMany()
             .HasForeignKey(c => c.VendorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(c => c.Customer)
+            .WithMany()
+            .HasForeignKey(c => c.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(c => c.Apartment)

@@ -7,6 +7,7 @@ namespace MTK.Modules.Payments.Application.Charges.Commands.GenerateChargesForPe
 internal sealed class GenerateChargesForPeriodCommandHandler(
     IChargeGenerationService chargeGenerationService,
     IVendorChargeGenerationService vendorChargeGenerationService,
+    ICustomerChargeGenerationService customerChargeGenerationService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<GenerateChargesForPeriodCommand, GenerateChargesForPeriodResponse>
 {
@@ -27,11 +28,15 @@ internal sealed class GenerateChargesForPeriodCommandHandler(
         int vendorCreated = await vendorChargeGenerationService.GenerateScheduledChargesAsync(
             request.Period, regenerateCancelled: true, cancellationToken);
 
+        int customerCreated = await customerChargeGenerationService.GenerateScheduledChargesAsync(
+            request.Period, regenerateCancelled: true, cancellationToken);
+
         return new GenerateChargesForPeriodResponse(
             request.Period,
             resident.Created,
             resident.ApartmentsSkippedNoRate,
             resident.GaragesSkippedNoRate,
-            vendorCreated);
+            vendorCreated,
+            customerCreated);
     }
 }

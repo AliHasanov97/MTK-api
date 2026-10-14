@@ -68,7 +68,12 @@ internal sealed class PaymentAllocationService(
 
         await ApplyAdvanceForPartiesAsync(
             PartyType.Vendor,
-            openCharges.Where(charge => !charge.OwnerId.HasValue).GroupBy(charge => charge.VendorId!.Value),
+            openCharges.Where(charge => charge.VendorId.HasValue).GroupBy(charge => charge.VendorId!.Value),
+            cancellationToken);
+
+        await ApplyAdvanceForPartiesAsync(
+            PartyType.Customer,
+            openCharges.Where(charge => charge.CustomerId.HasValue).GroupBy(charge => charge.CustomerId!.Value),
             cancellationToken);
 
         return Result.Success();
@@ -101,7 +106,12 @@ internal sealed class PaymentAllocationService(
             .ToDictionary(group => group.Key, group => group.Sum(allocation => allocation.Amount));
 
         var paymentsByParty = payments
-            .GroupBy(payment => partyType == PartyType.Owner ? payment.OwnerId!.Value : payment.VendorId!.Value)
+            .GroupBy(payment => partyType switch
+            {
+                PartyType.Owner => payment.OwnerId!.Value,
+                PartyType.Customer => payment.CustomerId!.Value,
+                _ => payment.VendorId!.Value,
+            })
             .ToDictionary(group => group.Key, group => group.OrderBy(payment => payment.PaymentDate).ToList());
 
         foreach (var partyCharges in groups)

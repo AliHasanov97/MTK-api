@@ -43,6 +43,13 @@ internal sealed class CreateOneTimeServiceExpenseCommandHandler
             return Result.Failure<Guid>(new Error("Contract.NotFound", "Müqavilə tapılmadı"));
         }
 
+        if (contract.VendorId is not { } vendorId)
+        {
+            return Result.Failure<Guid>(new Error(
+                "Contract.NotVendorContract",
+                "Bu əməliyyat yalnız tədarükçü müqavilələri üçündür"));
+        }
+
         if (!contract.IsActive)
         {
             return Result.Failure<Guid>(new Error("Contract.NotActive", "Müqavilə aktiv deyil"));
@@ -73,7 +80,7 @@ internal sealed class CreateOneTimeServiceExpenseCommandHandler
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var payment = Payment.CreateForVendor(
-            contract.VendorId,
+            vendorId,
             request.Amount,
             request.PaymentMethod,
             now,

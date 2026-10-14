@@ -25,6 +25,7 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         // köməkçi xassələrdir, DB sütunu deyil).
         builder.Property(p => p.OwnerId);
         builder.Property(p => p.VendorId);
+        builder.Property(p => p.CustomerId);
 
         builder.Property(p => p.Amount)
             .IsRequired()

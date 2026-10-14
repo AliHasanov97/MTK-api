@@ -8,13 +8,16 @@ internal sealed class GetContractByIdQueryHandler : IQueryHandler<GetContractByI
 {
     private readonly IContractRepository _contractRepository;
     private readonly IVendorRepository _vendorRepository;
+    private readonly ICustomerRepository _customerRepository;
 
     public GetContractByIdQueryHandler(
         IContractRepository contractRepository,
-        IVendorRepository vendorRepository)
+        IVendorRepository vendorRepository,
+        ICustomerRepository customerRepository)
     {
         _contractRepository = contractRepository;
         _vendorRepository = vendorRepository;
+        _customerRepository = customerRepository;
     }
 
     public async Task<Result<ContractResponse>> Handle(
@@ -30,7 +33,12 @@ internal sealed class GetContractByIdQueryHandler : IQueryHandler<GetContractByI
                 $"Müqavilə tapılmadı: {request.ContractId}"));
         }
 
-        var vendor = await _vendorRepository.GetByIdAsync(contract.VendorId, cancellationToken);
+        var vendor = contract.VendorId is { } vendorId
+            ? await _vendorRepository.GetByIdAsync(vendorId, cancellationToken)
+            : null;
+        var customer = contract.CustomerId is { } customerId
+            ? await _customerRepository.GetByIdAsync(customerId, cancellationToken)
+            : null;
 
         var services = contract.Services
             .Select(s => new ContractServiceResponse(
@@ -51,6 +59,8 @@ internal sealed class GetContractByIdQueryHandler : IQueryHandler<GetContractByI
             contract.Number,
             contract.VendorId,
             vendor?.Name,
+            contract.CustomerId,
+            customer?.Name,
             contract.CreatedByUserId,
             contract.StartDate,
             contract.EndDate,

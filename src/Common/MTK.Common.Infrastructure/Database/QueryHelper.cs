@@ -145,7 +145,7 @@ public static class QueryHelper
         if (property == null)
             return null;
 
-        var filterExpression = CreateComparisonExpression(property, filter.Comparison, filter.Value);
+        var filterExpression = CreateComparisonExpression(property, filter.Comparison, filter.Value!);
 
         return filterExpression != null
             ? Expression.Lambda<Func<T, bool>>(filterExpression, parameter)
@@ -207,7 +207,7 @@ public static class QueryHelper
                     if (innerProperty == null)
                         return null;
 
-                    var innerComparison = CreateComparisonExpression(innerProperty, filter.Comparison, filter.Value);
+                    var innerComparison = CreateComparisonExpression(innerProperty, filter.Comparison, filter.Value!);
                     if (innerComparison == null)
                         return null;
 

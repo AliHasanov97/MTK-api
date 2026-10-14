@@ -5,8 +5,10 @@ namespace MTK.Modules.Payments.Application.Contracts.Queries.GetContractById;
 public sealed record ContractResponse(
     Guid Id,
     string Number,
-    Guid VendorId,
+    Guid? VendorId,
     string? VendorName,
+    Guid? CustomerId,
+    string? CustomerName,
     Guid? CreatedByUserId,
     DateTimeOffset StartDate,
     DateTimeOffset EndDate,
