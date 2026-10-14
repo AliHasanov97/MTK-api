@@ -1373,6 +1373,67 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.ToTable("vacation_return_applications", "hr");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BaseEntitledDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CarriedOverDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ChildrenUnder14Days")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CompensatedDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisabledChildDays")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ExperienceBonusDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("KarabakhWorkerDays")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UsedDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateOnly>("WorkYearEnd")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("WorkYearStart")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "WorkYearStart")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("vacation_balances", "hr");
+                });
+
             modelBuilder.Entity("MTK.Modules.Hr.Domain.BonusOrders.BonusOrder", b =>
                 {
                     b.HasBaseType("MTK.Modules.Hr.Domain.Orders.Order");
@@ -2186,6 +2247,17 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .WithOne()
                         .HasForeignKey("MTK.Modules.Hr.Domain.VacationReturnApplications.VacationReturnApplication", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", b =>
+                {
+                    b.HasOne("MTK.Modules.Hr.Domain.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Employee");

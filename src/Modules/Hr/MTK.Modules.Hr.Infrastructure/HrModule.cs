@@ -74,6 +74,7 @@ public static class HrModule
         services.AddScoped<ReturnToWorkDateService>();
         services.AddScoped<ILeaveOverlapService, LeaveOverlapService>();
         services.AddScoped<IVacationApplicationAllocationService, VacationApplicationAllocationService>();
+        services.AddScoped<MTK.Modules.Hr.Application.VacationBalances.Services.IVacationBalanceService, MTK.Modules.Hr.Application.VacationBalances.Services.VacationBalanceService>();
 
         // Repositories: every `I<Name>Repository` of the Domain layer is implemented by exactly one class here
         services.AddRepositories();
