@@ -10,4 +10,7 @@ public interface IPayrollRunRepository : IRepository<PayrollRun>
 
     /// <summary>Verilmiş ay/il üçün mövcud PayrollRun (təkrar hesablamanın qarşısını almaq üçün).</summary>
     Task<PayrollRun?> GetByPeriodAsync(int year, int month, CancellationToken cancellationToken = default);
+
+    /// <summary>Verilmiş ay/il üçün mövcud PayrollRun, qəbzləri ilə birlikdə (UI-da baxış üçün).</summary>
+    Task<PayrollRun?> GetByPeriodWithPayslipsAsync(int year, int month, CancellationToken cancellationToken = default);
 }

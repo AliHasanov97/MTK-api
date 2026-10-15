@@ -26,4 +26,11 @@ internal sealed class PayrollRunRepository : Repository<PayrollRun>, IPayrollRun
         return PaymentsContext.PayrollRuns
             .FirstOrDefaultAsync(r => r.Year == year && r.Month == month, cancellationToken);
     }
+
+    public Task<PayrollRun?> GetByPeriodWithPayslipsAsync(int year, int month, CancellationToken cancellationToken = default)
+    {
+        return PaymentsContext.PayrollRuns
+            .Include(r => r.Payslips)
+            .FirstOrDefaultAsync(r => r.Year == year && r.Month == month, cancellationToken);
+    }
 }

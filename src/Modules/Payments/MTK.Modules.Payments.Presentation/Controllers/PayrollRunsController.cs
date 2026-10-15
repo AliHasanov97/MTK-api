@@ -5,6 +5,7 @@ using MTK.Modules.Payments.Application.Payroll.Commands.CalculatePayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Queries.ExportPayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Queries.ExportPayslip;
 using MTK.Modules.Payments.Application.Payroll.Queries.GetPayrollRunById;
+using MTK.Modules.Payments.Application.Payroll.Queries.GetPayrollRunByPeriod;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
@@ -20,6 +21,17 @@ public class PayrollRunsController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value, "Əmək haqqı hesablandı")
+            : BadRequest(result.Error);
+    }
+
+    /// <summary>Seçilmiş ay üçün artıq hesablanmış PayrollRun (UI-da ay seçəndə baxış üçün; hesablanmayıbsa 400 + "NotFound" kodu).</summary>
+    [HttpGet("by-period")]
+    public async Task<IActionResult> GetByPeriod([FromQuery] int year, [FromQuery] int month, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetPayrollRunByPeriodQuery(year, month), cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value)
             : BadRequest(result.Error);
     }
 
