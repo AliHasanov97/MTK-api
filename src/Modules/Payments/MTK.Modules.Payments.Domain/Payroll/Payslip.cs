@@ -1,4 +1,5 @@
 using MTK.Common.Domain.Abstractions;
+using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Domain.Payroll;
 
@@ -37,6 +38,9 @@ public sealed class Payslip : Entity
     public decimal EmployerMedicalInsurance { get; private set; }
     public decimal TotalEmployerCost { get; private set; }
 
+    public DateTimeOffset? PaidAt { get; private set; }
+    public PaymentMethod? PaymentMethod { get; private set; }
+
     internal static Payslip Create(Guid payrollRunId, Guid employeeId, string employeeFullName, PayrollCalculationResult result)
     {
         // Id qəsdən təyin edilmir: EF onu özü generasiya edir (bax: ContractService.Create).
@@ -65,5 +69,18 @@ public sealed class Payslip : Entity
 
         payslip.SetCreatedAt();
         return payslip;
+    }
+
+    /// <summary>Yalnız PayrollRun.PayPayslip/PayAllPayslips tərəfindən çağırılır — status qaydası aggregate-dədir.</summary>
+    internal void MarkAsPaid(PaymentMethod method, DateTimeOffset paidAt)
+    {
+        if (PaidAt.HasValue)
+        {
+            throw new InvalidOperationException($"Payslip {Id} artıq ödənilib ({PaidAt:yyyy-MM-dd})");
+        }
+
+        PaymentMethod = method;
+        PaidAt = paidAt;
+        SetUpdatedAt();
     }
 }

@@ -1,3 +1,5 @@
+using MTK.Modules.Payments.Domain.Payments;
+
 namespace MTK.Modules.Payments.Application.Payroll;
 
 public sealed record PayslipResponse(
@@ -18,4 +20,6 @@ public sealed record PayslipResponse(
     decimal EmployerDsmf,
     decimal EmployerUnemployment,
     decimal EmployerMedicalInsurance,
-    decimal TotalEmployerCost);
+    decimal TotalEmployerCost,
+    DateTimeOffset? PaidAt,
+    PaymentMethod? PaymentMethod);

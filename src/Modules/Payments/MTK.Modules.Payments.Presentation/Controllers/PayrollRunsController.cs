@@ -1,11 +1,15 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
+using MTK.Modules.Payments.Application.Payroll.Commands.ApprovePayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Commands.CalculatePayrollRun;
+using MTK.Modules.Payments.Application.Payroll.Commands.PayPayrollRun;
+using MTK.Modules.Payments.Application.Payroll.Commands.PayPayslip;
 using MTK.Modules.Payments.Application.Payroll.Queries.ExportPayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Queries.ExportPayslip;
 using MTK.Modules.Payments.Application.Payroll.Queries.GetPayrollRunById;
 using MTK.Modules.Payments.Application.Payroll.Queries.GetPayrollRunByPeriod;
+using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
@@ -64,4 +68,48 @@ public class PayrollRunsController(ISender sender) : BaseController(sender)
             ? File(result.Value.FileContent, result.Value.ContentType, result.Value.FileName)
             : BadRequest(result.Error);
     }
+
+    /// <summary>Hesablamanın rəqəmlərini təsdiqləyir — ödəniş yalnız bundan sonra mümkündür.</summary>
+    [HttpPost("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new ApprovePayrollRunCommand(id), cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value, "Əmək haqqı hesablaması təsdiqləndi")
+            : BadRequest(result.Error);
+    }
+
+    /// <summary>Bir işçinin qəbzini ödənilmiş qeyd edir və uyğun Transaction (xərc) yaradır.</summary>
+    [HttpPost("{id:guid}/payslips/{employeeId:guid}/pay")]
+    public async Task<IActionResult> PayPayslip(
+        Guid id,
+        Guid employeeId,
+        [FromBody] PayPayslipRequest? request,
+        CancellationToken cancellationToken)
+    {
+        var command = new PayPayslipCommand(id, employeeId, request?.PaymentMethod ?? PaymentMethod.BankTransfer);
+        var result = await _sender.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value, "Əmək haqqı ödənildi")
+            : BadRequest(result.Error);
+    }
+
+    /// <summary>Hələ ödənilməmiş bütün qəbzləri ödənilmiş qeyd edir — hər biri üçün ayrıca Transaction yaradır.</summary>
+    [HttpPost("{id:guid}/pay")]
+    public async Task<IActionResult> PayAll(
+        Guid id,
+        [FromBody] PayPayslipRequest? request,
+        CancellationToken cancellationToken)
+    {
+        var command = new PayPayrollRunCommand(id, request?.PaymentMethod ?? PaymentMethod.BankTransfer);
+        var result = await _sender.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value, "Bütün əmək haqları ödənildi")
+            : BadRequest(result.Error);
+    }
 }
+
+public sealed record PayPayslipRequest(PaymentMethod? PaymentMethod);

@@ -39,6 +39,12 @@ internal sealed class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         builder.Property(p => p.EmployerMedicalInsurance).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.TotalEmployerCost).IsRequired().HasPrecision(18, 2);
 
+        builder.Property(p => p.PaidAt);
+
+        builder.Property(p => p.PaymentMethod)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
         builder.Property(p => p.CreatedAt)
             .IsRequired();
 

@@ -1,6 +1,7 @@
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
+using MTK.Modules.Payments.Domain.Payroll;
 
 namespace MTK.Modules.Payments.Domain.Transactions;
 
@@ -20,6 +21,7 @@ public sealed class Transaction : SearchableEntity
     public const string VendorPaymentCategory = "Tədarükçü ödənişi";
     public const string CustomerPaymentCategory = "Müştəri ödənişi";
     public const string PurchaseExpenseCategory = "Satınalma";
+    public const string PayrollPaymentCategory = "Əmək haqqı ödənişi";
 
     private Transaction() : base() { }
 
@@ -39,15 +41,20 @@ public sealed class Transaction : SearchableEntity
     /// <summary>Alış sənədindən yaradılmış xərcin mənbə alış identifikatoru.</summary>
     public Guid? SourcePurchaseId { get; private set; }
 
+    /// <summary>Hansı qəbzin ödənişindən yarandığı — bax: ForPayrollPayment.</summary>
+    public Guid? SourcePayslipId { get; private set; }
+
     /// <summary>Identifies the related document opened from a ledger transaction.</summary>
     public string DocumentType => SourcePurchaseId.HasValue
         ? "Purchase"
-        : SourcePaymentId.HasValue
-            ? (Direction == TransactionDirection.Income ? "ResidentPayment" : "VendorPayment")
-            : "LedgerEntry";
+        : SourcePayslipId.HasValue
+            ? "PayrollPayment"
+            : SourcePaymentId.HasValue
+                ? (Direction == TransactionDirection.Income ? "ResidentPayment" : "VendorPayment")
+                : "LedgerEntry";
 
     /// <summary>The related document ID, or this ledger entry ID for manual transactions.</summary>
-    public Guid ReferenceId => SourcePurchaseId ?? SourcePaymentId ?? Id;
+    public Guid ReferenceId => SourcePurchaseId ?? SourcePayslipId ?? SourcePaymentId ?? Id;
 
     public static Transaction Create(
         TransactionDirection direction,
@@ -56,7 +63,8 @@ public sealed class Transaction : SearchableEntity
         string? description,
         DateTimeOffset transactionDate,
         Guid? sourcePaymentId = null,
-        Guid? sourcePurchaseId = null)
+        Guid? sourcePurchaseId = null,
+        Guid? sourcePayslipId = null)
     {
         if (amount <= 0)
             throw new ArgumentException("Transaction amount must be positive");
@@ -70,6 +78,7 @@ public sealed class Transaction : SearchableEntity
             TransactionDate = transactionDate,
             SourcePaymentId = sourcePaymentId,
             SourcePurchaseId = sourcePurchaseId,
+            SourcePayslipId = sourcePayslipId,
         };
         transaction.SetCreatedAt();
         return transaction;
@@ -147,6 +156,27 @@ public sealed class Transaction : SearchableEntity
             descriptionParts.Count > 0 ? string.Join(" · ", descriptionParts) : "Satınalma sənədi",
             purchaseDate.ToUniversalTime(),
             sourcePurchaseId: purchaseId);
+    }
+
+    /// <summary>
+    /// The entry a paid payslip posts — money paid out, so always an Expense. Only the net
+    /// amount actually transferred to the employee (<see cref="Payslip.FinalNetSalary"/>); DSMF/
+    /// sığorta/vergi tutumları dövlətə ayrıca gedir, bura qarışdırılmır (bax: PayPayslipCommandHandler).
+    /// </summary>
+    public static Transaction ForPayrollPayment(Payslip payslip, PaymentMethod method, string periodLabel)
+    {
+        if (payslip.PaidAt is null)
+        {
+            throw new InvalidOperationException($"Payslip {payslip.Id} hələ ödənilməmiş qeyd olunub");
+        }
+
+        return Create(
+            TransactionDirection.Expense,
+            PayrollPaymentCategory,
+            payslip.FinalNetSalary,
+            $"{payslip.EmployeeFullName} — {periodLabel} əmək haqqı · {MethodName(method)}",
+            payslip.PaidAt.Value,
+            sourcePayslipId: payslip.Id);
     }
 
     // No Delete(): the ledger is append-only.

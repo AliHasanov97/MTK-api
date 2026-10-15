@@ -1147,6 +1147,13 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<Guid>("PayrollRunId")
                         .HasColumnType("uuid");
 
@@ -1570,6 +1577,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<Guid?>("SourcePaymentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SourcePayslipId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("SourcePurchaseId")
                         .HasColumnType("uuid");
 
@@ -1590,6 +1600,10 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.HasIndex("SourcePaymentId");
+
+                    b.HasIndex("SourcePayslipId")
+                        .IsUnique()
+                        .HasFilter("\"SourcePayslipId\" IS NOT NULL");
 
                     b.HasIndex("SourcePurchaseId")
                         .IsUnique()
@@ -1900,6 +1914,11 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.HasOne("MTK.Modules.Payments.Domain.Payments.Payment", null)
                         .WithMany()
                         .HasForeignKey("SourcePaymentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MTK.Modules.Payments.Domain.Payroll.Payslip", null)
+                        .WithMany()
+                        .HasForeignKey("SourcePayslipId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MTK.Modules.Payments.Domain.Purchases.Purchase", null)

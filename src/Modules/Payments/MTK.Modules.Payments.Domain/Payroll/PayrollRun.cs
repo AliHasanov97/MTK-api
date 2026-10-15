@@ -1,4 +1,5 @@
 using MTK.Common.Domain.Abstractions;
+using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Domain.Payroll;
 
@@ -104,5 +105,52 @@ public sealed class PayrollRun : Entity
         Status = PayrollRunStatus.Paid;
         PaidAt = DateTimeOffset.UtcNow;
         SetUpdatedAt();
+    }
+
+    private bool AllPayslipsPaid => _payslips.All(p => p.PaidAt.HasValue);
+
+    /// <summary>
+    /// Bir işçinin qəbzini ödənilmiş qeyd edir. Son ödənilməmiş qəbz bu olarsa, run özü
+    /// "Paid"ə keçir (MarkPaid). Çağıran (PayPayslipCommandHandler) bunun ardından Transaction
+    /// yaradır — bax: Transaction.ForPayrollPayment.
+    /// </summary>
+    public Payslip PayPayslip(Guid employeeId, PaymentMethod method, DateTimeOffset paidAt)
+    {
+        if (Status != PayrollRunStatus.Approved)
+        {
+            throw new InvalidOperationException($"PayrollRun {Id} '{Status}' statusundadır — yalnız Approved statusunda ödəniş edilə bilər");
+        }
+
+        var payslip = _payslips.FirstOrDefault(p => p.EmployeeId == employeeId)
+            ?? throw new InvalidOperationException($"PayrollRun {Id}-də {employeeId} işçisi üçün qəbz tapılmadı");
+
+        payslip.MarkAsPaid(method, paidAt);
+
+        if (AllPayslipsPaid)
+        {
+            MarkPaid();
+        }
+
+        SetUpdatedAt();
+        return payslip;
+    }
+
+    /// <summary>Hələ ödənilməmiş bütün qəbzləri ödənilmiş qeyd edir və run-u "Paid"ə keçirir.</summary>
+    public IReadOnlyCollection<Payslip> PayAllPayslips(PaymentMethod method, DateTimeOffset paidAt)
+    {
+        if (Status != PayrollRunStatus.Approved)
+        {
+            throw new InvalidOperationException($"PayrollRun {Id} '{Status}' statusundadır — yalnız Approved statusunda ödəniş edilə bilər");
+        }
+
+        var newlyPaid = _payslips.Where(p => !p.PaidAt.HasValue).ToList();
+        foreach (var payslip in newlyPaid)
+        {
+            payslip.MarkAsPaid(method, paidAt);
+        }
+
+        MarkPaid();
+        SetUpdatedAt();
+        return newlyPaid;
     }
 }

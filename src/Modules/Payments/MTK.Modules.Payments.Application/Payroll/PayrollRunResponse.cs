@@ -47,7 +47,9 @@ public sealed record PayrollRunResponse(
                     p.EmployerDsmf,
                     p.EmployerUnemployment,
                     p.EmployerMedicalInsurance,
-                    p.TotalEmployerCost))
+                    p.TotalEmployerCost,
+                    p.PaidAt,
+                    p.PaymentMethod))
                 .ToList());
     }
 }

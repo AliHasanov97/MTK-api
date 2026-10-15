@@ -41,6 +41,11 @@ internal sealed class TransactionConfiguration : IEntityTypeConfiguration<Transa
             .HasForeignKey(t => t.SourcePurchaseId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<MTK.Modules.Payments.Domain.Payroll.Payslip>()
+            .WithMany()
+            .HasForeignKey(t => t.SourcePayslipId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(t => t.CreatedAt)
             .IsRequired();
 
@@ -68,5 +73,9 @@ internal sealed class TransactionConfiguration : IEntityTypeConfiguration<Transa
         builder.HasIndex(t => t.SourcePurchaseId)
             .IsUnique()
             .HasFilter("\"SourcePurchaseId\" IS NOT NULL");
+
+        builder.HasIndex(t => t.SourcePayslipId)
+            .IsUnique()
+            .HasFilter("\"SourcePayslipId\" IS NOT NULL");
     }
 }
