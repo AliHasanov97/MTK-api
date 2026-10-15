@@ -13,7 +13,7 @@ using NpgsqlTypes;
 namespace MTK.Modules.Buildings.Infrastructure.Migrations
 {
     [DbContext(typeof(BuildingsDbContext))]
-    [Migration("20261013032058_Initial")]
+    [Migration("20261015043217_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -124,6 +124,38 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     b.ToTable("outbox_message_consumers", "buildings");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.ApartmentTypes.ApartmentType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AreaSquareMeters")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("BuildingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RoomCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuildingId");
+
+                    b.ToTable("ApartmentTypes", "buildings");
+                });
+
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Apartments.Apartment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -134,6 +166,9 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("ApartmentTypeId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("AreaSquareMeters")
                         .HasPrecision(18, 2)
@@ -173,6 +208,8 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApartmentTypeId");
 
                     b.HasIndex("CurrentOwnerId");
 
@@ -257,9 +294,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("ApartmentsPerFloor")
-                        .HasColumnType("integer");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -286,9 +320,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<int>("TotalFloors")
-                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -607,8 +638,22 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     b.ToTable("Users", "buildings");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.ApartmentTypes.ApartmentType", b =>
+                {
+                    b.HasOne("MTK.Modules.Buildings.Domain.Buildings.Building", null)
+                        .WithMany()
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Apartments.Apartment", b =>
                 {
+                    b.HasOne("MTK.Modules.Buildings.Domain.ApartmentTypes.ApartmentType", null)
+                        .WithMany()
+                        .HasForeignKey("ApartmentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MTK.Modules.Buildings.Domain.Buildings.Building", "Building")
                         .WithMany("Apartments")
                         .HasForeignKey("BuildingId")

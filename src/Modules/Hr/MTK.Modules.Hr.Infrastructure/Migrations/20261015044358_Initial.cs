@@ -72,6 +72,24 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "companies",
+                schema: "hr",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    Director = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_companies", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "educational_institutions",
                 schema: "hr",
                 columns: table => new
@@ -385,6 +403,7 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     ContractNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     SalaryBankName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     EmployeeBankAccountNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    BaseSalary = table.Column<decimal>(type: "numeric(18,2)", nullable: false, defaultValue: 0m),
                     MaritalStatus = table.Column<int>(type: "integer", nullable: true),
                     NumberOfChildren = table.Column<int>(type: "integer", nullable: true),
                     MilitaryService = table.Column<int>(type: "integer", nullable: true),
@@ -860,6 +879,39 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "vacation_balances",
+                schema: "hr",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    WorkYearStart = table.Column<DateOnly>(type: "date", nullable: false),
+                    WorkYearEnd = table.Column<DateOnly>(type: "date", nullable: false),
+                    BaseEntitledDays = table.Column<int>(type: "integer", nullable: false),
+                    ExperienceBonusDays = table.Column<int>(type: "integer", nullable: false),
+                    KarabakhWorkerDays = table.Column<int>(type: "integer", nullable: false),
+                    ChildrenUnder14Days = table.Column<int>(type: "integer", nullable: false),
+                    DisabledChildDays = table.Column<int>(type: "integer", nullable: false),
+                    CarriedOverDays = table.Column<int>(type: "integer", nullable: false),
+                    UsedDays = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    CompensatedDays = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_vacation_balances", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_vacation_balances_employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalSchema: "hr",
+                        principalTable: "employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "vacation_compensation_applications",
                 schema: "hr",
                 columns: table => new
@@ -1202,7 +1254,8 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     VacationReturnApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
                     EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
                     ReturnDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    UnusedDaysReturned = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2134,6 +2187,14 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 column: "StartDate");
 
             migrationBuilder.CreateIndex(
+                name: "IX_vacation_balances_EmployeeId_WorkYearStart",
+                schema: "hr",
+                table: "vacation_balances",
+                columns: new[] { "EmployeeId", "WorkYearStart" },
+                unique: true,
+                filter: "\"DeletedAt\" IS NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_vacation_compensation_applications_EmployeeId",
                 schema: "hr",
                 table: "vacation_compensation_applications",
@@ -2226,6 +2287,10 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 schema: "hr");
 
             migrationBuilder.DropTable(
+                name: "companies",
+                schema: "hr");
+
+            migrationBuilder.DropTable(
                 name: "employee_education_histories",
                 schema: "hr");
 
@@ -2255,6 +2320,10 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "outbox_messages",
+                schema: "hr");
+
+            migrationBuilder.DropTable(
+                name: "vacation_balances",
                 schema: "hr");
 
             migrationBuilder.DropTable(
