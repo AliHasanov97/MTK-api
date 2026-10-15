@@ -2,6 +2,7 @@ using MTK.Modules.Hr.Domain.Employees;
 using MTK.Modules.Hr.Domain.Helpers;
 using MTK.Modules.Hr.Domain.Orders;
 using MTK.Modules.Hr.Domain.VacationReturnApplications;
+using MTK.Modules.Hr.Domain.VacationReturnOrders.Events;
 
 namespace MTK.Modules.Hr.Domain.VacationReturnOrders;
 
@@ -68,6 +69,16 @@ public sealed class VacationReturnOrder : Order
             UnusedDaysReturned = unusedDaysReturned,
             Notes = notes
         };
+
+        // Məzuniyyətin vaxtından əvvəl kəsilməsi — qaytarılmış günlər əmək haqqı hesablamasındakı
+        // məzuniyyətlə bağlı düzəlişlərə təsir edə bilər, buna görə bildiriş yayımlanır.
+        order.RaiseDomainEvent(new VacationReturnOrderCreatedDomainEvent
+        {
+            OrderId = order.Id,
+            EmployeeId = employeeId,
+            ReturnDate = DateTimeHelper.ToUtcDateOnly(returnDate),
+            UnusedDaysReturned = unusedDaysReturned
+        });
 
         return order;
     }

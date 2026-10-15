@@ -7,6 +7,7 @@ public sealed record PayslipResponse(
     string EmployeeFullName,
     decimal BaseSalary,
     decimal BonusAmount,
+    decimal AdjustmentAmount,
     decimal GrossSalary,
     decimal EmployeeDsmf,
     decimal EmployeeUnemployment,

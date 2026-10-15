@@ -679,6 +679,11 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1051,6 +1056,52 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("PaymentAllocations", "payments");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.Payroll.PayrollAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Hours")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("NormHours")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("SalaryMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SalaryYear")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalaryYear", "SalaryMonth");
+
+                    b.HasIndex("EmployeeId", "SalaryYear", "SalaryMonth");
+
+                    b.ToTable("payroll_adjustments", "payments");
+                });
+
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Payroll.PayrollBonus", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1227,6 +1278,10 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("AdjustmentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("BaseSalary")
                         .HasPrecision(18, 2)

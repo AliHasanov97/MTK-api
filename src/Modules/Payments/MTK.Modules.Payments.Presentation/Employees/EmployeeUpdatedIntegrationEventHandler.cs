@@ -16,7 +16,8 @@ internal sealed class EmployeeUpdatedIntegrationEventHandler(ISender sender)
         var command = new SyncEmployeeCommand(
             integrationEvent.EmployeeId,
             integrationEvent.FullName,
-            integrationEvent.BaseSalary);
+            integrationEvent.BaseSalary,
+            integrationEvent.IsActive);
 
         Result result = await sender.Send(command, cancellationToken);
 

@@ -71,6 +71,7 @@ public static class HrModule
 
         // Domain / Application services
         services.AddScoped<WorkingDayCalculatorService>();
+        services.AddScoped<WorkHoursCalculatorService>();
         services.AddScoped<ReturnToWorkDateService>();
         services.AddScoped<ILeaveOverlapService, LeaveOverlapService>();
         services.AddScoped<IVacationApplicationAllocationService, VacationApplicationAllocationService>();

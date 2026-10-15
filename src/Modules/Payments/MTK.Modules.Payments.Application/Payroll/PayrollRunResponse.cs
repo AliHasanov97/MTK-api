@@ -34,6 +34,7 @@ public sealed record PayrollRunResponse(
                     p.EmployeeFullName,
                     p.BaseSalary,
                     p.BonusAmount,
+                    p.AdjustmentAmount,
                     p.GrossSalary,
                     p.EmployeeDsmf,
                     p.EmployeeUnemployment,

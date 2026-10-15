@@ -24,6 +24,7 @@ internal sealed class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
 
         builder.Property(p => p.BaseSalary).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.BonusAmount).IsRequired().HasPrecision(18, 2);
+        builder.Property(p => p.AdjustmentAmount).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.GrossSalary).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.EmployeeDsmf).IsRequired().HasPrecision(18, 2);
         builder.Property(p => p.EmployeeUnemployment).IsRequired().HasPrecision(18, 2);

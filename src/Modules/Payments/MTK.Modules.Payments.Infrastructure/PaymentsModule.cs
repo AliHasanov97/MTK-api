@@ -26,6 +26,7 @@ using MTK.Modules.Warehouse.IntegrationEvents.Nomenclatures;
 using MTK.Modules.Hr.IntegrationEvents.Employees;
 using MTK.Modules.Hr.IntegrationEvents.BonusOrders;
 using MTK.Modules.Hr.IntegrationEvents.SalaryDeductions;
+using MTK.Modules.Hr.IntegrationEvents.Payroll;
 using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
 
 namespace MTK.Modules.Payments.Infrastructure;
@@ -91,6 +92,7 @@ public static class PaymentsModule
         services.AddScoped<IPayrollRunRepository, PayrollRunRepository>();
         services.AddScoped<IPayrollBonusRepository, PayrollBonusRepository>();
         services.AddScoped<IPayrollDeductionRepository, PayrollDeductionRepository>();
+        services.AddScoped<IPayrollAdjustmentRepository, PayrollAdjustmentRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
@@ -221,5 +223,6 @@ public static class PaymentsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<BonusOrderCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<SalaryDeductionCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<SalaryDeductionDeletedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<PayrollAdjustmentRequestedIntegrationEvent>>();
     }
 }

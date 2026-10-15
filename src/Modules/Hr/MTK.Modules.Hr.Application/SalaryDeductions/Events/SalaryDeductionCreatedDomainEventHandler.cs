@@ -24,7 +24,9 @@ internal sealed class SalaryDeductionCreatedDomainEventHandler : DomainEventHand
             domainEvent.SalaryDeductionId,
             domainEvent.EmployeeId,
             domainEvent.PercentageSalary,
-            domainEvent.StartDate);
+            // UTC-yə normallaşdırılır — əks halda istehlakçı (Payments) bazaya yaza bilmir
+            // (PostgreSQL timestamptz yalnız offset 0 qəbul edir).
+            domainEvent.StartDate.ToUniversalTime());
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

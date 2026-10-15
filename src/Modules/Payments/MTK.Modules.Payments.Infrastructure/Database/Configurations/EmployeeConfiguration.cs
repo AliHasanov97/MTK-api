@@ -19,5 +19,10 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.BaseSalary)
             .IsRequired()
             .HasColumnType("decimal(18,2)");
+
+        // Mövcud sətirlər (bu sütun əlavə olunmazdan əvvəl sync olunmuş) aktiv sayılır.
+        builder.Property(e => e.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
     }
 }

@@ -15,7 +15,9 @@ public sealed class PayrollDeduction : Entity
     {
         EmployeeId = employeeId;
         PercentageSalary = percentageSalary;
-        StartDate = startDate;
+        // PostgreSQL "timestamp with time zone" yalnız offset 0 (UTC) qəbul edir — HR-dən gələn
+        // dəyər lokal offsetlərlə (+04:00 və s.) ola bilər, ona görə UTC-yə normallaşdırılır.
+        StartDate = startDate.ToUniversalTime();
     }
 
     private PayrollDeduction() : base() { }

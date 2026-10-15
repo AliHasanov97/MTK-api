@@ -21,6 +21,10 @@ public sealed class Payslip : Entity
 
     public decimal BaseSalary { get; private set; }
     public decimal BonusAmount { get; private set; }
+
+    /// <summary>HR düzəlişinin pul ekvivalenti (saat əsaslı; mənfi = maaşdan çıxılma).</summary>
+    public decimal AdjustmentAmount { get; private set; }
+
     public decimal GrossSalary { get; private set; }
     public decimal EmployeeDsmf { get; private set; }
     public decimal EmployeeUnemployment { get; private set; }
@@ -51,6 +55,7 @@ public sealed class Payslip : Entity
             EmployeeFullName = employeeFullName,
             BaseSalary = result.BaseSalary,
             BonusAmount = result.BonusAmount,
+            AdjustmentAmount = result.AdjustmentAmount,
             GrossSalary = result.GrossSalary,
             EmployeeDsmf = result.EmployeeDsmf,
             EmployeeUnemployment = result.EmployeeUnemployment,

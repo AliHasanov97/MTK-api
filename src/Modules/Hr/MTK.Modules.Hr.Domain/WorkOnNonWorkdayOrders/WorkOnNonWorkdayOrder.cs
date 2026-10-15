@@ -1,4 +1,5 @@
 using MTK.Modules.Hr.Domain.Orders;
+using MTK.Modules.Hr.Domain.WorkOnNonWorkdayOrders.Events;
 
 namespace MTK.Modules.Hr.Domain.WorkOnNonWorkdayOrders;
 
@@ -22,6 +23,15 @@ public sealed class WorkOnNonWorkdayOrder : Order
             EndDate = endDate,
             CreatedById = createdById
         };
+
+        // İş günü olmayan gündə iş əlavə ödəniş tələb edir, lakin bu əmrdə işçi sahəsi yoxdur —
+        // buna görə yalnız bildiriş kimi yayımlanır (bax: WorkOnNonWorkdayOrderCreatedDomainEventHandler).
+        workOnNonWorkdayOrder.RaiseDomainEvent(new WorkOnNonWorkdayOrderCreatedDomainEvent
+        {
+            OrderId = workOnNonWorkdayOrder.Id,
+            StartDate = startDate,
+            EndDate = endDate
+        });
 
         return workOnNonWorkdayOrder;
     }

@@ -12,6 +12,7 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IPayrollBonusRepository _payrollBonusRepository;
     private readonly IPayrollDeductionRepository _payrollDeductionRepository;
+    private readonly IPayrollAdjustmentRepository _payrollAdjustmentRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public PayrollRunGenerationService(
@@ -20,6 +21,7 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
         IEmployeeRepository employeeRepository,
         IPayrollBonusRepository payrollBonusRepository,
         IPayrollDeductionRepository payrollDeductionRepository,
+        IPayrollAdjustmentRepository payrollAdjustmentRepository,
         IUnitOfWork unitOfWork)
     {
         _payrollRunRepository = payrollRunRepository;
@@ -27,6 +29,7 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
         _employeeRepository = employeeRepository;
         _payrollBonusRepository = payrollBonusRepository;
         _payrollDeductionRepository = payrollDeductionRepository;
+        _payrollAdjustmentRepository = payrollAdjustmentRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -40,7 +43,10 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
                 $"{year}-{month:D2} dövrü üçün hesablama artıq mövcuddur (PayrollRun {existing.Id})"));
         }
 
-        var employees = await _employeeRepository.ListAsync(cancellationToken);
+        // Yalnız aktiv işçilər hesablanır — işdən çıxmış (Inactive) işçilərə qəbz yaradılmır.
+        var employees = (await _employeeRepository.ListAsync(cancellationToken))
+            .Where(e => e.IsActive)
+            .ToList();
         if (employees.Count == 0)
         {
             return Result.Failure<PayrollRunResponse>(new Error(
@@ -67,14 +73,39 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
             .GroupBy(d => d.EmployeeId)
             .ToDictionary(g => g.Key, g => g.Sum(d => d.PercentageSalary));
 
+        // HR əmrlərindən gələn iş saatı əsaslı düzəlişlər (məzuniyyət/ödənişsiz/kompensasiya və s.).
+        var adjustments = await _payrollAdjustmentRepository.GetForPeriodAsync(year, month, cancellationToken);
+        var adjustmentsByEmployee = adjustments
+            .GroupBy(a => a.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         var run = PayrollRun.Create(year, month);
 
         foreach (var employee in employees)
         {
             var bonusAmount = bonusByEmployee.GetValueOrDefault(employee.Id, 0m);
+
+            // Saat əsaslı düzəliş: pul = baza maaş × (saat / ayın iş saatı norması).
+            decimal adjustmentAmount = 0m;
+            if (adjustmentsByEmployee.TryGetValue(employee.Id, out var employeeAdjustments))
+            {
+                foreach (var adjustment in employeeAdjustments)
+                {
+                    if (adjustment.NormHours <= 0m)
+                    {
+                        continue;
+                    }
+
+                    adjustmentAmount += Math.Round(
+                        employee.BaseSalary * (adjustment.Hours / adjustment.NormHours),
+                        2,
+                        MidpointRounding.AwayFromZero);
+                }
+            }
+
             var courtDeductionPercentage = Math.Min(100m, deductionPercentageByEmployee.GetValueOrDefault(employee.Id, 0m));
 
-            var result = PayrollCalculator.Calculate(employee.BaseSalary, bonusAmount, courtDeductionPercentage, brackets);
+            var result = PayrollCalculator.Calculate(employee.BaseSalary, bonusAmount, adjustmentAmount, courtDeductionPercentage, brackets);
             run.AddPayslip(employee.Id, employee.FullName, result);
         }
 

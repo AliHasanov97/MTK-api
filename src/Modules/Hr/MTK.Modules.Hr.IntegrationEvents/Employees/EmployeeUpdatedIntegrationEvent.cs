@@ -13,15 +13,18 @@ public sealed class EmployeeUpdatedIntegrationEvent : IntegrationEvent
         DateTime occurredOnUtc,
         Guid employeeId,
         string fullName,
-        decimal baseSalary)
+        decimal baseSalary,
+        bool isActive)
         : base(integrationEventId, occurredOnUtc)
     {
         EmployeeId = employeeId;
         FullName = fullName;
         BaseSalary = baseSalary;
+        IsActive = isActive;
     }
 
     public Guid EmployeeId { get; }
     public string FullName { get; }
     public decimal BaseSalary { get; }
+    public bool IsActive { get; }
 }

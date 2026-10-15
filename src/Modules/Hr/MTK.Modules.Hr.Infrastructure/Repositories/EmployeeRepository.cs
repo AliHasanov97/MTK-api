@@ -61,6 +61,13 @@ internal sealed class EmployeeRepository : SearchableRepository<Employee>, IEmpl
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
+    public async Task<Employee?> GetByIdWithWorkSchedulesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<Employee>()
+            .Include(e => e.WorkSchedules)
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+    }
+
     public async Task<List<Employee>> GetForTimesheetAsync(
         DateOnly monthEnd,
         CancellationToken cancellationToken = default)

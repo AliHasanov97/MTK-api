@@ -1,3 +1,4 @@
+using MTK.Modules.Hr.Domain.CompensationOrders.Events;
 using MTK.Modules.Hr.Domain.Employees;
 using MTK.Modules.Hr.Domain.FileAttachments;
 using MTK.Modules.Hr.Domain.Orders;
@@ -69,6 +70,17 @@ public sealed class CompensationOrder : Order
             CreatedById = createdById,
             Notes = notes
         };
+
+        // İstifadə olunmamış məzuniyyət günlərinin pul kompensasiyasıdır — işçiyə ödəniləcək
+        // məbləğ olduğu üçün Payments-in əmək haqqı hesablamasına ötürülməlidir (bax: domain event handler).
+        order.RaiseDomainEvent(new CompensationOrderCreatedDomainEvent
+        {
+            OrderId = order.Id,
+            EmployeeId = employeeId,
+            CompensatedDays = compensatedDays,
+            WorkYearStart = workYearStart,
+            WorkYearEnd = workYearEnd
+        });
 
         return order;
     }

@@ -16,6 +16,7 @@ public static class PayrollCalculator
     public static PayrollCalculationResult Calculate(
         decimal baseSalary,
         decimal bonusAmount,
+        decimal adjustmentAmount,
         decimal courtDeductionPercentage,
         IReadOnlyCollection<PayrollTaxBracket> brackets)
     {
@@ -35,7 +36,10 @@ public static class PayrollCalculator
         }
 
         // Bonus vergiyə cəlb olunan gəlirdir — gross-a (DSMF/sığorta/vergi bazasına) daxildir.
-        var grossSalary = baseSalary + bonusAmount;
+        // <paramref name="adjustmentAmount"/> çağıran tərəfindən iş saatı əsasında hesablanır
+        // (baza maaş × saat / saat norması) və işarəlidir — mənfi olduqda maaşdan çıxılır.
+        // Gross heç vaxt 0-dan aşağı düşmür.
+        var grossSalary = Math.Max(0m, baseSalary + bonusAmount + adjustmentAmount);
 
         var employeeDsmf = Apply(grossSalary, PayrollRateType.Dsmf, PayrollParty.Employee, brackets);
         var employeeUnemployment = Apply(grossSalary, PayrollRateType.Unemployment, PayrollParty.Employee, brackets);
@@ -59,6 +63,7 @@ public static class PayrollCalculator
         return new PayrollCalculationResult(
             BaseSalary: baseSalary,
             BonusAmount: bonusAmount,
+            AdjustmentAmount: adjustmentAmount,
             GrossSalary: grossSalary,
             EmployeeDsmf: employeeDsmf,
             EmployeeUnemployment: employeeUnemployment,

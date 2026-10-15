@@ -22,11 +22,11 @@ internal sealed class SyncEmployeeCommandHandler : ICommandHandler<SyncEmployeeC
         var employee = await _employeeRepository.GetByIdDefaultAsync(request.EmployeeId, cancellationToken);
         if (employee is not null)
         {
-            employee.Update(request.FullName, request.BaseSalary);
+            employee.Update(request.FullName, request.BaseSalary, request.IsActive);
         }
         else
         {
-            employee = Employee.Create(request.EmployeeId, request.FullName, request.BaseSalary);
+            employee = Employee.Create(request.EmployeeId, request.FullName, request.BaseSalary, request.IsActive);
             _employeeRepository.Add(employee);
         }
 

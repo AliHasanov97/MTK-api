@@ -24,7 +24,8 @@ internal sealed class EmployeeCreatedDomainEventHandler : DomainEventHandler<Emp
             DateTime.UtcNow,
             domainEvent.EmployeeId,
             domainEvent.FullName,
-            domainEvent.BaseSalary);
+            domainEvent.BaseSalary,
+            domainEvent.IsActive);
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

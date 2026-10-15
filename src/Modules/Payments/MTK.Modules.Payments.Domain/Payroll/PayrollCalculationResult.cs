@@ -7,6 +7,8 @@ namespace MTK.Modules.Payments.Domain.Payroll;
 public sealed record PayrollCalculationResult(
     decimal BaseSalary,
     decimal BonusAmount,
+    // HR düzəlişinin pul ekvivalenti (saat əsaslı; işarəli: mənfi = maaşdan çıxılma).
+    decimal AdjustmentAmount,
     decimal GrossSalary,
     decimal EmployeeDsmf,
     decimal EmployeeUnemployment,

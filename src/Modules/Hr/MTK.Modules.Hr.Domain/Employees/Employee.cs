@@ -187,7 +187,8 @@ public sealed class Employee : SearchableEntity
             EmployeeId = employeeId,
             StartWorkDate = startWorkDate,
             FullName = employee.FullName,
-            BaseSalary = employee.BaseSalary
+            BaseSalary = employee.BaseSalary,
+            IsActive = employee.IsActive == EmployeeStatus.Active
         });
 
         return employee;
@@ -266,7 +267,8 @@ public sealed class Employee : SearchableEntity
         {
             EmployeeId = Id,
             FullName = FullName,
-            BaseSalary = BaseSalary
+            BaseSalary = BaseSalary,
+            IsActive = IsActive == EmployeeStatus.Active
         });
     }
 
