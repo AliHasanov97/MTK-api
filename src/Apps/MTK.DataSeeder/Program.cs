@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MTK.DataSeeder.Seeders;
 using MTK.Modules.Buildings.Infrastructure;
+using MTK.Modules.Hr.Infrastructure;
 using MTK.Modules.Payments.Infrastructure;
 using MTK.Modules.Warehouse.Infrastructure;
 
@@ -43,6 +44,7 @@ var host = Host.CreateDefaultBuilder(args)
             var loggerFactory = sp.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>();
             var mapperConfigExpression = new AutoMapper.MapperConfigurationExpression();
             mapperConfigExpression.AddMaps(typeof(MTK.Modules.Payments.Application.PaymentsMappingProfile).Assembly);
+            mapperConfigExpression.AddMaps(typeof(MTK.Modules.Hr.Application.AssemblyReference).Assembly);
             return new AutoMapper.MapperConfiguration(mapperConfigExpression, loggerFactory);
         });
         services.AddScoped<AutoMapper.IMapper>(sp =>
@@ -60,6 +62,9 @@ var host = Host.CreateDefaultBuilder(args)
         // Warehouse Module
         services.AddWarehouseModule(configuration);
 
+        // Hr Module
+        services.AddHrModule(configuration);
+
         // Seeders
         services.AddScoped<BuildingSeeder>();
         services.AddScoped<OwnerSeeder>();
@@ -74,6 +79,10 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddScoped<ChargeSeeder>();
         services.AddScoped<OwnerPaymentSeeder>();
         services.AddScoped<VendorPaymentSeeder>();
+        services.AddScoped<HrJobSeeder>();
+        services.AddScoped<HrEducationalInstitutionSeeder>();
+        services.AddScoped<HrCalendarDaySeeder>();
+        services.AddScoped<HrEmployeeSeeder>();
     })
     .Build();
 
@@ -109,15 +118,19 @@ while (true)
         Console.WriteLine("│ 12. 💳 Yalnız borcları seed et                         │");
         Console.WriteLine("│ 13. 💵 Yalnız sakin ödənişləri seed et                 │");
         Console.WriteLine("│ 14. 💸 Yalnız vendor ödənişləri seed et                │");
-        Console.WriteLine("│ 15. 🗑️  Bazanı təmizlə (DROP DATABASE)                 │");
-        Console.WriteLine("│ 16. 📊 Statistika göstər                               │");
-        Console.WriteLine("│ 17. ❌ Çıxış                                            │");
+        Console.WriteLine("│ 15. 💼 Yalnız HR vəzifələrini seed et                  │");
+        Console.WriteLine("│ 16. 🎓 Yalnız HR təhsil ocaqlarını seed et             │");
+        Console.WriteLine("│ 17. 📅 Yalnız HR təqvim günlərini seed et              │");
+        Console.WriteLine("│ 18. 🧑‍💼 Yalnız HR işçilərini seed et                   │");
+        Console.WriteLine("│ 19. 🗑️  Bazanı təmizlə (DROP DATABASE)                 │");
+        Console.WriteLine("│ 20. 📊 Statistika göstər                               │");
+        Console.WriteLine("│ 21. ❌ Çıxış                                            │");
         Console.WriteLine("│                                                        │");
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("└────────────────────────────────────────────────────────┘");
         Console.ResetColor();
         Console.WriteLine();
-        Console.Write("Seçiminizi edin (1-17): ");
+        Console.Write("Seçiminizi edin (1-21): ");
 
         var choice = Console.ReadLine();
         Console.WriteLine();
@@ -170,19 +183,31 @@ while (true)
                 await SeedVendorPayments(services, logger);
                 break;
             case "15":
-                await DropDatabase(logger);
+                await SeedHrJobs(services, logger);
                 break;
             case "16":
-                await ShowStatistics(services, logger);
+                await SeedHrEducationalInstitutions(services, logger);
                 break;
             case "17":
+                await SeedHrCalendarDays(services, logger);
+                break;
+            case "18":
+                await SeedHrEmployees(services, logger);
+                break;
+            case "19":
+                await DropDatabase(logger);
+                break;
+            case "20":
+                await ShowStatistics(services, logger);
+                break;
+            case "21":
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("👋 Görüşənədək!");
                 Console.ResetColor();
                 return 0;
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("❌ Yanlış seçim! Zəhmət olmasa 1-17 arası seçin.");
+                Console.WriteLine("❌ Yanlış seçim! Zəhmət olmasa 1-21 arası seçin.");
                 Console.ResetColor();
                 break;
         }
@@ -227,6 +252,10 @@ static async Task SeedAll(IServiceProvider services, ILogger logger)
     await SeedCharges(services, logger);
     await SeedOwnerPayments(services, logger);
     await SeedVendorPayments(services, logger);
+    await SeedHrJobs(services, logger);
+    await SeedHrEducationalInstitutions(services, logger);
+    await SeedHrCalendarDays(services, logger);
+    await SeedHrEmployees(services, logger);
 
     logger.LogInformation("🎉 Bütün seed prosesi uğurla tamamlandı!");
     logger.LogInformation("");
@@ -242,6 +271,8 @@ static async Task SeedAll(IServiceProvider services, ILogger logger)
     logger.LogInformation("  - ~25 anbar stoku");
     logger.LogInformation("  - Son 3 ay üçün borclar");
     logger.LogInformation("  - Sakin və vendor ödənişləri");
+    logger.LogInformation("  - HR: vəzifələr, təhsil ocaqları, təqvim günləri, ~30 işçi (iş/təhsil tarixçəsi ilə)");
+    logger.LogInformation("  - HR: məzuniyyət (və digər) ərizə/əmrləri QƏSDƏN seed edilmir");
     logger.LogInformation("");
     logger.LogInformation("✅ Integration events avtomatik Payments module-a göndərildi!");
     logger.LogInformation("✅ Cache invalidation işlədi!");
@@ -361,6 +392,42 @@ static async Task SeedVendorPayments(IServiceProvider services, ILogger logger)
     var vendorPaymentSeeder = services.GetRequiredService<VendorPaymentSeeder>();
     await vendorPaymentSeeder.SeedAsync();
     logger.LogInformation("✅ Vendor Payments seed tamamlandı!");
+    logger.LogInformation("");
+}
+
+static async Task SeedHrJobs(IServiceProvider services, ILogger logger)
+{
+    logger.LogInformation("💼 HR vəzifələri seed edilir...");
+    var jobSeeder = services.GetRequiredService<HrJobSeeder>();
+    await jobSeeder.SeedAsync();
+    logger.LogInformation("✅ HR vəzifələri seed tamamlandı!");
+    logger.LogInformation("");
+}
+
+static async Task SeedHrEducationalInstitutions(IServiceProvider services, ILogger logger)
+{
+    logger.LogInformation("🎓 HR təhsil ocaqları seed edilir...");
+    var institutionSeeder = services.GetRequiredService<HrEducationalInstitutionSeeder>();
+    await institutionSeeder.SeedAsync();
+    logger.LogInformation("✅ HR təhsil ocaqları seed tamamlandı!");
+    logger.LogInformation("");
+}
+
+static async Task SeedHrCalendarDays(IServiceProvider services, ILogger logger)
+{
+    logger.LogInformation("📅 HR təqvim günləri seed edilir...");
+    var calendarDaySeeder = services.GetRequiredService<HrCalendarDaySeeder>();
+    await calendarDaySeeder.SeedAsync();
+    logger.LogInformation("✅ HR təqvim günləri seed tamamlandı!");
+    logger.LogInformation("");
+}
+
+static async Task SeedHrEmployees(IServiceProvider services, ILogger logger)
+{
+    logger.LogInformation("🧑‍💼 HR işçiləri seed edilir (məzuniyyət ərizə/əmrləri seed edilmir)...");
+    var employeeSeeder = services.GetRequiredService<HrEmployeeSeeder>();
+    await employeeSeeder.SeedAsync();
+    logger.LogInformation("✅ HR işçiləri seed tamamlandı!");
     logger.LogInformation("");
 }
 
