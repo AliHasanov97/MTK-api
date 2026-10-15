@@ -8,6 +8,7 @@ public sealed class GetVacationReturnOrderByIdResponse
     public int OrderNumber { get; set; }
     public ResponseObjectWithName Employee { get; set; } = null!;
     public DateTimeOffset ReturnDate { get; set; }
+    public int UnusedDaysReturned { get; set; }
     public string? Notes { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public ResponseObjectWithName CreatedBy { get; set; } = null!;

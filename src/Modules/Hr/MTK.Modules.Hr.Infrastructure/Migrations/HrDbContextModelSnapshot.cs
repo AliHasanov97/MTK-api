@@ -1783,6 +1783,9 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("ReturnDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("UnusedDaysReturned")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("VacationReturnApplicationId")
                         .HasColumnType("uuid");
 

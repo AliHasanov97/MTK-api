@@ -19,4 +19,8 @@ public static class VacationReturnApplicationErrors
     public static readonly Error CannotDeleteNonPendingApplication = new Error(
         "VacationReturnApplication.CannotDeleteNonPendingApplication",
         "Yalnız 'Gözləyir' statusunda olan ərizələr silinə bilər");
+
+    public static readonly Error OriginalVacationOrderNotFound = new Error(
+        "VacationReturnApplication.OriginalVacationOrderNotFound",
+        "Geri çağırma tarixinə uyğun məzuniyyət əmri tapılmadı — balans düzəlişi aparıla bilmədi");
 }

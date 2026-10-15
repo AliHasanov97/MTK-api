@@ -34,6 +34,9 @@ internal sealed class VacationReturnOrderConfiguration : IEntityTypeConfiguratio
         builder.Property(v => v.ReturnDate)
             .IsRequired();
 
+        builder.Property(v => v.UnusedDaysReturned)
+            .IsRequired();
+
         builder.Property(v => v.Notes)
             .HasMaxLength(1000);
 

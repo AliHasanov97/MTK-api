@@ -111,4 +111,19 @@ public sealed class VacationBalance : Entity
         CompensatedDays += days;
         SetUpdatedAt();
     }
+
+    /// <summary>
+    /// VacationReturnOrder (məzuniyyətdən geri çağırma) yaradılanda çağırılır — işçi məzuniyyəti vaxtından
+    /// əvvəl kəsdiyi üçün istifadə olunmamış günləri geri "RegisterUsedDays"-in tərsi kimi balansa qaytarır.
+    /// </summary>
+    public void ReturnUnusedDays(int days)
+    {
+        if (days <= 0)
+        {
+            return;
+        }
+
+        UsedDays = Math.Max(0, UsedDays - days);
+        SetUpdatedAt();
+    }
 }

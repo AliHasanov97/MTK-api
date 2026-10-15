@@ -33,6 +33,13 @@ public sealed class VacationReturnOrder : Order
     /// </summary>
     public string? Notes { get; private set; }
 
+    /// <summary>
+    /// Bu geri çağırma nəticəsində VacationBalance-a qaytarılmış istifadə olunmamış gün sayı
+    /// (bax: ConvertVacationReturnToOrderCommandHandler / VacationBalance.ReturnUnusedDays) — izlənilə bilsin deyə
+    /// hesablanan anda sabitlənir (snapshot), sonradan balans dəyişsə belə bu dəyər dəyişmir.
+    /// </summary>
+    public int UnusedDaysReturned { get; private set; }
+
     // Override base property
     public override Employee? RelatedEmployee => Employee;
 
@@ -46,6 +53,7 @@ public sealed class VacationReturnOrder : Order
         Guid employeeId,
         DateTimeOffset returnDate,
         Guid createdById,
+        int unusedDaysReturned,
         string? notes = null)
     {
         var id = Guid.NewGuid();
@@ -57,6 +65,7 @@ public sealed class VacationReturnOrder : Order
             EmployeeId = employeeId,
             ReturnDate = DateTimeHelper.ToUtcDateOnly(returnDate),
             CreatedById = createdById,
+            UnusedDaysReturned = unusedDaysReturned,
             Notes = notes
         };
 
