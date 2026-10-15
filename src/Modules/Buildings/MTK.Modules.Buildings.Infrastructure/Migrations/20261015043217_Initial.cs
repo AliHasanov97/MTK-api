@@ -52,8 +52,6 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     District = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     PostalCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     Country = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    TotalFloors = table.Column<int>(type: "integer", nullable: false),
-                    ApartmentsPerFloor = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -181,40 +179,26 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Apartments",
+                name: "ApartmentTypes",
                 schema: "buildings",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     BuildingId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApartmentNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    Floor = table.Column<int>(type: "integer", nullable: false),
-                    AreaSquareMeters = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     RoomCount = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    CurrentOwnerId = table.Column<Guid>(type: "uuid", nullable: true),
+                    AreaSquareMeters = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    SearchVector = table.Column<NpgsqlTsVector>(type: "tsvector", nullable: false)
-                        .Annotation("Npgsql:TsVectorConfig", "english")
-                        .Annotation("Npgsql:TsVectorProperties", new[] { "ApartmentNumber", "Status" })
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Apartments", x => x.Id);
+                    table.PrimaryKey("PK_ApartmentTypes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Apartments_Buildings_BuildingId",
+                        name: "FK_ApartmentTypes_Buildings_BuildingId",
                         column: x => x.BuildingId,
                         principalSchema: "buildings",
                         principalTable: "Buildings",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Apartments_Owners_CurrentOwnerId",
-                        column: x => x.CurrentOwnerId,
-                        principalSchema: "buildings",
-                        principalTable: "Owners",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -249,44 +233,46 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OwnershipHistories",
+                name: "Apartments",
                 schema: "buildings",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApartmentId = table.Column<Guid>(type: "uuid", nullable: false),
-                    PreviousOwnerId = table.Column<Guid>(type: "uuid", nullable: true),
-                    PreviousOwnerName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    NewOwnerId = table.Column<Guid>(type: "uuid", nullable: false),
-                    NewOwnerName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    TransferDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    BuildingId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApartmentNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Floor = table.Column<int>(type: "integer", nullable: false),
+                    AreaSquareMeters = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    RoomCount = table.Column<int>(type: "integer", nullable: false),
+                    ApartmentTypeId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CurrentOwnerId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     SearchVector = table.Column<NpgsqlTsVector>(type: "tsvector", nullable: false)
                         .Annotation("Npgsql:TsVectorConfig", "english")
-                        .Annotation("Npgsql:TsVectorProperties", new[] { "PreviousOwnerName", "NewOwnerName" })
+                        .Annotation("Npgsql:TsVectorProperties", new[] { "ApartmentNumber", "Status" })
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OwnershipHistories", x => x.Id);
+                    table.PrimaryKey("PK_Apartments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_OwnershipHistories_Apartments_ApartmentId",
-                        column: x => x.ApartmentId,
+                        name: "FK_Apartments_ApartmentTypes_ApartmentTypeId",
+                        column: x => x.ApartmentTypeId,
                         principalSchema: "buildings",
-                        principalTable: "Apartments",
+                        principalTable: "ApartmentTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_OwnershipHistories_Owners_NewOwnerId",
-                        column: x => x.NewOwnerId,
+                        name: "FK_Apartments_Buildings_BuildingId",
+                        column: x => x.BuildingId,
                         principalSchema: "buildings",
-                        principalTable: "Owners",
+                        principalTable: "Buildings",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_OwnershipHistories_Owners_PreviousOwnerId",
-                        column: x => x.PreviousOwnerId,
+                        name: "FK_Apartments_Owners_CurrentOwnerId",
+                        column: x => x.CurrentOwnerId,
                         principalSchema: "buildings",
                         principalTable: "Owners",
                         principalColumn: "Id",
@@ -344,6 +330,57 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "OwnershipHistories",
+                schema: "buildings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApartmentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PreviousOwnerId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PreviousOwnerName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    NewOwnerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    NewOwnerName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    TransferDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    SearchVector = table.Column<NpgsqlTsVector>(type: "tsvector", nullable: false)
+                        .Annotation("Npgsql:TsVectorConfig", "english")
+                        .Annotation("Npgsql:TsVectorProperties", new[] { "PreviousOwnerName", "NewOwnerName" })
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OwnershipHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OwnershipHistories_Apartments_ApartmentId",
+                        column: x => x.ApartmentId,
+                        principalSchema: "buildings",
+                        principalTable: "Apartments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OwnershipHistories_Owners_NewOwnerId",
+                        column: x => x.NewOwnerId,
+                        principalSchema: "buildings",
+                        principalTable: "Owners",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OwnershipHistories_Owners_PreviousOwnerId",
+                        column: x => x.PreviousOwnerId,
+                        principalSchema: "buildings",
+                        principalTable: "Owners",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Apartments_ApartmentTypeId",
+                schema: "buildings",
+                table: "Apartments",
+                column: "ApartmentTypeId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Apartments_BuildingId_ApartmentNumber",
                 schema: "buildings",
@@ -364,6 +401,12 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 table: "Apartments",
                 column: "SearchVector")
                 .Annotation("Npgsql:IndexMethod", "GIN");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApartmentTypes_BuildingId",
+                schema: "buildings",
+                table: "ApartmentTypes",
+                column: "BuildingId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_EntityId",
@@ -561,11 +604,15 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                 schema: "buildings");
 
             migrationBuilder.DropTable(
-                name: "Buildings",
+                name: "ApartmentTypes",
                 schema: "buildings");
 
             migrationBuilder.DropTable(
                 name: "Owners",
+                schema: "buildings");
+
+            migrationBuilder.DropTable(
+                name: "Buildings",
                 schema: "buildings");
         }
     }

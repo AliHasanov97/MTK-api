@@ -13,8 +13,8 @@ using NpgsqlTypes;
 namespace MTK.Modules.Hr.Infrastructure.Migrations
 {
     [DbContext(typeof(HrDbContext))]
-    [Migration("20261014050000_AddVacationBalances")]
-    partial class AddVacationBalances
+    [Migration("20261015044358_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -318,6 +318,40 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.HasIndex("Year", "Date");
 
                     b.ToTable("calendar_days", "hr");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Hr.Domain.Companies.Company", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Director")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("companies", "hr");
                 });
 
             modelBuilder.Entity("MTK.Modules.Hr.Domain.EducationalInstitutions.EducationalInstitution", b =>
@@ -1150,6 +1184,67 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.ToTable("Users", "hr");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BaseEntitledDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CarriedOverDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ChildrenUnder14Days")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CompensatedDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisabledChildDays")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ExperienceBonusDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("KarabakhWorkerDays")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UsedDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateOnly>("WorkYearEnd")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("WorkYearStart")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "WorkYearStart")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("vacation_balances", "hr");
+                });
+
             modelBuilder.Entity("MTK.Modules.Hr.Domain.ApplicationsForChangeOfPosition.ApplicationForChangeOfPosition", b =>
                 {
                     b.HasBaseType("MTK.Modules.Hr.Domain.Applications.Application");
@@ -1374,67 +1469,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.HasIndex("ReturnDate");
 
                     b.ToTable("vacation_return_applications", "hr");
-                });
-
-            modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("BaseEntitledDays")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CarriedOverDays")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ChildrenUnder14Days")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CompensatedDays")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DisabledChildDays")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ExperienceBonusDays")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("KarabakhWorkerDays")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("UsedDays")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateOnly>("WorkYearEnd")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly>("WorkYearStart")
-                        .HasColumnType("date");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId", "WorkYearStart")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
-
-                    b.ToTable("vacation_balances", "hr");
                 });
 
             modelBuilder.Entity("MTK.Modules.Hr.Domain.BonusOrders.BonusOrder", b =>
@@ -1751,6 +1785,9 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("ReturnDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UnusedDaysReturned")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("VacationReturnApplicationId")
                         .HasColumnType("uuid");
@@ -2095,6 +2132,17 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", b =>
+                {
+                    b.HasOne("MTK.Modules.Hr.Domain.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("MTK.Modules.Hr.Domain.ApplicationsForChangeOfPosition.ApplicationForChangeOfPosition", b =>
                 {
                     b.HasOne("MTK.Modules.Hr.Domain.Jobs.Job", "CurrentJob")
@@ -2250,17 +2298,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .WithOne()
                         .HasForeignKey("MTK.Modules.Hr.Domain.VacationReturnApplications.VacationReturnApplication", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-                });
-
-            modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", b =>
-                {
-                    b.HasOne("MTK.Modules.Hr.Domain.Employees.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Employee");

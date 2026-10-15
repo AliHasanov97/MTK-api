@@ -59,6 +59,24 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "companies",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    Director = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_companies", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CompanyBalances",
                 schema: "payments",
                 columns: table => new
@@ -82,7 +100,8 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    VendorId = table.Column<Guid>(type: "uuid", nullable: false),
+                    VendorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CustomerId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
                     StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -98,6 +117,50 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Contracts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Customers",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    CustomerType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Voen = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Director = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    Email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    Phone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Note = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    SearchVector = table.Column<NpgsqlTsVector>(type: "tsvector", nullable: false)
+                        .Annotation("Npgsql:TsVectorConfig", "english")
+                        .Annotation("Npgsql:TsVectorProperties", new[] { "Name", "Voen", "Director", "Email" })
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Customers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "employees",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    FullName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    BaseSalary = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_employees", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -269,6 +332,7 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     OwnerId = table.Column<Guid>(type: "uuid", nullable: true),
                     VendorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CustomerId = table.Column<Guid>(type: "uuid", nullable: true),
                     Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     PaymentMethod = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     PaymentDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -287,6 +351,87 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Payments", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "payroll_bonuses",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    SalaryMonth = table.Column<int>(type: "integer", nullable: false),
+                    SalaryYear = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_payroll_bonuses", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "payroll_deductions",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PercentageSalary = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
+                    StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_payroll_deductions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "payroll_runs",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Year = table.Column<int>(type: "integer", nullable: false),
+                    Month = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CalculatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ApprovedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    PaidAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_payroll_runs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "payroll_tax_brackets",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RateType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Party = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    LowerBound = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    UpperBound = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    Rate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: false),
+                    EffectiveFrom = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    EffectiveTo = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_payroll_tax_brackets", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -448,6 +593,47 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "payslips",
+                schema: "payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    PayrollRunId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmployeeFullName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    BaseSalary = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    BonusAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    GrossSalary = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EmployeeDsmf = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EmployeeUnemployment = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EmployeeMedicalInsurance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    TaxableIncome = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    IncomeTax = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    NetSalary = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    CourtDeductionPercentage = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
+                    CourtDeductionAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    FinalNetSalary = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EmployerDsmf = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EmployerUnemployment = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EmployerMedicalInsurance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalEmployerCost = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_payslips", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_payslips_payroll_runs_PayrollRunId",
+                        column: x => x.PayrollRunId,
+                        principalSchema: "payments",
+                        principalTable: "payroll_runs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PurchaseLines",
                 schema: "payments",
                 columns: table => new
@@ -520,6 +706,7 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     OwnerId = table.Column<Guid>(type: "uuid", nullable: true),
                     VendorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CustomerId = table.Column<Guid>(type: "uuid", nullable: true),
                     ApartmentId = table.Column<Guid>(type: "uuid", nullable: true),
                     GarageId = table.Column<Guid>(type: "uuid", nullable: true),
                     AreaSquareMeters = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
@@ -546,6 +733,13 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Charges", x => x.Id);
                     table.CheckConstraint("CK_Charges_PaidAmount_Range", "\"PaidAmount\" >= 0 AND \"PaidAmount\" <= \"Amount\"");
+                    table.ForeignKey(
+                        name: "FK_Charges_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalSchema: "payments",
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Charges_Vendors_VendorId",
                         column: x => x.VendorId,
@@ -754,6 +948,12 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 filter: "\"ContractServiceId\" IS NOT NULL AND \"DeletedAt\" IS NULL AND \"Status\" <> 'Cancelled'");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Charges_CustomerId_IssuedOn",
+                schema: "payments",
+                table: "Charges",
+                columns: new[] { "CustomerId", "IssuedOn" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Charges_DueDate",
                 schema: "payments",
                 table: "Charges",
@@ -825,6 +1025,12 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 columns: new[] { "VendorId", "IssuedOn" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Contracts_CustomerId",
+                schema: "payments",
+                table: "Contracts",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Contracts_EndDate",
                 schema: "payments",
                 table: "Contracts",
@@ -868,6 +1074,33 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 schema: "payments",
                 table: "ContractServices",
                 column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_IsActive",
+                schema: "payments",
+                table: "Customers",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_Name",
+                schema: "payments",
+                table: "Customers",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_SearchVector",
+                schema: "payments",
+                table: "Customers",
+                column: "SearchVector")
+                .Annotation("Npgsql:IndexMethod", "GIN");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_Voen",
+                schema: "payments",
+                table: "Customers",
+                column: "Voen",
+                unique: true,
+                filter: "\"Voen\" IS NOT NULL AND \"DeletedAt\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FileAttachments_ContractId",
@@ -994,6 +1227,69 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 schema: "payments",
                 table: "Payments",
                 column: "VendorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payroll_bonuses_EmployeeId_SalaryYear_SalaryMonth",
+                schema: "payments",
+                table: "payroll_bonuses",
+                columns: new[] { "EmployeeId", "SalaryYear", "SalaryMonth" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payroll_bonuses_SalaryYear_SalaryMonth",
+                schema: "payments",
+                table: "payroll_bonuses",
+                columns: new[] { "SalaryYear", "SalaryMonth" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payroll_deductions_EmployeeId",
+                schema: "payments",
+                table: "payroll_deductions",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payroll_deductions_StartDate",
+                schema: "payments",
+                table: "payroll_deductions",
+                column: "StartDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payroll_runs_Year_Month",
+                schema: "payments",
+                table: "payroll_runs",
+                columns: new[] { "Year", "Month" },
+                unique: true,
+                filter: "\"DeletedAt\" IS NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payroll_tax_brackets_EffectiveTo",
+                schema: "payments",
+                table: "payroll_tax_brackets",
+                column: "EffectiveTo");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payroll_tax_brackets_RateType_Party_EffectiveFrom",
+                schema: "payments",
+                table: "payroll_tax_brackets",
+                columns: new[] { "RateType", "Party", "EffectiveFrom" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payslips_EmployeeId",
+                schema: "payments",
+                table: "payslips",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payslips_PayrollRunId",
+                schema: "payments",
+                table: "payslips",
+                column: "PayrollRunId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payslips_PayrollRunId_EmployeeId",
+                schema: "payments",
+                table: "payslips",
+                columns: new[] { "PayrollRunId", "EmployeeId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_property_ownerships_ApartmentId",
@@ -1178,11 +1474,19 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 schema: "payments");
 
             migrationBuilder.DropTable(
+                name: "companies",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
                 name: "CompanyBalances",
                 schema: "payments");
 
             migrationBuilder.DropTable(
                 name: "ContractServices",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
+                name: "employees",
                 schema: "payments");
 
             migrationBuilder.DropTable(
@@ -1218,6 +1522,22 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                 schema: "payments");
 
             migrationBuilder.DropTable(
+                name: "payroll_bonuses",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
+                name: "payroll_deductions",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
+                name: "payroll_tax_brackets",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
+                name: "payslips",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
                 name: "property_ownerships",
                 schema: "payments");
 
@@ -1227,6 +1547,10 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Rates",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
+                name: "Customers",
                 schema: "payments");
 
             migrationBuilder.DropTable(
@@ -1243,6 +1567,10 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Vendors",
+                schema: "payments");
+
+            migrationBuilder.DropTable(
+                name: "payroll_runs",
                 schema: "payments");
 
             migrationBuilder.DropTable(
