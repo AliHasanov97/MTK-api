@@ -1,6 +1,7 @@
 using MTK.Common.Application.Authorization;
 using MTK.Modules.Hr.Application.VacationBalances.Commands.RecalculateVacationBalance;
 using MTK.Modules.Hr.Application.VacationBalances.Queries.GetVacationBalanceByEmployeeId;
+using MTK.Modules.Hr.Application.VacationBalances.Queries.GetAllVacationBalancesByEmployeeId;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +21,15 @@ public class VacationBalancesController : BaseController
         CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetVacationBalanceByEmployeeIdQuery(employeeId, asOfDate), cancellationToken);
+        return result.IsSuccess ? Success(result.Value) : BadRequest(result.Error);
+    }
+
+    [HttpGet("{employeeId:guid}/all")]
+    public async Task<IActionResult> GetAllByEmployeeId(
+        [FromRoute] Guid employeeId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetAllVacationBalancesByEmployeeIdQuery(employeeId), cancellationToken);
         return result.IsSuccess ? Success(result.Value) : BadRequest(result.Error);
     }
 

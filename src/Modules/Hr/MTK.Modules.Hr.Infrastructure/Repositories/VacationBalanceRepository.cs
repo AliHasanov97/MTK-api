@@ -32,4 +32,12 @@ internal sealed class VacationBalanceRepository : Repository<VacationBalance>, I
             .OrderBy(b => b.WorkYearStart)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<List<VacationBalance>> GetAllByEmployeeIdAsync(Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<VacationBalance>()
+            .Where(b => b.EmployeeId == employeeId)
+            .OrderBy(b => b.WorkYearStart)
+            .ToListAsync(cancellationToken);
+    }
 }
