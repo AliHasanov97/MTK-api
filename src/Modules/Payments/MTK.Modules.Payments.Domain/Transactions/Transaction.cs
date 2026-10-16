@@ -2,6 +2,7 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.Payroll;
+using MTK.Modules.Payments.Domain.SalaryPayments;
 
 namespace MTK.Modules.Payments.Domain.Transactions;
 
@@ -22,6 +23,7 @@ public sealed class Transaction : SearchableEntity
     public const string CustomerPaymentCategory = "Müştəri ödənişi";
     public const string PurchaseExpenseCategory = "Satınalma";
     public const string PayrollPaymentCategory = "Əmək haqqı ödənişi";
+    public const string SalaryPaymentCategory = "Əmək haqqı ödənişi";
 
     private Transaction() : base() { }
 
@@ -44,17 +46,22 @@ public sealed class Transaction : SearchableEntity
     /// <summary>Hansı qəbzin ödənişindən yarandığı — bax: ForPayrollPayment.</summary>
     public Guid? SourcePayslipId { get; private set; }
 
+    /// <summary>Maaş ödənişindən yaradılmış xərcin mənbə maaş ödənişi identifikatoru.</summary>
+    public Guid? SourceSalaryPaymentId { get; private set; }
+
     /// <summary>Identifies the related document opened from a ledger transaction.</summary>
     public string DocumentType => SourcePurchaseId.HasValue
         ? "Purchase"
         : SourcePayslipId.HasValue
             ? "PayrollPayment"
-            : SourcePaymentId.HasValue
-                ? (Direction == TransactionDirection.Income ? "ResidentPayment" : "VendorPayment")
-                : "LedgerEntry";
+            : SourceSalaryPaymentId.HasValue
+                ? "SalaryPayment"
+                : SourcePaymentId.HasValue
+                    ? (Direction == TransactionDirection.Income ? "ResidentPayment" : "VendorPayment")
+                    : "LedgerEntry";
 
     /// <summary>The related document ID, or this ledger entry ID for manual transactions.</summary>
-    public Guid ReferenceId => SourcePurchaseId ?? SourcePayslipId ?? SourcePaymentId ?? Id;
+    public Guid ReferenceId => SourcePurchaseId ?? SourcePayslipId ?? SourceSalaryPaymentId ?? SourcePaymentId ?? Id;
 
     public static Transaction Create(
         TransactionDirection direction,
@@ -64,7 +71,8 @@ public sealed class Transaction : SearchableEntity
         DateTimeOffset transactionDate,
         Guid? sourcePaymentId = null,
         Guid? sourcePurchaseId = null,
-        Guid? sourcePayslipId = null)
+        Guid? sourcePayslipId = null,
+        Guid? sourceSalaryPaymentId = null)
     {
         if (amount <= 0)
             throw new ArgumentException("Transaction amount must be positive");
@@ -79,6 +87,7 @@ public sealed class Transaction : SearchableEntity
             SourcePaymentId = sourcePaymentId,
             SourcePurchaseId = sourcePurchaseId,
             SourcePayslipId = sourcePayslipId,
+            SourceSalaryPaymentId = sourceSalaryPaymentId,
         };
         transaction.SetCreatedAt();
         return transaction;
@@ -177,6 +186,38 @@ public sealed class Transaction : SearchableEntity
             $"{payslip.EmployeeFullName} — {periodLabel} əmək haqqı · {MethodName(method)}",
             payslip.PaidAt.Value,
             sourcePayslipId: payslip.Id);
+    }
+
+    /// <summary>
+    /// Maaş ödənişi üçün transaction-lar yarat.
+    /// Hər line (əsas maaş, bonus, düzəliş) üçün ayrıca transaction - detallı mühasibat qeydi.
+    /// </summary>
+    public static IEnumerable<Transaction> ForSalaryPayment(
+        SalaryPayment salaryPayment,
+        string periodLabel)
+    {
+        if (salaryPayment.Status != SalaryPaymentStatus.Paid)
+        {
+            throw new InvalidOperationException($"SalaryPayment {salaryPayment.Id} hələ Paid statusunda deyil");
+        }
+
+        foreach (var line in salaryPayment.Lines)
+        {
+            var description = $"{salaryPayment.EmployeeFullName} — {periodLabel} — {line.Description}";
+            description += $" · {MethodName(salaryPayment.PaymentMethod)}";
+            if (!string.IsNullOrWhiteSpace(salaryPayment.Notes))
+            {
+                description += $" · {salaryPayment.Notes}";
+            }
+
+            yield return Create(
+                TransactionDirection.Expense,
+                SalaryPaymentCategory,
+                Math.Abs(line.Amount),
+                description,
+                salaryPayment.PaymentDate.ToUniversalTime(),
+                sourceSalaryPaymentId: salaryPayment.Id);
+        }
     }
 
     // No Delete(): the ledger is append-only.

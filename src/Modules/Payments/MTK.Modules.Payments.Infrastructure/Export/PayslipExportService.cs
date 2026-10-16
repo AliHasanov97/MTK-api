@@ -94,23 +94,6 @@ internal sealed class PayslipExportService : IPayslipExportService
             column.Item().PaddingTop(2).LineHorizontal(0.75f).LineColor(RuleColor);
             Line(column, "Ümumi (gross)", data.GrossSalary, bold: true);
 
-            column.Item().PaddingTop(8);
-
-            // ---- Deductions ----
-            Line(column, "DSMF (işçi payı)", -data.EmployeeDsmf);
-            Line(column, "İşsizlikdən sığorta (işçi payı)", -data.EmployeeUnemployment);
-            Line(column, "İcbari tibbi sığorta (işçi payı)", -data.EmployeeMedicalInsurance);
-            Line(column, "Gəlir vergisi", -data.IncomeTax);
-
-            column.Item().PaddingTop(2).LineHorizontal(0.75f).LineColor(RuleColor);
-            Line(column, "Net əmək haqqı", data.NetSalary, bold: true);
-
-            if (data.CourtDeductionAmount != 0)
-            {
-                column.Item().PaddingTop(8);
-                Line(column, $"Məhkəmə tutması ({data.CourtDeductionPercentage:0.##}%)", -data.CourtDeductionAmount);
-            }
-
             column.Item().PaddingTop(6).LineHorizontal(1.5f).LineColor(AccentColor);
             column.Item().PaddingTop(4).Row(row =>
             {

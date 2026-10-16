@@ -51,13 +51,6 @@ internal sealed class ExportPayrollRunQueryHandler : IQueryHandler<ExportPayroll
                 p.BaseSalary,
                 p.BonusAmount,
                 p.GrossSalary,
-                p.EmployeeDsmf,
-                p.EmployeeUnemployment,
-                p.EmployeeMedicalInsurance,
-                p.IncomeTax,
-                p.NetSalary,
-                p.CourtDeductionPercentage,
-                p.CourtDeductionAmount,
                 p.FinalNetSalary))
             .OrderBy(p => p.EmployeeFullName)
             .ToList();

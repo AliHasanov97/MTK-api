@@ -27,20 +27,7 @@ public sealed class Payslip : Entity
     public decimal AdjustmentAmount { get; private set; }
 
     public decimal GrossSalary { get; private set; }
-    public decimal EmployeeDsmf { get; private set; }
-    public decimal EmployeeUnemployment { get; private set; }
-    public decimal EmployeeMedicalInsurance { get; private set; }
-    public decimal TaxableIncome { get; private set; }
-    public decimal IncomeTax { get; private set; }
-    public decimal NetSalary { get; private set; }
-
-    public decimal CourtDeductionPercentage { get; private set; }
-    public decimal CourtDeductionAmount { get; private set; }
     public decimal FinalNetSalary { get; private set; }
-
-    public decimal EmployerDsmf { get; private set; }
-    public decimal EmployerUnemployment { get; private set; }
-    public decimal EmployerMedicalInsurance { get; private set; }
     public decimal TotalEmployerCost { get; private set; }
 
     public DateTimeOffset? PaidAt { get; private set; }
@@ -58,18 +45,7 @@ public sealed class Payslip : Entity
             BonusAmount = result.BonusAmount,
             AdjustmentAmount = result.AdjustmentAmount,
             GrossSalary = result.GrossSalary,
-            EmployeeDsmf = result.EmployeeDsmf,
-            EmployeeUnemployment = result.EmployeeUnemployment,
-            EmployeeMedicalInsurance = result.EmployeeMedicalInsurance,
-            TaxableIncome = result.TaxableIncome,
-            IncomeTax = result.IncomeTax,
-            NetSalary = result.NetSalary,
-            CourtDeductionPercentage = result.CourtDeductionPercentage,
-            CourtDeductionAmount = result.CourtDeductionAmount,
             FinalNetSalary = result.FinalNetSalary,
-            EmployerDsmf = result.EmployerDsmf,
-            EmployerUnemployment = result.EmployerUnemployment,
-            EmployerMedicalInsurance = result.EmployerMedicalInsurance,
             TotalEmployerCost = result.TotalEmployerCost
         };
 
@@ -88,20 +64,5 @@ public sealed class Payslip : Entity
         PaymentMethod = method;
         PaidAt = paidAt;
         SetUpdatedAt();
-
-        // Yalnız məhkəmə tutması varsa event raise et
-        if (CourtDeductionAmount > 0)
-        {
-            RaiseDomainEvent(new PayslipPaidDomainEvent
-            {
-                PayslipId = Id,
-                EmployeeId = EmployeeId,
-                CourtDeductionAmount = CourtDeductionAmount,
-                SalaryMonth = salaryMonth,
-                SalaryYear = salaryYear,
-                PaymentMethod = method,
-                PaidAt = paidAt
-            });
-        }
     }
 }

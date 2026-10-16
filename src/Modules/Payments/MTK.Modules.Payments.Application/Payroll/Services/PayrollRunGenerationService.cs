@@ -8,27 +8,21 @@ namespace MTK.Modules.Payments.Application.Payroll.Services;
 internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
 {
     private readonly IPayrollRunRepository _payrollRunRepository;
-    private readonly IPayrollTaxBracketRepository _payrollTaxBracketRepository;
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IPayrollBonusRepository _payrollBonusRepository;
-    private readonly IPayrollDeductionRepository _payrollDeductionRepository;
     private readonly IPayrollAdjustmentRepository _payrollAdjustmentRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public PayrollRunGenerationService(
         IPayrollRunRepository payrollRunRepository,
-        IPayrollTaxBracketRepository payrollTaxBracketRepository,
         IEmployeeRepository employeeRepository,
         IPayrollBonusRepository payrollBonusRepository,
-        IPayrollDeductionRepository payrollDeductionRepository,
         IPayrollAdjustmentRepository payrollAdjustmentRepository,
         IUnitOfWork unitOfWork)
     {
         _payrollRunRepository = payrollRunRepository;
-        _payrollTaxBracketRepository = payrollTaxBracketRepository;
         _employeeRepository = employeeRepository;
         _payrollBonusRepository = payrollBonusRepository;
-        _payrollDeductionRepository = payrollDeductionRepository;
         _payrollAdjustmentRepository = payrollAdjustmentRepository;
         _unitOfWork = unitOfWork;
     }
@@ -54,28 +48,10 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
                 "HR-dan sinxronlaşmış heç bir işçi tapılmadı"));
         }
 
-        var periodStart = new DateTimeOffset(year, month, 1, 0, 0, 0, TimeSpan.Zero);
-        var brackets = await _payrollTaxBracketRepository.GetEffectiveBracketsAsync(periodStart, cancellationToken);
-        if (brackets.Count == 0)
-        {
-            return Result.Failure<PayrollRunResponse>(new Error(
-                "PayrollRun.NoTaxBrackets",
-                $"{year}-{month:D2} tarixi üçün qüvvədə olan heç bir vergi/sığorta dərəcəsi tapılmadı"));
-        }
-
         var bonuses = await _payrollBonusRepository.GetForPeriodAsync(year, month, cancellationToken);
         var bonusByEmployee = bonuses
             .GroupBy(b => b.EmployeeId)
             .ToDictionary(g => g.Key, g => g.Sum(b => b.Amount));
-
-        var activeDeductions = await _payrollDeductionRepository.GetActiveAsync(periodStart, cancellationToken);
-        var deductionPercentageByEmployee = activeDeductions
-            .GroupBy(d => d.EmployeeId)
-            .ToDictionary(g => g.Key, g => g.Sum(d => d.PercentageSalary));
-
-        var maxDeductionByEmployee = activeDeductions
-            .GroupBy(d => d.EmployeeId)
-            .ToDictionary(g => g.Key, g => g.Sum(d => d.TotalRemaining ?? decimal.MaxValue));
 
         // HR əmrlərindən gələn iş saatı əsaslı düzəlişlər (məzuniyyət/ödənişsiz/kompensasiya və s.).
         var adjustments = await _payrollAdjustmentRepository.GetForPeriodAsync(year, month, cancellationToken);
@@ -107,19 +83,10 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
                 }
             }
 
-            var courtDeductionPercentage = Math.Min(100m, deductionPercentageByEmployee.GetValueOrDefault(employee.Id, 0m));
-            var maxCourtDeduction = maxDeductionByEmployee.GetValueOrDefault(employee.Id, decimal.MaxValue);
-
-            // Əgər maxCourtDeduction çox böyükdürsə (limit yoxdur), null pass edək
-            decimal? maxCourtDeductionNullable = maxCourtDeduction == decimal.MaxValue ? null : maxCourtDeduction;
-
             var result = PayrollCalculator.Calculate(
                 employee.BaseSalary,
                 bonusAmount,
-                adjustmentAmount,
-                courtDeductionPercentage,
-                brackets,
-                maxCourtDeductionNullable);
+                adjustmentAmount);
             run.AddPayslip(employee.Id, employee.FullName, result);
         }
 

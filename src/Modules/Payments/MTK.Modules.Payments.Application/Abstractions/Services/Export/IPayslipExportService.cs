@@ -21,11 +21,4 @@ public sealed record PayslipExportData(
     decimal BaseSalary,
     decimal BonusAmount,
     decimal GrossSalary,
-    decimal EmployeeDsmf,
-    decimal EmployeeUnemployment,
-    decimal EmployeeMedicalInsurance,
-    decimal IncomeTax,
-    decimal NetSalary,
-    decimal CourtDeductionPercentage,
-    decimal CourtDeductionAmount,
     decimal FinalNetSalary);

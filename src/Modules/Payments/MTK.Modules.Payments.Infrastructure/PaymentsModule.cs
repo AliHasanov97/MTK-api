@@ -88,11 +88,11 @@ public static class PaymentsModule
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-        services.AddScoped<IPayrollTaxBracketRepository, PayrollTaxBracketRepository>();
         services.AddScoped<IPayrollRunRepository, PayrollRunRepository>();
         services.AddScoped<IPayrollBonusRepository, PayrollBonusRepository>();
         services.AddScoped<IPayrollDeductionRepository, PayrollDeductionRepository>();
         services.AddScoped<IPayrollAdjustmentRepository, PayrollAdjustmentRepository>();
+        services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
@@ -110,6 +110,7 @@ public static class PaymentsModule
         services.AddScoped<IAnnualPaymentReportExcelExportService, AnnualPaymentReportExcelExportService>();
         services.AddScoped<IContractExportService, ContractExportService>();
         services.AddScoped<IPayslipExportService, PayslipExportService>();
+        services.AddScoped<ISalaryPaymentExportService, SalaryPaymentExportService>();
 
         // Services
         services.AddScoped<MTK.Modules.Payments.Application.Payments.Services.IPaymentAllocationService, MTK.Modules.Payments.Application.Payments.Services.PaymentAllocationService>();

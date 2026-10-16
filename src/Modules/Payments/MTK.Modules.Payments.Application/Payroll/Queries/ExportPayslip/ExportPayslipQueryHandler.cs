@@ -50,13 +50,6 @@ internal sealed class ExportPayslipQueryHandler : IQueryHandler<ExportPayslipQue
             payslip.BaseSalary,
             payslip.BonusAmount,
             payslip.GrossSalary,
-            payslip.EmployeeDsmf,
-            payslip.EmployeeUnemployment,
-            payslip.EmployeeMedicalInsurance,
-            payslip.IncomeTax,
-            payslip.NetSalary,
-            payslip.CourtDeductionPercentage,
-            payslip.CourtDeductionAmount,
             payslip.FinalNetSalary);
 
         var stream = _exportService.ExportToPdf(data);

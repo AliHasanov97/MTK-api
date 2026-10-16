@@ -27,6 +27,11 @@ public class BaseController : ControllerBase
         return Ok(new { message });
     }
 
+    protected IActionResult Created<T>(string uri, T data, string message = "Uğurla yaradıldı")
+    {
+        return base.Created(uri, new { data, message });
+    }
+
     protected IActionResult BadRequest(Error error)
     {
         return base.BadRequest(new { error = error.Message, code = error.Code });
