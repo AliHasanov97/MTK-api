@@ -45,14 +45,10 @@ internal sealed class VacationBalanceService : IVacationBalanceService
         var hireDate = DateOnly.FromDateTime(employee.StartWorkDate.UtcDateTime);
         var workYearStart = ResolveWorkYearStart(hireDate, asOfDateOnly);
 
-        // Əvvəlki iş ilinin qalığı — limitsiz keçir (CarriedOverDays).
-        var previous = await _vacationBalanceRepository.GetMostRecentBeforeAsync(employeeId, workYearStart, cancellationToken);
-        var carriedOverDays = Math.Max(0, previous?.RemainingDays ?? 0);
-
         var workYearStartOffset = new DateTimeOffset(workYearStart.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
         var breakdown = VacationEntitlementCalculator.Calculate(employee, workYearStartOffset);
 
-        var balance = VacationBalance.Create(employeeId, workYearStart, employee.VacationDays, breakdown, carriedOverDays);
+        var balance = VacationBalance.Create(employeeId, workYearStart, employee.VacationDays, breakdown);
 
         _vacationBalanceRepository.Add(balance);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

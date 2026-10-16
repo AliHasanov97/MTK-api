@@ -20,7 +20,6 @@ internal sealed class VacationBalanceConfiguration : IEntityTypeConfiguration<Va
         builder.Property(b => b.KarabakhWorkerDays).IsRequired();
         builder.Property(b => b.ChildrenUnder14Days).IsRequired();
         builder.Property(b => b.DisabledChildDays).IsRequired();
-        builder.Property(b => b.CarriedOverDays).IsRequired();
         builder.Property(b => b.UsedDays).IsRequired().HasDefaultValue(0);
         builder.Property(b => b.CompensatedDays).IsRequired().HasDefaultValue(0);
 

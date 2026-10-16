@@ -1190,9 +1190,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<int>("BaseEntitledDays")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CarriedOverDays")
-                        .HasColumnType("integer");
-
                     b.Property<int>("ChildrenUnder14Days")
                         .HasColumnType("integer");
 

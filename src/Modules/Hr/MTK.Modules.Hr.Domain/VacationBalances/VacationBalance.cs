@@ -35,9 +35,6 @@ public sealed class VacationBalance : Entity
     /// <summary>Maddə 117: əlil uşaq.</summary>
     public int DisabledChildDays { get; private set; }
 
-    /// <summary>Əvvəlki iş ilindən qalan (limitsiz keçən) istifadə olunmamış günlər.</summary>
-    public int CarriedOverDays { get; private set; }
-
     /// <summary>Bu iş ili ərzində VacationOrder ilə götürülmüş günlər.</summary>
     public int UsedDays { get; private set; }
 
@@ -45,7 +42,7 @@ public sealed class VacationBalance : Entity
     public int CompensatedDays { get; private set; }
 
     public int AdditionalDays => ExperienceBonusDays + KarabakhWorkerDays + ChildrenUnder14Days + DisabledChildDays;
-    public int TotalEntitledDays => BaseEntitledDays + AdditionalDays + CarriedOverDays;
+    public int TotalEntitledDays => BaseEntitledDays + AdditionalDays;
     public int RemainingDays => TotalEntitledDays - UsedDays - CompensatedDays;
 
     private VacationBalance() { }
@@ -54,8 +51,7 @@ public sealed class VacationBalance : Entity
         Guid employeeId,
         DateOnly workYearStart,
         int baseEntitledDays,
-        AdditionalVacationDaysBreakdown additionalDays,
-        int carriedOverDays)
+        AdditionalVacationDaysBreakdown additionalDays)
     {
         return new VacationBalance
         {
@@ -67,14 +63,13 @@ public sealed class VacationBalance : Entity
             ExperienceBonusDays = additionalDays.ExperienceBonusDays,
             KarabakhWorkerDays = additionalDays.KarabakhWorkerDays,
             ChildrenUnder14Days = additionalDays.ChildrenUnder14Days,
-            DisabledChildDays = additionalDays.DisabledChildDays,
-            CarriedOverDays = carriedOverDays
+            DisabledChildDays = additionalDays.DisabledChildDays
         };
     }
 
     /// <summary>
     /// İş tarixçəsi (staj) və ya ailə/sosial vəziyyət dəyişəndə (bax: EmployeeWorkHistoryChangedDomainEventHandler)
-    /// bu CARİ iş ilinin əlavə gün hesablamasını yeniləyir. BaseEntitledDays, CarriedOverDays, UsedDays və
+    /// bu CARİ iş ilinin əlavə gün hesablamasını yeniləyir. BaseEntitledDays, UsedDays və
     /// CompensatedDays-ə toxunmur — yalnız staj/Qarabağ/uşaq/əlil-uşaq bonusları yenidən hesablanır.
     /// </summary>
     public void RecalculateAdditionalDays(AdditionalVacationDaysBreakdown additionalDays)
