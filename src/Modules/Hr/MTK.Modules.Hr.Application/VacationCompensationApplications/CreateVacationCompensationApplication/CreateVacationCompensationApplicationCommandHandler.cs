@@ -4,7 +4,6 @@ using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Hr.Application.Abstractions.Authentication;
 using MTK.Modules.Hr.Application.Abstractions.Data;
-using MTK.Modules.Hr.Application.VacationBalances.Services;
 using MTK.Modules.Hr.Domain.Employees;
 using MTK.Modules.Hr.Domain.VacationCompensationApplications;
 using MTK.Modules.Hr.Domain.VacationBalances;
@@ -17,7 +16,6 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
     private readonly IVacationCompensationApplicationRepository _repository;
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IVacationBalanceRepository _vacationBalanceRepository;
-    private readonly IVacationBalanceService _vacationBalanceService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IUserContext _userContext;
@@ -26,7 +24,6 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
         IVacationCompensationApplicationRepository repository,
         IEmployeeRepository employeeRepository,
         IVacationBalanceRepository vacationBalanceRepository,
-        IVacationBalanceService vacationBalanceService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         IUserContext userContext)
@@ -34,7 +31,6 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
         _repository = repository;
         _employeeRepository = employeeRepository;
         _vacationBalanceRepository = vacationBalanceRepository;
-        _vacationBalanceService = vacationBalanceService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _userContext = userContext;
@@ -52,17 +48,19 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
 
         // 1.5. Balansı müəyyənləşdir və qalan günləri yoxla.
         // İstifadəçi konkret balans seçibsə, onu istifadə edirik — amma mütləq həmin işçinin
-        // balansı olmalıdır. Seçməyibsə (boş GUID), cari tarixə uyğun balans götürülür.
+        // balansı olmalıdır. Seçməyibsə (boş GUID), FIFO məntiqinə görə ən köhnə iş ilindən götürülür.
         VacationBalance balance;
         if (request.VacationBalanceId == Guid.Empty)
         {
-            // Boş GUID göndərilibsə - cari iş ilinin balansını avtomatik seç
-            var balanceResult = await _vacationBalanceService.EnsureCurrentAsync(
-                request.EmployeeId, DateTimeOffset.UtcNow, cancellationToken);
-            if (balanceResult.IsFailure)
-                return Result.Failure<ResponseObjectWithName>(balanceResult.Error);
+            // Boş GUID göndərilibsə - FIFO (First In First Out): qalan günləri olan ən köhnə balansı seç
+            var oldestBalance = await _vacationBalanceRepository.GetOldestWithRemainingDaysAsync(
+                request.EmployeeId, cancellationToken);
 
-            balance = balanceResult.Value;
+            if (oldestBalance is null)
+                return Result.Failure<ResponseObjectWithName>(
+                    new Error("VacationBalance.NoRemainingDays", "İşçinin qalan məzuniyyət günü yoxdur"));
+
+            balance = oldestBalance;
         }
         else
         {

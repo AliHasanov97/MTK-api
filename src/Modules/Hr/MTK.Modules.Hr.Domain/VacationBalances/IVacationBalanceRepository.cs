@@ -9,4 +9,7 @@ public interface IVacationBalanceRepository : IRepository<VacationBalance>
 
     /// <summary>Verilmiş iş ili başlanğıcından əvvəlki ən son balans sətri (carry-over üçün).</summary>
     Task<VacationBalance?> GetMostRecentBeforeAsync(Guid employeeId, DateOnly workYearStart, CancellationToken cancellationToken = default);
+
+    /// <summary>Qalan günləri olan ən köhnə iş ili balansı (FIFO - kompensasiya ödəniş üçün).</summary>
+    Task<VacationBalance?> GetOldestWithRemainingDaysAsync(Guid employeeId, CancellationToken cancellationToken = default);
 }

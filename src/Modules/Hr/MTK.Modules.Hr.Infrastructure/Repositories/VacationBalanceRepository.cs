@@ -24,4 +24,12 @@ internal sealed class VacationBalanceRepository : Repository<VacationBalance>, I
             .OrderByDescending(b => b.WorkYearStart)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<VacationBalance?> GetOldestWithRemainingDaysAsync(Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<VacationBalance>()
+            .Where(b => b.EmployeeId == employeeId && b.RemainingDays > 0)
+            .OrderBy(b => b.WorkYearStart)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }
