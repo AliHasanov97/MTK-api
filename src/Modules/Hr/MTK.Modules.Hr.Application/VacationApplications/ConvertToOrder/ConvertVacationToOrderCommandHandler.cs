@@ -70,6 +70,7 @@ internal sealed class ConvertVacationToOrderCommandHandler
         var order = VacationOrder.Create(
             application.Id,
             application.EmployeeId,
+            application.VacationBalanceId,
             application.StartDate,
             application.EndDate!.Value,
             application.TotalRequestedDays,

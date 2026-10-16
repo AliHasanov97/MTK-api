@@ -15,7 +15,8 @@ internal sealed class SalaryDeductionUpdatedIntegrationEventHandler(ISender send
     {
         var command = new UpdatePayrollDeductionCommand(
             integrationEvent.SalaryDeductionId,
-            integrationEvent.RemainingDebt);
+            integrationEvent.StateFeeRemaining,
+            integrationEvent.DebtRemaining);
 
         Result result = await sender.Send(command, cancellationToken);
 

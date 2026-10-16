@@ -26,15 +26,15 @@ public sealed class CompensationOrder : Order
     public Employee Employee { get; private set; } = null!;
 
     /// <summary>
+    /// Hansı iş ilinin balansından kompensasiya edilib
+    /// </summary>
+    public Guid VacationBalanceId { get; private set; }
+    public VacationBalances.VacationBalance VacationBalance { get; private set; } = null!;
+
+    /// <summary>
     /// Neçə gün kompensasiya edilir
     /// </summary>
     public int CompensatedDays { get; private set; }
-
-    /// <summary>
-    /// Kompensasiya ediləcək iş ili (ərizədən köçürülür)
-    /// </summary>
-    public DateOnly? WorkYearStart { get; private set; }
-    public DateOnly? WorkYearEnd { get; private set; }
 
     /// <summary>
     /// Qeydlər
@@ -52,11 +52,10 @@ public sealed class CompensationOrder : Order
     public static CompensationOrder Create(
         Guid compensationApplicationId,
         Guid employeeId,
+        Guid vacationBalanceId,
         int compensatedDays,
         Guid createdById,
-        string? notes = null,
-        DateOnly? workYearStart = null,
-        DateOnly? workYearEnd = null)
+        string? notes = null)
     {
         var order = new CompensationOrder
         {
@@ -64,9 +63,8 @@ public sealed class CompensationOrder : Order
             Type = OrderType.VacationCompensation,
             CompensationApplicationId = compensationApplicationId,
             EmployeeId = employeeId,
+            VacationBalanceId = vacationBalanceId,
             CompensatedDays = compensatedDays,
-            WorkYearStart = workYearStart,
-            WorkYearEnd = workYearEnd,
             CreatedById = createdById,
             Notes = notes
         };
@@ -77,9 +75,7 @@ public sealed class CompensationOrder : Order
         {
             OrderId = order.Id,
             EmployeeId = employeeId,
-            CompensatedDays = compensatedDays,
-            WorkYearStart = workYearStart,
-            WorkYearEnd = workYearEnd
+            CompensatedDays = compensatedDays
         });
 
         return order;

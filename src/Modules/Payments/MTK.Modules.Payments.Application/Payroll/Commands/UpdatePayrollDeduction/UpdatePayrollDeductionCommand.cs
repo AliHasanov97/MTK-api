@@ -4,4 +4,5 @@ namespace MTK.Modules.Payments.Application.Payroll.Commands.UpdatePayrollDeducti
 
 public sealed record UpdatePayrollDeductionCommand(
     Guid SalaryDeductionId,
-    decimal RemainingDebt) : ICommand;
+    decimal StateFeeRemaining,
+    decimal DebtRemaining) : ICommand;

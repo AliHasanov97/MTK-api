@@ -10,12 +10,19 @@ namespace MTK.Modules.Hr.Domain.VacationApplications;
 
 /// <summary>
 /// Ödənişli məzuniyyət müraciəti
-/// Bir ərizədə bir neçə iş ilindən məzuniyyət götürülə bilər (many-to-many)
+/// Hər ərizə bir VacationBalance-dən (bir iş ilindən) götürülür.
+/// Əgər bir neçə iş ilindən götürmək lazımdırsa, ayrı-ayrı ərizələr yaradılır.
 /// </summary>
 public sealed class VacationApplication : Application
 {
     public Guid EmployeeId { get; private set; }
     public Employee Employee { get; private set; } = null!;
+
+    /// <summary>
+    /// Hansı iş ilinin balansından götürülür (istifadəçi seçir)
+    /// </summary>
+    public Guid VacationBalanceId { get; private set; }
+    public VacationBalances.VacationBalance VacationBalance { get; private set; } = null!;
 
     /// <summary>
     /// Məzuniyyətin başlama tarixi
@@ -53,6 +60,7 @@ public sealed class VacationApplication : Application
     /// </summary>
     public static Result<VacationApplication> Create(
         Guid employeeId,
+        Guid vacationBalanceId,
         DateTimeOffset startDate,
         DateTimeOffset? endDate,
         int totalRequestedDays,
@@ -76,6 +84,7 @@ public sealed class VacationApplication : Application
             Type = ApplicationType.Vacation,
             Status = ApplicationStatus.PendingApproval,
             EmployeeId = employeeId,
+            VacationBalanceId = vacationBalanceId,
             StartDate = DateTimeHelper.ToUtcDateOnly(startDate),
             EndDate = DateTimeHelper.ToUtcDateOnly(endDate),
             TotalRequestedDays = totalRequestedDays,

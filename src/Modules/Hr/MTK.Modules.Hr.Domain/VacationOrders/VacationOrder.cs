@@ -25,6 +25,12 @@ public sealed class VacationOrder : Order
     public Employee Employee { get; private set; } = null!;
 
     /// <summary>
+    /// Hansı iş ilinin balansından götürülüb
+    /// </summary>
+    public Guid VacationBalanceId { get; private set; }
+    public VacationBalances.VacationBalance VacationBalance { get; private set; } = null!;
+
+    /// <summary>
     /// Məzuniyyətin başlama tarixi
     /// </summary>
     public DateTimeOffset StartDate { get; private set; }
@@ -61,6 +67,7 @@ public sealed class VacationOrder : Order
     public static VacationOrder Create(
         Guid vacationApplicationId,
         Guid employeeId,
+        Guid vacationBalanceId,
         DateTimeOffset startDate,
         DateTimeOffset endDate,
         int vacationDays,
@@ -75,6 +82,7 @@ public sealed class VacationOrder : Order
             Type = OrderType.Vacation,
             VacationApplicationId = vacationApplicationId,
             EmployeeId = employeeId,
+            VacationBalanceId = vacationBalanceId,
             StartDate = DateTimeHelper.ToUtcDateOnly(startDate),
             EndDate = DateTimeHelper.ToUtcDateOnly(endDate),
             VacationDays = vacationDays,

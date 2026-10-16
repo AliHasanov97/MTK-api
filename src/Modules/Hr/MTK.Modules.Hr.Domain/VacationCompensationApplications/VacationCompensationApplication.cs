@@ -18,19 +18,15 @@ public sealed class VacationCompensationApplication : Application
     public Employee Employee { get; private set; } = null!;
 
     /// <summary>
+    /// Hansı iş ilinin balansından kompensasiya edilir (istifadəçi seçir)
+    /// </summary>
+    public Guid VacationBalanceId { get; private set; }
+    public VacationBalances.VacationBalance VacationBalance { get; private set; } = null!;
+
+    /// <summary>
     /// Neçə gün kompensasiya ediləcək
     /// </summary>
     public int RequestedDays { get; private set; }
-
-    /// <summary>
-    /// Kompensasiya ediləcək iş ilinin başlanğıcı (məzuniyyət balansı izlənmədiyi üçün əl ilə daxil edilir)
-    /// </summary>
-    public DateOnly? WorkYearStart { get; private set; }
-
-    /// <summary>
-    /// Kompensasiya ediləcək iş ilinin sonu
-    /// </summary>
-    public DateOnly? WorkYearEnd { get; private set; }
 
     /// <summary>
     /// Qeydlər
@@ -53,20 +49,11 @@ public sealed class VacationCompensationApplication : Application
         /// </summary>
     public static Result<VacationCompensationApplication> Create(
         Guid employeeId,
+        Guid vacationBalanceId,
         int requestedDays,
         Guid createdById,
-        string? notes = null,
-        DateOnly? workYearStart = null,
-        DateOnly? workYearEnd = null)
+        string? notes = null)
     {
-        if (workYearStart.HasValue != workYearEnd.HasValue)
-            return Result.Failure<VacationCompensationApplication>(
-                new Error("VacationCompensationApplication.WorkYear", "İş ilinin başlanğıc və bitmə tarixi birlikdə daxil edilməlidir"));
-
-        if (workYearStart.HasValue && workYearEnd < workYearStart)
-            return Result.Failure<VacationCompensationApplication>(
-                new Error("VacationCompensationApplication.WorkYear", "İş ilinin bitmə tarixi başlanğıcdan əvvəl ola bilməz"));
-
         if (requestedDays <= 0)
             return Result.Failure<VacationCompensationApplication>(
                 VacationCompensationApplicationErrors.InvalidRequestedDays);
@@ -78,9 +65,8 @@ public sealed class VacationCompensationApplication : Application
             Type = ApplicationType.VacationCompensation,
             Status = ApplicationStatus.PendingApproval,
             EmployeeId = employeeId,
+            VacationBalanceId = vacationBalanceId,
             RequestedDays = requestedDays,
-            WorkYearStart = workYearStart,
-            WorkYearEnd = workYearEnd,
             CreatedById = createdById,
             Notes = notes
         };

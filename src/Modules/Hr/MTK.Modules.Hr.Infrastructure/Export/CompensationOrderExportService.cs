@@ -125,8 +125,8 @@ internal sealed class CompensationOrderExportService
 
                             text.Span(", Azərbaycan Respublikasının Əmək Məcəlləsinin 135-ci maddəsinin 2-ci bəndinə əsasən ");
 
-                            text.Span(order.WorkYearStart.HasValue && order.WorkYearEnd.HasValue
-                                ? $"{order.WorkYearStart.Value:dd.MM.yyyy}-{GetYearSuffix(order.WorkYearStart.Value.Year)} ildən {order.WorkYearEnd.Value:dd.MM.yyyy}-{GetYearSuffix(order.WorkYearEnd.Value.Year)} ilədək "
+                            text.Span(order.VacationBalance != null
+                                ? $"{order.VacationBalance.WorkYearStart:dd.MM.yyyy}-{GetYearSuffix(order.VacationBalance.WorkYearStart.Year)} ildən {order.VacationBalance.WorkYearEnd:dd.MM.yyyy}-{GetYearSuffix(order.VacationBalance.WorkYearEnd.Year)} ilədək "
                                 : "__.__.____-cı ildən __.__.____-ci ilədək ");
 
                             text.Span("iş ili üçün istifadə etmədiyi əmək məzuniyyətinə görə ");

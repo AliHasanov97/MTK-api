@@ -8,10 +8,13 @@ public static class VacationApplicationErrors
         "VacationApplication.NotFound",
         "Məzuniyyət müraciəti tapılmadı");
 
+    public static readonly Error BalanceNotFound = new Error(
+        "VacationApplication.BalanceNotFound",
+        "Məzuniyyət balansı tapılmadı");
 
-
-
-
+    public static readonly Error BalanceEmployeeMismatch = new Error(
+        "VacationApplication.BalanceEmployeeMismatch",
+        "Məzuniyyət balansı bu işçiyə aid deyil");
 
     public static readonly Error AlreadyConvertedToOrder = new Error(
         "VacationApplication.AlreadyConvertedToOrder",

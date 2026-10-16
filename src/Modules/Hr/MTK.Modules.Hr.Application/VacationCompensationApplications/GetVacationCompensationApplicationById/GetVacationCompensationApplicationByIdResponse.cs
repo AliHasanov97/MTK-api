@@ -1,4 +1,5 @@
 using MTK.Common.Presentation.Responses;
+using MTK.Modules.Hr.Application.CompensationOrders.GetCompensationOrderById;
 
 namespace MTK.Modules.Hr.Application.VacationCompensationApplications.GetVacationCompensationApplicationById;
 
@@ -9,8 +10,7 @@ public sealed class GetVacationCompensationApplicationByIdResponse
     public string Status { get; set; } = null!;
     public ResponseObjectWithName Employee { get; set; } = null!;
     public int RequestedDays { get; set; }
-    public DateOnly? WorkYearStart { get; set; }
-    public DateOnly? WorkYearEnd { get; set; }
+    public VacationBalanceInfo? VacationBalance { get; set; }
     public string? Notes { get; set; }
     public ResponseObjectWithName? CompensationOrder { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

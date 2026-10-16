@@ -8,6 +8,7 @@ using MTK.Modules.Hr.Application.VacationBalances.Services;
 using MTK.Modules.Hr.Domain.CompensationOrders;
 using MTK.Modules.Hr.Domain.Orders;
 using MTK.Modules.Hr.Domain.VacationCompensationApplications;
+using MTK.Modules.Hr.Domain.VacationBalances;
 
 namespace MTK.Modules.Hr.Application.VacationCompensationApplications.ConvertToOrder;
 
@@ -16,7 +17,7 @@ internal sealed class ConvertVacationCompensationToOrderCommandHandler
 {
     private readonly IVacationCompensationApplicationRepository _compensationApplicationRepository;
     private readonly ICompensationOrderRepository _compensationOrderRepository;
-    private readonly IVacationBalanceService _vacationBalanceService;
+    private readonly IVacationBalanceRepository _vacationBalanceRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContext _userContext;
     private readonly IMapper _mapper;
@@ -24,14 +25,14 @@ internal sealed class ConvertVacationCompensationToOrderCommandHandler
     public ConvertVacationCompensationToOrderCommandHandler(
         IVacationCompensationApplicationRepository compensationApplicationRepository,
         ICompensationOrderRepository compensationOrderRepository,
-        IVacationBalanceService vacationBalanceService,
+        IVacationBalanceRepository vacationBalanceRepository,
         IUnitOfWork unitOfWork,
         IUserContext userContext,
         IMapper mapper)
     {
         _compensationApplicationRepository = compensationApplicationRepository;
         _compensationOrderRepository = compensationOrderRepository;
-        _vacationBalanceService = vacationBalanceService;
+        _vacationBalanceRepository = vacationBalanceRepository;
         _unitOfWork = unitOfWork;
         _userContext = userContext;
         _mapper = mapper;
@@ -63,24 +64,19 @@ internal sealed class ConvertVacationCompensationToOrderCommandHandler
         var order = CompensationOrder.Create(
             application.Id,
             application.EmployeeId,
+            application.VacationBalanceId,
             application.RequestedDays,
             _userContext.UserId,
-            application.Notes,
-            application.WorkYearStart,
-            application.WorkYearEnd
+            application.Notes
         );
 
-        // 3.5. Balansdan günləri çıx
-        var asOfDate = application.WorkYearStart.HasValue
-            ? new DateTimeOffset(application.WorkYearStart.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
-            : (DateTimeOffset?)null;
+        // 3.5. Balansdan günləri çıx (artıq VacationBalanceId var, tarix lazım deyil)
+        var balance = await _vacationBalanceRepository.GetByIdAsync(application.VacationBalanceId, cancellationToken);
+        if (balance is null)
+            return Result.Failure<ConvertVacationCompensationToOrderResponse>(
+                new Error("VacationBalance.NotFound", "Məzuniyyət balansı tapılmadı"));
 
-        var balanceResult = await _vacationBalanceService.EnsureCurrentAsync(
-            application.EmployeeId, asOfDate, cancellationToken);
-        if (balanceResult.IsFailure)
-            return Result.Failure<ConvertVacationCompensationToOrderResponse>(balanceResult.Error);
-
-        balanceResult.Value.RegisterCompensatedDays(application.RequestedDays);
+        balance.RegisterCompensatedDays(application.RequestedDays);
 
         // 4. Saxla
         await _compensationOrderRepository.AddAsync(order, cancellationToken);

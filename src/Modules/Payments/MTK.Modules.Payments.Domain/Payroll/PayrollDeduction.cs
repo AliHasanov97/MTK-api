@@ -8,6 +8,8 @@ namespace MTK.Modules.Payments.Domain.Payroll;
 /// etibarən, silinənə qədər (borc ödənilib/qərar ləğv olunub) hər ay tətbiq olunur.
 /// Silinmə HR-dəki SalaryDeductionDeleted event-i ilə bu snapshot-un özünün
 /// (soft-)silinməsi ilə əks olunur.
+///
+/// FIFO qaydası: əvvəlcə dövlət rüsumu tam ödənilir, sonra əsas borc.
 /// </summary>
 public sealed class PayrollDeduction : Entity
 {
@@ -25,24 +27,33 @@ public sealed class PayrollDeduction : Entity
     public Guid EmployeeId { get; private set; }
     public decimal PercentageSalary { get; private set; }
     public DateTimeOffset StartDate { get; private set; }
-    public decimal? MaxDeductionAmount { get; private set; }
+    public decimal StateFee { get; private set; }
+    public decimal? StateFeeRemaining { get; private set; }
+    public decimal? DebtRemaining { get; private set; }
+
+    /// <summary>Ümumi qalan məbləğ (dövlət rüsumu + əsas borc).</summary>
+    public decimal? TotalRemaining => (StateFeeRemaining ?? 0) + (DebtRemaining ?? 0);
 
     public static PayrollDeduction Create(
         Guid id,
         Guid employeeId,
         decimal percentageSalary,
         DateTimeOffset startDate,
-        decimal? maxDeductionAmount = null)
+        decimal stateFee,
+        decimal debt)
     {
         var deduction = new PayrollDeduction(id, employeeId, percentageSalary, startDate);
-        deduction.MaxDeductionAmount = maxDeductionAmount;
+        deduction.StateFee = stateFee;
+        deduction.StateFeeRemaining = stateFee > 0 ? stateFee : null;
+        deduction.DebtRemaining = debt > 0 ? debt : null;
         deduction.SetCreatedAt();
         return deduction;
     }
 
-    public void UpdateRemainingDebt(decimal remainingDebt)
+    public void UpdateRemaining(decimal stateFeeRemaining, decimal debtRemaining)
     {
-        MaxDeductionAmount = remainingDebt > 0 ? remainingDebt : null;
+        StateFeeRemaining = stateFeeRemaining > 0 ? stateFeeRemaining : null;
+        DebtRemaining = debtRemaining > 0 ? debtRemaining : null;
         SetUpdatedAt();
     }
 }

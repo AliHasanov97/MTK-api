@@ -18,6 +18,8 @@ public sealed class GetSalaryDeductionByIdResponse
     public decimal Debt { get; set; }
     public decimal TotalPaid { get; set; }
     public decimal RemainingDebt { get; set; }
+    public decimal StateFeeRemaining { get; set; }
+    public decimal DebtRemaining { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public ResponseObjectWithName CreatedBy { get; set; } = null!;
 }

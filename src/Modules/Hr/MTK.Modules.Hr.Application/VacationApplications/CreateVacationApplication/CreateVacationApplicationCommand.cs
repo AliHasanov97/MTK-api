@@ -8,6 +8,7 @@ namespace MTK.Modules.Hr.Application.VacationApplications.CreateVacationApplicat
 /// </summary>
 public sealed record CreateVacationApplicationCommand(
     Guid EmployeeId,
+    Guid VacationBalanceId,
     DateTimeOffset StartDate,
     DateTimeOffset? EndDate,         // Nullable: EndDate OR RequestedDays
     int? RequestedDays,              // Nullable: EndDate OR RequestedDays

@@ -9,15 +9,18 @@ public sealed class SalaryDeductionUpdatedIntegrationEvent : IntegrationEvent
         DateTime occurredOnUtc,
         Guid salaryDeductionId,
         Guid employeeId,
-        decimal remainingDebt)
+        decimal stateFeeRemaining,
+        decimal debtRemaining)
         : base(integrationEventId, occurredOnUtc)
     {
         SalaryDeductionId = salaryDeductionId;
         EmployeeId = employeeId;
-        RemainingDebt = remainingDebt;
+        StateFeeRemaining = stateFeeRemaining;
+        DebtRemaining = debtRemaining;
     }
 
     public Guid SalaryDeductionId { get; }
     public Guid EmployeeId { get; }
-    public decimal RemainingDebt { get; }
+    public decimal StateFeeRemaining { get; }
+    public decimal DebtRemaining { get; }
 }

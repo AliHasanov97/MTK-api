@@ -1,5 +1,6 @@
 using AutoMapper;
 using MTK.Common.Presentation.Responses;
+using MTK.Modules.Hr.Application.CompensationOrders.GetCompensationOrderById;
 using MTK.Modules.Hr.Application.VacationCompensationApplications.CreateVacationCompensationApplication;
 using MTK.Modules.Hr.Application.VacationCompensationApplications.GetVacationCompensationApplicationById;
 using MTK.Modules.Hr.Application.VacationCompensationApplications.SearchVacationCompensationApplications;
@@ -22,6 +23,7 @@ public class VacationCompensationApplicationProfile : Profile
         CreateMap<VacationCompensationApplication, GetVacationCompensationApplicationByIdResponse>()
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             .ForMember(dest => dest.Employee, opt => opt.MapFrom(src => src.Employee))
+            .ForMember(dest => dest.VacationBalance, opt => opt.MapFrom(src => src.VacationBalance))
             .ForMember(dest => dest.CompensationOrder, opt => opt.MapFrom(src => src.CompensationOrder))
             .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy));
 

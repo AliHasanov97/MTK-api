@@ -1148,14 +1148,14 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("DebtRemaining")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
-
-                    b.Property<decimal?>("MaxDeductionAmount")
-                        .HasColumnType("numeric");
 
                     b.Property<decimal>("PercentageSalary")
                         .HasPrecision(5, 2)
@@ -1163,6 +1163,12 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("StartDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("StateFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("StateFeeRemaining")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

@@ -19,9 +19,14 @@ public sealed class SalaryDeduction : Order
     public decimal StateFee { get; private set; }
     public string Creditor { get; private set; } = string.Empty;
     public decimal Debt { get; private set; }
-    public decimal TotalPaid { get; private set; }
+    public decimal StateFeeRemaining { get; private set; }
+    public decimal DebtRemaining { get; private set; }
 
-    public decimal RemainingDebt => Math.Max(0, Debt - TotalPaid);
+    /// <summary>Ümumi qalan məbləğ (dövlət rüsumu + əsas borc).</summary>
+    public decimal RemainingDebt => StateFeeRemaining + DebtRemaining;
+
+    /// <summary>Ümumi ödənilmiş məbləğ (dövlət rüsumu + əsas borc ödənilənlər).</summary>
+    public decimal TotalPaid => (StateFee - StateFeeRemaining) + (Debt - DebtRemaining);
 
     private SalaryDeduction() { }
 
@@ -48,8 +53,10 @@ public sealed class SalaryDeduction : Order
             StartDate = startDate,
             PercentageSalary = percentageSalary,
             StateFee = stateFee,
+            StateFeeRemaining = stateFee,
             Creditor = creditor,
             Debt = debt,
+            DebtRemaining = debt,
             CreatedById = createdById
         };
 
@@ -59,12 +66,17 @@ public sealed class SalaryDeduction : Order
             EmployeeId = employeeId,
             PercentageSalary = percentageSalary,
             StartDate = startDate,
+            StateFee = stateFee,
             Debt = debt
         });
 
         return salaryDeduction;
     }
 
+    /// <summary>
+    /// Ödəniş qeyd edir. FIFO qaydası ilə: əvvəlcə dövlət rüsumu tam ödənilir,
+    /// sonra əsas borc ödənilir.
+    /// </summary>
     public void RecordPayment(decimal amount)
     {
         if (amount <= 0)
@@ -74,7 +86,23 @@ public sealed class SalaryDeduction : Order
             throw new InvalidOperationException(
                 $"Ödəniş məbləği ({amount}) qalan borcdan ({RemainingDebt}) çoxdur");
 
-        TotalPaid += amount;
+        decimal remainingAmount = amount;
+
+        // FIFO: əvvəlcə dövlət rüsumunu ödə
+        if (StateFeeRemaining > 0)
+        {
+            decimal stateFeePayment = Math.Min(remainingAmount, StateFeeRemaining);
+            StateFeeRemaining -= stateFeePayment;
+            remainingAmount -= stateFeePayment;
+        }
+
+        // Qalan məbləğ varsa, əsas borca tətbiq et
+        if (remainingAmount > 0 && DebtRemaining > 0)
+        {
+            decimal debtPayment = Math.Min(remainingAmount, DebtRemaining);
+            DebtRemaining -= debtPayment;
+        }
+
         SetUpdatedAt();
 
         RaiseDomainEvent(new SalaryDeductionPaymentRecordedDomainEvent
@@ -82,7 +110,8 @@ public sealed class SalaryDeduction : Order
             SalaryDeductionId = Id,
             EmployeeId = EmployeeId,
             AmountPaid = amount,
-            RemainingDebt = RemainingDebt
+            StateFeeRemaining = StateFeeRemaining,
+            DebtRemaining = DebtRemaining
         });
     }
 

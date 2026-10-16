@@ -1413,11 +1413,16 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<int>("TotalRequestedDays")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("VacationBalanceId")
+                        .HasColumnType("uuid");
+
                     b.HasIndex("EmployeeId");
 
                     b.HasIndex("EndDate");
 
                     b.HasIndex("StartDate");
+
+                    b.HasIndex("VacationBalanceId");
 
                     b.ToTable("vacation_applications", "hr");
                 });
@@ -1436,13 +1441,12 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<int>("RequestedDays")
                         .HasColumnType("integer");
 
-                    b.Property<DateOnly?>("WorkYearEnd")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("WorkYearStart")
-                        .HasColumnType("date");
+                    b.Property<Guid>("VacationBalanceId")
+                        .HasColumnType("uuid");
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("VacationBalanceId");
 
                     b.ToTable("vacation_compensation_applications", "hr");
                 });
@@ -1511,16 +1515,15 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<DateOnly?>("WorkYearEnd")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("WorkYearStart")
-                        .HasColumnType("date");
+                    b.Property<Guid>("VacationBalanceId")
+                        .HasColumnType("uuid");
 
                     b.HasIndex("CompensationApplicationId")
                         .IsUnique();
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("VacationBalanceId");
 
                     b.ToTable("compensation_orders", "hr");
                 });
@@ -1649,6 +1652,9 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<decimal>("Debt")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("DebtRemaining")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("District")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1672,7 +1678,7 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<decimal>("StateFee")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("TotalPaid")
+                    b.Property<decimal>("StateFeeRemaining")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasIndex("EmployeeId");
@@ -1755,6 +1761,9 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<Guid>("VacationApplicationId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("VacationBalanceId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("VacationDays")
                         .HasColumnType("integer");
 
@@ -1768,6 +1777,8 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
 
                     b.HasIndex("VacationApplicationId")
                         .IsUnique();
+
+                    b.HasIndex("VacationBalanceId");
 
                     b.ToTable("vacation_orders", "hr");
                 });
@@ -2266,7 +2277,15 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", "VacationBalance")
+                        .WithMany()
+                        .HasForeignKey("VacationBalanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Employee");
+
+                    b.Navigation("VacationBalance");
                 });
 
             modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationCompensationApplications.VacationCompensationApplication", b =>
@@ -2283,7 +2302,15 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", "VacationBalance")
+                        .WithMany()
+                        .HasForeignKey("VacationBalanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Employee");
+
+                    b.Navigation("VacationBalance");
                 });
 
             modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationReturnApplications.VacationReturnApplication", b =>
@@ -2348,9 +2375,17 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", "VacationBalance")
+                        .WithMany()
+                        .HasForeignKey("VacationBalanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("CompensationApplication");
 
                     b.Navigation("Employee");
+
+                    b.Navigation("VacationBalance");
                 });
 
             modelBuilder.Entity("MTK.Modules.Hr.Domain.EducationLeaveOrders.EducationLeaveOrder", b =>
@@ -2540,9 +2575,17 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MTK.Modules.Hr.Domain.VacationBalances.VacationBalance", "VacationBalance")
+                        .WithMany()
+                        .HasForeignKey("VacationBalanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Employee");
 
                     b.Navigation("VacationApplication");
+
+                    b.Navigation("VacationBalance");
                 });
 
             modelBuilder.Entity("MTK.Modules.Hr.Domain.VacationReturnOrders.VacationReturnOrder", b =>

@@ -17,7 +17,10 @@ internal sealed class PayrollDeductionRepository : Repository<PayrollDeduction>,
     public Task<List<PayrollDeduction>> GetActiveAsync(DateTimeOffset asOfDate, CancellationToken cancellationToken = default)
     {
         return PaymentsContext.PayrollDeductions
-            .Where(d => d.StartDate <= asOfDate && d.DeletedAt == null)
+            .Where(d => d.StartDate <= asOfDate
+                && d.DeletedAt == null
+                && ((d.StateFeeRemaining.HasValue && d.StateFeeRemaining.Value > 0)
+                    || (d.DebtRemaining.HasValue && d.DebtRemaining.Value > 0)))
             .ToListAsync(cancellationToken);
     }
 }

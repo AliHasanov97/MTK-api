@@ -25,6 +25,8 @@ public class SearchSalaryDeductionsResponseItem
     public decimal Debt { get; set; }
     public decimal TotalPaid { get; set; }
     public decimal RemainingDebt { get; set; }
+    public decimal StateFeeRemaining { get; set; }
+    public decimal DebtRemaining { get; set; }
     public ResponseObjectWithName CreatedBy { get; set; } = null!;
     public DateTimeOffset CreatedAt { get; set; }
 }

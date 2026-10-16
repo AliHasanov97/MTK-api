@@ -7,5 +7,6 @@ public sealed record SalaryDeductionPaymentRecordedDomainEvent : DomainEvent
     public Guid SalaryDeductionId { get; init; }
     public Guid EmployeeId { get; init; }
     public decimal AmountPaid { get; init; }
-    public decimal RemainingDebt { get; init; }
+    public decimal StateFeeRemaining { get; init; }
+    public decimal DebtRemaining { get; init; }
 }

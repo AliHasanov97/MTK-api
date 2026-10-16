@@ -8,6 +8,7 @@ using MTK.Modules.Hr.Application.VacationApplications.Services;
 using MTK.Modules.Hr.Application.VacationBalances.Services;
 using MTK.Modules.Hr.Domain.Employees;
 using MTK.Modules.Hr.Domain.VacationApplications;
+using MTK.Modules.Hr.Domain.VacationBalances;
 
 namespace MTK.Modules.Hr.Application.VacationApplications.CreateVacationApplication;
 
@@ -20,6 +21,7 @@ internal sealed class CreateVacationApplicationCommandHandler
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILeaveOverlapService _leaveOverlap;
     private readonly IVacationBalanceService _vacationBalanceService;
+    private readonly IVacationBalanceRepository _vacationBalanceRepository;
     private readonly IUserContext _userContext;
 
     public CreateVacationApplicationCommandHandler(
@@ -29,6 +31,7 @@ internal sealed class CreateVacationApplicationCommandHandler
         IUnitOfWork unitOfWork,
         ILeaveOverlapService leaveOverlap,
         IVacationBalanceService vacationBalanceService,
+        IVacationBalanceRepository vacationBalanceRepository,
         IUserContext userContext)
     {
         _vacationApplicationRepository = vacationApplicationRepository;
@@ -37,6 +40,7 @@ internal sealed class CreateVacationApplicationCommandHandler
         _unitOfWork = unitOfWork;
         _leaveOverlap = leaveOverlap;
         _vacationBalanceService = vacationBalanceService;
+        _vacationBalanceRepository = vacationBalanceRepository;
         _userContext = userContext;
     }
 
@@ -70,19 +74,45 @@ internal sealed class CreateVacationApplicationCommandHandler
         if (overlap.IsFailure)
             return Result.Failure<CreateVacationApplicationResponse>(overlap.Error);
 
-        // 2.5. Qalan məzuniyyət balansını yoxla (iş ili StartDate-ə görə müəyyənləşir)
-        var balanceResult = await _vacationBalanceService.EnsureCurrentAsync(
-            request.EmployeeId, request.StartDate, cancellationToken);
-        if (balanceResult.IsFailure)
-            return Result.Failure<CreateVacationApplicationResponse>(balanceResult.Error);
+        // 2.5. Balansı müəyyənləşdir və qalan günləri yoxla.
+        // İstifadəçi konkret balans seçibsə, onu istifadə edirik — amma mütləq həmin işçinin
+        // balansı olmalıdır. Seçməyibsə (boş GUID), StartDate-in iş ilinə uyğun balans götürülür.
+        // Əvvəl boş GUID birbaşa saxlanılırdı və
+        // FK_vacation_applications_vacation_balances_VacationBalanceId pozulurdu.
+        VacationBalance balance;
+        if (request.VacationBalanceId == Guid.Empty)
+        {
+            var balanceResult = await _vacationBalanceService.EnsureCurrentAsync(
+                request.EmployeeId, request.StartDate, cancellationToken);
+            if (balanceResult.IsFailure)
+                return Result.Failure<CreateVacationApplicationResponse>(balanceResult.Error);
 
-        if (requestedDays > balanceResult.Value.RemainingDays)
+            balance = balanceResult.Value;
+        }
+        else
+        {
+            var selectedBalance = await _vacationBalanceRepository.GetByIdAsync(
+                request.VacationBalanceId, cancellationToken);
+
+            if (selectedBalance is null)
+                return Result.Failure<CreateVacationApplicationResponse>(
+                    VacationApplicationErrors.BalanceNotFound);
+
+            if (selectedBalance.EmployeeId != request.EmployeeId)
+                return Result.Failure<CreateVacationApplicationResponse>(
+                    VacationApplicationErrors.BalanceEmployeeMismatch);
+
+            balance = selectedBalance;
+        }
+
+        if (requestedDays > balance.RemainingDays)
             return Result.Failure<CreateVacationApplicationResponse>(
-                VacationApplicationErrors.ExceedsBalance(requestedDays, balanceResult.Value.RemainingDays));
+                VacationApplicationErrors.ExceedsBalance(requestedDays, balance.RemainingDays));
 
         // 3. Create VacationApplication
         var applicationResult = VacationApplication.Create(
             request.EmployeeId,
+            balance.Id,
             request.StartDate,
             endDate,
             requestedDays,

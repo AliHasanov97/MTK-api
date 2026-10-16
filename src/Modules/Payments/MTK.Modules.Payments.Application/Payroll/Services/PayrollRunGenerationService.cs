@@ -75,7 +75,7 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
 
         var maxDeductionByEmployee = activeDeductions
             .GroupBy(d => d.EmployeeId)
-            .ToDictionary(g => g.Key, g => g.Sum(d => d.MaxDeductionAmount ?? decimal.MaxValue));
+            .ToDictionary(g => g.Key, g => g.Sum(d => d.TotalRemaining ?? decimal.MaxValue));
 
         // HR əmrlərindən gələn iş saatı əsaslı düzəlişlər (məzuniyyət/ödənişsiz/kompensasiya və s.).
         var adjustments = await _payrollAdjustmentRepository.GetForPeriodAsync(year, month, cancellationToken);

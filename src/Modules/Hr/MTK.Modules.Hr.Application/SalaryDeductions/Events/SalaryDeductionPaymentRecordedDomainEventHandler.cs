@@ -19,13 +19,14 @@ internal sealed class SalaryDeductionPaymentRecordedDomainEventHandler
         SalaryDeductionPaymentRecordedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {
-        // RemainingDebt sync et (Payments moduluna)
+        // Qalan məbləğləri sync et (Payments moduluna)
         var integrationEvent = new SalaryDeductionUpdatedIntegrationEvent(
             Guid.NewGuid(),
             DateTime.UtcNow,
             domainEvent.SalaryDeductionId,
             domainEvent.EmployeeId,
-            domainEvent.RemainingDebt);
+            domainEvent.StateFeeRemaining,
+            domainEvent.DebtRemaining);
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

@@ -19,6 +19,14 @@ internal sealed class VacationApplicationConfiguration
             .HasForeignKey(v => v.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(v => v.VacationBalanceId)
+            .IsRequired();
+
+        builder.HasOne(v => v.VacationBalance)
+            .WithMany()
+            .HasForeignKey(v => v.VacationBalanceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(v => v.StartDate)
             .IsRequired();
 

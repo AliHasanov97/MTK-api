@@ -12,6 +12,4 @@ public sealed record CompensationOrderCreatedDomainEvent : DomainEvent
     public required Guid OrderId { get; init; }
     public required Guid EmployeeId { get; init; }
     public required int CompensatedDays { get; init; }
-    public DateOnly? WorkYearStart { get; init; }
-    public DateOnly? WorkYearEnd { get; init; }
 }

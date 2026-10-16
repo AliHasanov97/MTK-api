@@ -15,6 +15,9 @@ internal sealed class PayrollDeductionConfiguration : IEntityTypeConfiguration<P
         builder.Property(d => d.EmployeeId).IsRequired();
         builder.Property(d => d.PercentageSalary).IsRequired().HasPrecision(5, 2);
         builder.Property(d => d.StartDate).IsRequired();
+        builder.Property(d => d.StateFee).IsRequired().HasColumnType("decimal(18,2)");
+        builder.Property(d => d.StateFeeRemaining).HasColumnType("decimal(18,2)");
+        builder.Property(d => d.DebtRemaining).HasColumnType("decimal(18,2)");
 
         builder.Property(d => d.CreatedAt).IsRequired();
         builder.Property(d => d.UpdatedAt);

@@ -32,7 +32,7 @@ internal sealed class UpdatePayrollDeductionCommandHandler : ICommandHandler<Upd
             return Result.Success();
         }
 
-        deduction.UpdateRemainingDebt(request.RemainingDebt);
+        deduction.UpdateRemaining(request.StateFeeRemaining, request.DebtRemaining);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

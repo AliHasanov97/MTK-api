@@ -31,6 +31,14 @@ internal sealed class CompensationOrderConfiguration : IEntityTypeConfiguration<
 
         builder.HasIndex(c => c.EmployeeId);
 
+        builder.Property(c => c.VacationBalanceId)
+            .IsRequired();
+
+        builder.HasOne(c => c.VacationBalance)
+            .WithMany()
+            .HasForeignKey(c => c.VacationBalanceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(c => c.CompensatedDays)
             .IsRequired();
 

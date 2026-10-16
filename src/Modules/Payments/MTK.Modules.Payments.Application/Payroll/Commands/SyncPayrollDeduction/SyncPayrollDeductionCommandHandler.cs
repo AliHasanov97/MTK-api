@@ -32,7 +32,8 @@ internal sealed class SyncPayrollDeductionCommandHandler : ICommandHandler<SyncP
             request.EmployeeId,
             request.PercentageSalary,
             request.StartDate,
-            request.RemainingDebt);
+            request.StateFee,
+            request.Debt);
 
         _payrollDeductionRepository.Add(deduction);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -44,9 +44,9 @@ internal sealed class VacationCompensationApplicationExportService
             ? "____________________________"
             : directorName;
 
-        // İş ili dövrü ərizədə daxil edilibsə yazılır, əks halda boş xətt qalır
-        string workYearText = app.WorkYearStart.HasValue && app.WorkYearEnd.HasValue
-            ? $"{app.WorkYearStart.Value:dd.MM.yyyy}-{app.WorkYearEnd.Value:dd.MM.yyyy}"
+        // İş ili dövrü VacationBalance-dən götürülür
+        string workYearText = app.VacationBalance != null
+            ? $"{app.VacationBalance.WorkYearStart:dd.MM.yyyy}-{app.VacationBalance.WorkYearEnd:dd.MM.yyyy}"
             : "___________-___________";
 
         // PDF generation with QuestPDF
