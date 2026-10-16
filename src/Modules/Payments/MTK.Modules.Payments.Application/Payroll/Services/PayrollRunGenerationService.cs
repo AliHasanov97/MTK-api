@@ -73,6 +73,10 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
             .GroupBy(d => d.EmployeeId)
             .ToDictionary(g => g.Key, g => g.Sum(d => d.PercentageSalary));
 
+        var maxDeductionByEmployee = activeDeductions
+            .GroupBy(d => d.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Sum(d => d.MaxDeductionAmount ?? decimal.MaxValue));
+
         // HR əmrlərindən gələn iş saatı əsaslı düzəlişlər (məzuniyyət/ödənişsiz/kompensasiya və s.).
         var adjustments = await _payrollAdjustmentRepository.GetForPeriodAsync(year, month, cancellationToken);
         var adjustmentsByEmployee = adjustments
@@ -104,8 +108,18 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
             }
 
             var courtDeductionPercentage = Math.Min(100m, deductionPercentageByEmployee.GetValueOrDefault(employee.Id, 0m));
+            var maxCourtDeduction = maxDeductionByEmployee.GetValueOrDefault(employee.Id, decimal.MaxValue);
 
-            var result = PayrollCalculator.Calculate(employee.BaseSalary, bonusAmount, adjustmentAmount, courtDeductionPercentage, brackets);
+            // Əgər maxCourtDeduction çox böyükdürsə (limit yoxdur), null pass edək
+            decimal? maxCourtDeductionNullable = maxCourtDeduction == decimal.MaxValue ? null : maxCourtDeduction;
+
+            var result = PayrollCalculator.Calculate(
+                employee.BaseSalary,
+                bonusAmount,
+                adjustmentAmount,
+                courtDeductionPercentage,
+                brackets,
+                maxCourtDeductionNullable);
             run.AddPayslip(employee.Id, employee.FullName, result);
         }
 

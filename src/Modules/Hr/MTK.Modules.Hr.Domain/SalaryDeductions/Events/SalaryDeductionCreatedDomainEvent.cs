@@ -8,4 +8,5 @@ public sealed record SalaryDeductionCreatedDomainEvent : DomainEvent
     public Guid EmployeeId { get; init; }
     public decimal PercentageSalary { get; init; }
     public DateTimeOffset StartDate { get; init; }
+    public decimal Debt { get; init; }
 }

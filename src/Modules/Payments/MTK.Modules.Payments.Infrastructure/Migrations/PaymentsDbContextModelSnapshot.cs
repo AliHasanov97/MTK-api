@@ -1154,6 +1154,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("MaxDeductionAmount")
+                        .HasColumnType("numeric");
+
                     b.Property<decimal>("PercentageSalary")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");

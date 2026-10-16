@@ -6,4 +6,5 @@ public sealed record SyncPayrollDeductionCommand(
     Guid SalaryDeductionId,
     Guid EmployeeId,
     decimal PercentageSalary,
-    DateTimeOffset StartDate) : ICommand;
+    DateTimeOffset StartDate,
+    decimal RemainingDebt) : ICommand;

@@ -18,7 +18,8 @@ public static class PayrollCalculator
         decimal bonusAmount,
         decimal adjustmentAmount,
         decimal courtDeductionPercentage,
-        IReadOnlyCollection<PayrollTaxBracket> brackets)
+        IReadOnlyCollection<PayrollTaxBracket> brackets,
+        decimal? maxCourtDeduction = null)
     {
         if (baseSalary < 0)
         {
@@ -52,6 +53,13 @@ public static class PayrollCalculator
 
         // Məhkəmə tutması (alimony və s.) net (vergidən sonrakı) məbləğin faizi kimi tətbiq olunur.
         var courtDeductionAmount = Math.Round(netSalary * courtDeductionPercentage / 100m, 2, MidpointRounding.AwayFromZero);
+
+        // Qalan borcdan artıq tutulmasın
+        if (maxCourtDeduction.HasValue && courtDeductionAmount > maxCourtDeduction.Value)
+        {
+            courtDeductionAmount = maxCourtDeduction.Value;
+        }
+
         var finalNetSalary = netSalary - courtDeductionAmount;
 
         var employerDsmf = Apply(grossSalary, PayrollRateType.Dsmf, PayrollParty.Employer, brackets);

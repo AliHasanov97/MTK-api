@@ -223,6 +223,7 @@ public static class PaymentsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<BonusOrderCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<SalaryDeductionCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<SalaryDeductionDeletedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<SalaryDeductionUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<PayrollAdjustmentRequestedIntegrationEvent>>();
     }
 }

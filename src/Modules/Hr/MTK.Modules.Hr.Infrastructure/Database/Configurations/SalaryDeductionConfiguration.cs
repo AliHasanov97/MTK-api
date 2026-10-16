@@ -41,6 +41,12 @@ internal sealed class SalaryDeductionConfiguration : IEntityTypeConfiguration<Sa
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
+        builder.Property(x => x.TotalPaid)
+            .HasColumnType("decimal(18,2)")
+            .IsRequired();
+
+        builder.Ignore(x => x.RemainingDebt);
+
         builder.HasOne(x => x.Employee)
             .WithMany()
             .HasForeignKey(x => x.EmployeeId)

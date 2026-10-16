@@ -14,17 +14,20 @@ public sealed class SalaryDeductionCreatedIntegrationEvent : IntegrationEvent
         Guid salaryDeductionId,
         Guid employeeId,
         decimal percentageSalary,
-        DateTimeOffset startDate)
+        DateTimeOffset startDate,
+        decimal remainingDebt)
         : base(integrationEventId, occurredOnUtc)
     {
         SalaryDeductionId = salaryDeductionId;
         EmployeeId = employeeId;
         PercentageSalary = percentageSalary;
         StartDate = startDate;
+        RemainingDebt = remainingDebt;
     }
 
     public Guid SalaryDeductionId { get; }
     public Guid EmployeeId { get; }
     public decimal PercentageSalary { get; }
     public DateTimeOffset StartDate { get; }
+    public decimal RemainingDebt { get; }
 }

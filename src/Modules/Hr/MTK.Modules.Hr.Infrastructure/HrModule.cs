@@ -163,5 +163,8 @@ public static class HrModule
         // mənbəyidir, bu modul yalnız PDF-lərdə göstərmək üçün (bax: OrganizationInfo) güzgü saxlayır.
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.Companies.CompanyCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.Companies.CompanyUpdatedIntegrationEvent>>();
+
+        // Payments-dən gələn əmək haqqı ödənişi event-ləri — məhkəmə tutması ödənilib
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.Payroll.PayrollPaymentCompletedIntegrationEvent>>();
     }
 }

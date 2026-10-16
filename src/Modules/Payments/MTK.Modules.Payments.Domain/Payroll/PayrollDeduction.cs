@@ -25,11 +25,24 @@ public sealed class PayrollDeduction : Entity
     public Guid EmployeeId { get; private set; }
     public decimal PercentageSalary { get; private set; }
     public DateTimeOffset StartDate { get; private set; }
+    public decimal? MaxDeductionAmount { get; private set; }
 
-    public static PayrollDeduction Create(Guid id, Guid employeeId, decimal percentageSalary, DateTimeOffset startDate)
+    public static PayrollDeduction Create(
+        Guid id,
+        Guid employeeId,
+        decimal percentageSalary,
+        DateTimeOffset startDate,
+        decimal? maxDeductionAmount = null)
     {
         var deduction = new PayrollDeduction(id, employeeId, percentageSalary, startDate);
+        deduction.MaxDeductionAmount = maxDeductionAmount;
         deduction.SetCreatedAt();
         return deduction;
+    }
+
+    public void UpdateRemainingDebt(decimal remainingDebt)
+    {
+        MaxDeductionAmount = remainingDebt > 0 ? remainingDebt : null;
+        SetUpdatedAt();
     }
 }

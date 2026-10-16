@@ -1,5 +1,6 @@
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Domain.Payments;
+using MTK.Modules.Payments.Domain.Payroll.Events;
 
 namespace MTK.Modules.Payments.Domain.Payroll;
 
@@ -77,7 +78,7 @@ public sealed class Payslip : Entity
     }
 
     /// <summary>Yalnız PayrollRun.PayPayslip/PayAllPayslips tərəfindən çağırılır — status qaydası aggregate-dədir.</summary>
-    internal void MarkAsPaid(PaymentMethod method, DateTimeOffset paidAt)
+    internal void MarkAsPaid(PaymentMethod method, DateTimeOffset paidAt, int salaryMonth, int salaryYear)
     {
         if (PaidAt.HasValue)
         {
@@ -87,5 +88,20 @@ public sealed class Payslip : Entity
         PaymentMethod = method;
         PaidAt = paidAt;
         SetUpdatedAt();
+
+        // Yalnız məhkəmə tutması varsa event raise et
+        if (CourtDeductionAmount > 0)
+        {
+            RaiseDomainEvent(new PayslipPaidDomainEvent
+            {
+                PayslipId = Id,
+                EmployeeId = EmployeeId,
+                CourtDeductionAmount = CourtDeductionAmount,
+                SalaryMonth = salaryMonth,
+                SalaryYear = salaryYear,
+                PaymentMethod = method,
+                PaidAt = paidAt
+            });
+        }
     }
 }

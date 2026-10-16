@@ -5,4 +5,6 @@ namespace MTK.Modules.Hr.Domain.SalaryDeductions;
 public interface ISalaryDeductionRepository : IRepository<SalaryDeduction>
 {
     Task<SalaryDeduction?> GetByIdForExportAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<List<SalaryDeduction>> GetActiveByEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 }

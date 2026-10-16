@@ -17,7 +17,8 @@ internal sealed class SalaryDeductionCreatedIntegrationEventHandler(ISender send
             integrationEvent.SalaryDeductionId,
             integrationEvent.EmployeeId,
             integrationEvent.PercentageSalary,
-            integrationEvent.StartDate);
+            integrationEvent.StartDate,
+            integrationEvent.RemainingDebt);
 
         Result result = await sender.Send(command, cancellationToken);
 

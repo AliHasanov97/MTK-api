@@ -19,6 +19,9 @@ public sealed class SalaryDeduction : Order
     public decimal StateFee { get; private set; }
     public string Creditor { get; private set; } = string.Empty;
     public decimal Debt { get; private set; }
+    public decimal TotalPaid { get; private set; }
+
+    public decimal RemainingDebt => Math.Max(0, Debt - TotalPaid);
 
     private SalaryDeduction() { }
 
@@ -55,10 +58,32 @@ public sealed class SalaryDeduction : Order
             SalaryDeductionId = salaryDeduction.Id,
             EmployeeId = employeeId,
             PercentageSalary = percentageSalary,
-            StartDate = startDate
+            StartDate = startDate,
+            Debt = debt
         });
 
         return salaryDeduction;
+    }
+
+    public void RecordPayment(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Ödəniş məbləği müsbət olmalıdır", nameof(amount));
+
+        if (amount > RemainingDebt)
+            throw new InvalidOperationException(
+                $"Ödəniş məbləği ({amount}) qalan borcdan ({RemainingDebt}) çoxdur");
+
+        TotalPaid += amount;
+        SetUpdatedAt();
+
+        RaiseDomainEvent(new SalaryDeductionPaymentRecordedDomainEvent
+        {
+            SalaryDeductionId = Id,
+            EmployeeId = EmployeeId,
+            AmountPaid = amount,
+            RemainingDebt = RemainingDebt
+        });
     }
 
     public void Delete()

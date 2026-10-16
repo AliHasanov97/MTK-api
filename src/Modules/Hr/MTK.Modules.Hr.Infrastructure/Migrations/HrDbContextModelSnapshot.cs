@@ -1672,6 +1672,9 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<decimal>("StateFee")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("TotalPaid")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("salary_deductions", "hr");

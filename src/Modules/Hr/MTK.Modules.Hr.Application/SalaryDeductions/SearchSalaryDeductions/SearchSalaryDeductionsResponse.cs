@@ -23,6 +23,8 @@ public class SearchSalaryDeductionsResponseItem
     public decimal StateFee { get; set; }
     public string Creditor { get; set; } = string.Empty;
     public decimal Debt { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal RemainingDebt { get; set; }
     public ResponseObjectWithName CreatedBy { get; set; } = null!;
     public DateTimeOffset CreatedAt { get; set; }
 }

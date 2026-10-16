@@ -53,4 +53,16 @@ internal sealed class SalaryDeductionRepository : SearchableRepository<SalaryDed
         query = ApplyPages(query, page, pageSize);
         return await query.ToListAsync(cancellationToken);
     }
+
+    public async Task<List<SalaryDeduction>> GetActiveByEmployeeAsync(
+        Guid employeeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<SalaryDeduction>()
+            .Where(sd => sd.EmployeeId == employeeId
+                      && sd.DeletedAt == null
+                      && sd.TotalPaid < sd.Debt)
+            .OrderBy(sd => sd.JudgementDate)
+            .ToListAsync(cancellationToken);
+    }
 }
