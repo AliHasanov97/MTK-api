@@ -1,7 +1,8 @@
 namespace MTK.Modules.Payments.Domain.Payroll;
 
 /// <summary>
-/// Sadələşdirilmiş maaş hesablama nəticəsi — heç bir tutma yoxdur.
+/// <see cref="PayrollCalculator"/>-ın saf nəticəsi — bir işçi üçün bir ay üzrə
+/// əmək haqqı hesablamasının bütün komponentləri. Entity deyil, sadəcə dəyər.
 /// </summary>
 public sealed record PayrollCalculationResult(
     decimal BaseSalary,

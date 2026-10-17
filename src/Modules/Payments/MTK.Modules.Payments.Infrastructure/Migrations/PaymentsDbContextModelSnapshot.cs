@@ -1139,49 +1139,6 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.ToTable("payroll_bonuses", "payments");
                 });
 
-            modelBuilder.Entity("MTK.Modules.Payments.Domain.Payroll.PayrollDeduction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal?>("DebtRemaining")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("PercentageSalary")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<DateTimeOffset>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("StateFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("StateFeeRemaining")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("StartDate");
-
-                    b.ToTable("payroll_deductions", "payments");
-                });
-
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Payroll.PayrollRun", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1244,14 +1201,6 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<decimal>("CourtDeductionAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("CourtDeductionPercentage")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1271,10 +1220,6 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("GrossSalary")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("NetSalary")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
@@ -1596,7 +1541,7 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
 
                     b.HasIndex("EmployeeId", "SalaryYear", "SalaryMonth")
                         .IsUnique()
-                        .HasFilter("deleted_at IS NULL");
+                        .HasFilter("\"DeletedAt\" IS NULL");
 
                     b.ToTable("salary_payments", "payments");
                 });

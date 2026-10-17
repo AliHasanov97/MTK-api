@@ -90,6 +90,6 @@ internal sealed class SalaryPaymentConfiguration : IEntityTypeConfiguration<Sala
         // Unique constraint: one payment per employee per period
         builder.HasIndex(s => new { s.EmployeeId, s.SalaryYear, s.SalaryMonth })
             .IsUnique()
-            .HasFilter("deleted_at IS NULL");
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }

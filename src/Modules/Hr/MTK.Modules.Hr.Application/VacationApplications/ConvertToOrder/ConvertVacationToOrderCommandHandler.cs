@@ -7,7 +7,7 @@ using MTK.Modules.Hr.Application.VacationBalances.Services;
 using MTK.Modules.Hr.Domain.Applications;
 using MTK.Modules.Hr.Domain.Orders;
 using MTK.Modules.Hr.Domain.VacationApplications;
-
+using MTK.Modules.Hr.Domain.VacationBalances;
 using MTK.Modules.Hr.Domain.VacationOrders;
 
 namespace MTK.Modules.Hr.Application.VacationApplications.ConvertToOrder;
@@ -19,6 +19,7 @@ internal sealed class ConvertVacationToOrderCommandHandler
     private readonly IVacationOrderRepository _vacationOrderRepository;
     private readonly ReturnToWorkDateService _returnToWorkDateService;
     private readonly IVacationBalanceService _vacationBalanceService;
+    private readonly IVacationBalanceRepository _vacationBalanceRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContext _userContext;
 
@@ -27,6 +28,7 @@ internal sealed class ConvertVacationToOrderCommandHandler
         IVacationOrderRepository vacationOrderRepository,
         ReturnToWorkDateService returnToWorkDateService,
         IVacationBalanceService vacationBalanceService,
+        IVacationBalanceRepository vacationBalanceRepository,
         IUnitOfWork unitOfWork,
         IUserContext userContext)
     {
@@ -34,6 +36,7 @@ internal sealed class ConvertVacationToOrderCommandHandler
         _vacationOrderRepository = vacationOrderRepository;
         _returnToWorkDateService = returnToWorkDateService;
         _vacationBalanceService = vacationBalanceService;
+        _vacationBalanceRepository = vacationBalanceRepository;
         _unitOfWork = unitOfWork;
         _userContext = userContext;
     }
@@ -82,13 +85,26 @@ internal sealed class ConvertVacationToOrderCommandHandler
         // 5. Application statusunu yenilə
         application.MarkAsConvertedToOrder();
 
-        // 5.5. Balansdan günləri çıx (iş ili məzuniyyətin başladığı tarixə görə)
-        var balanceResult = await _vacationBalanceService.EnsureCurrentAsync(
-            application.EmployeeId, application.StartDate, cancellationToken);
-        if (balanceResult.IsFailure)
-            return Result.Failure<ConvertVacationToOrderResponse>(balanceResult.Error);
+        // 5.5. FIFO qaydası ilə bütün balanslardan günləri çıx
+        // İşçinin bütün balanslarını ən köhnədən başlayaraq götür
+        var allBalances = await _vacationBalanceRepository.GetAllByEmployeeIdAsync(
+            application.EmployeeId, cancellationToken);
 
-        balanceResult.Value.RegisterUsedDays(application.TotalRequestedDays);
+        // WorkYearStart-a görə sırala (ən köhnə birinci)
+        var sortedBalances = allBalances.OrderBy(b => b.WorkYearStart).ToList();
+
+        var remainingDays = application.TotalRequestedDays;
+        foreach (var balance in sortedBalances)
+        {
+            if (remainingDays <= 0) break;
+
+            var daysToTake = Math.Min(remainingDays, balance.RemainingDays);
+            if (daysToTake > 0)
+            {
+                balance.RegisterUsedDays(daysToTake);
+                remainingDays -= daysToTake;
+            }
+        }
 
         // 6. Saxla
         await _vacationOrderRepository.AddAsync(order, cancellationToken);

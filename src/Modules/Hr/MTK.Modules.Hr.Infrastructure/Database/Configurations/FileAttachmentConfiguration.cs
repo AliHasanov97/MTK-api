@@ -14,7 +14,6 @@ using MTK.Modules.Hr.Domain.EducationLeaveOrders;
 using MTK.Modules.Hr.Domain.VacationApplications;
 using MTK.Modules.Hr.Domain.VacationCompensationApplications;
 using MTK.Modules.Hr.Domain.VacationOrders;
-using MTK.Modules.Hr.Domain.SalaryDeductions;
 using MTK.Modules.Hr.Domain.Warnings;
 using MTK.Modules.Hr.Domain.EmploymentStatusChangeApplications;
 using MTK.Modules.Hr.Domain.EmploymentStatusChangeOrders;
@@ -186,14 +185,6 @@ internal sealed class FileAttachmentConfiguration : IEntityTypeConfiguration<Fil
         builder.HasOne(f => f.BonusOrder)
             .WithMany(b => b.FileAttachments)
             .HasForeignKey(f => f.BonusOrderId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(f => f.SalaryDeductionId)
-            .IsRequired(false);
-
-        builder.HasOne(f => f.SalaryDeduction)
-            .WithMany(s => s.FileAttachments)
-            .HasForeignKey(f => f.SalaryDeductionId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(f => f.EmploymentStatusChangeApplicationId)

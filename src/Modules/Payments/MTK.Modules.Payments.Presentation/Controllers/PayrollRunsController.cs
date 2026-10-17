@@ -13,6 +13,7 @@ using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
+[Route("api/payroll-runs")]
 [RequireAnyRole(Roles.Admin, Roles.Accountant)]
 public class PayrollRunsController(ISender sender) : BaseController(sender)
 {

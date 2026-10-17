@@ -31,7 +31,6 @@ public class SearchFileAttachmentsResponseItem
     public Guid? VacationApplicationId { get; set; }
     public Guid? VacationOrderId { get; set; }
     public Guid? BonusOrderId { get; set; }
-    public Guid? SalaryDeductionId { get; set; }
     public Guid? EmploymentStatusChangeApplicationId { get; set; }
     public Guid? EmploymentStatusChangeOrderId { get; set; }
     public Guid? WorkOnNonWorkdayOrderId { get; set; }

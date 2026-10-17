@@ -66,10 +66,6 @@ public interface IExportService
         Guid bonusOrderId,
         CancellationToken cancellationToken = default);
 
-    Task<ExportResult> ExportSalaryDeductionToPdfAsync(
-        Guid salaryDeductionId,
-        CancellationToken cancellationToken = default);
-
     Task<ExportResult> ExportWorkOnNonWorkdayOrderToPdfAsync(
         Guid workOnNonWorkdayOrderId,
         CancellationToken cancellationToken = default);

@@ -54,7 +54,7 @@ public sealed class Payslip : Entity
     }
 
     /// <summary>Yalnız PayrollRun.PayPayslip/PayAllPayslips tərəfindən çağırılır — status qaydası aggregate-dədir.</summary>
-    internal void MarkAsPaid(PaymentMethod method, DateTimeOffset paidAt, int salaryMonth, int salaryYear)
+    internal void MarkAsPaid(PaymentMethod method, DateTimeOffset paidAt)
     {
         if (PaidAt.HasValue)
         {

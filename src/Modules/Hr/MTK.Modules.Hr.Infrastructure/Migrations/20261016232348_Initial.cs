@@ -755,41 +755,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "salary_deductions",
-                schema: "hr",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    District = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    JudgementNo = table.Column<int>(type: "integer", nullable: false),
-                    JudgementDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    PercentageSalary = table.Column<decimal>(type: "numeric", nullable: false),
-                    StateFee = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    Creditor = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    Debt = table.Column<decimal>(type: "numeric(18,2)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_salary_deductions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_salary_deductions_employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalSchema: "hr",
-                        principalTable: "employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_salary_deductions_orders_Id",
-                        column: x => x.Id,
-                        principalSchema: "hr",
-                        principalTable: "orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "unexcused_absences",
                 schema: "hr",
                 columns: table => new
@@ -848,37 +813,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "vacation_applications",
-                schema: "hr",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    TotalRequestedDays = table.Column<int>(type: "integer", nullable: false),
-                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_vacation_applications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_vacation_applications_applications_Id",
-                        column: x => x.Id,
-                        principalSchema: "hr",
-                        principalTable: "applications",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_vacation_applications_employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalSchema: "hr",
-                        principalTable: "employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "vacation_balances",
                 schema: "hr",
                 columns: table => new
@@ -892,7 +826,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     KarabakhWorkerDays = table.Column<int>(type: "integer", nullable: false),
                     ChildrenUnder14Days = table.Column<int>(type: "integer", nullable: false),
                     DisabledChildDays = table.Column<int>(type: "integer", nullable: false),
-                    CarriedOverDays = table.Column<int>(type: "integer", nullable: false),
                     UsedDays = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CompensatedDays = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -904,37 +837,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     table.PrimaryKey("PK_vacation_balances", x => x.Id);
                     table.ForeignKey(
                         name: "FK_vacation_balances_employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalSchema: "hr",
-                        principalTable: "employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "vacation_compensation_applications",
-                schema: "hr",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RequestedDays = table.Column<int>(type: "integer", nullable: false),
-                    WorkYearStart = table.Column<DateOnly>(type: "date", nullable: true),
-                    WorkYearEnd = table.Column<DateOnly>(type: "date", nullable: true),
-                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_vacation_compensation_applications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_vacation_compensation_applications_applications_Id",
-                        column: x => x.Id,
-                        principalSchema: "hr",
-                        principalTable: "applications",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_vacation_compensation_applications_employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalSchema: "hr",
                         principalTable: "employees",
@@ -1167,80 +1069,77 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "vacation_orders",
+                name: "vacation_applications",
                 schema: "hr",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    VacationApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
                     EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    VacationBalanceId = table.Column<Guid>(type: "uuid", nullable: false),
                     StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    VacationDays = table.Column<int>(type: "integer", nullable: false),
-                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    ReturnToWorkDate = table.Column<DateOnly>(type: "date", nullable: true)
+                    EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TotalRequestedDays = table.Column<int>(type: "integer", nullable: false),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_vacation_orders", x => x.Id);
+                    table.PrimaryKey("PK_vacation_applications", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_vacation_orders_employees_EmployeeId",
+                        name: "FK_vacation_applications_applications_Id",
+                        column: x => x.Id,
+                        principalSchema: "hr",
+                        principalTable: "applications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_vacation_applications_employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalSchema: "hr",
                         principalTable: "employees",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_vacation_orders_orders_Id",
-                        column: x => x.Id,
+                        name: "FK_vacation_applications_vacation_balances_VacationBalanceId",
+                        column: x => x.VacationBalanceId,
                         principalSchema: "hr",
-                        principalTable: "orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_vacation_orders_vacation_applications_VacationApplicationId",
-                        column: x => x.VacationApplicationId,
-                        principalSchema: "hr",
-                        principalTable: "vacation_applications",
+                        principalTable: "vacation_balances",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "compensation_orders",
+                name: "vacation_compensation_applications",
                 schema: "hr",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    CompensationApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
                     EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CompensatedDays = table.Column<int>(type: "integer", nullable: false),
-                    WorkYearStart = table.Column<DateOnly>(type: "date", nullable: true),
-                    WorkYearEnd = table.Column<DateOnly>(type: "date", nullable: true),
+                    VacationBalanceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RequestedDays = table.Column<int>(type: "integer", nullable: false),
                     Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_compensation_orders", x => x.Id);
+                    table.PrimaryKey("PK_vacation_compensation_applications", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_compensation_orders_employees_EmployeeId",
+                        name: "FK_vacation_compensation_applications_applications_Id",
+                        column: x => x.Id,
+                        principalSchema: "hr",
+                        principalTable: "applications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_vacation_compensation_applications_employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalSchema: "hr",
                         principalTable: "employees",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_compensation_orders_orders_Id",
-                        column: x => x.Id,
+                        name: "FK_vacation_compensation_applications_vacation_balances_Vacati~",
+                        column: x => x.VacationBalanceId,
                         principalSchema: "hr",
-                        principalTable: "orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_compensation_orders_vacation_compensation_applications_Comp~",
-                        column: x => x.CompensationApplicationId,
-                        principalSchema: "hr",
-                        principalTable: "vacation_compensation_applications",
+                        principalTable: "vacation_balances",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1284,6 +1183,99 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "vacation_orders",
+                schema: "hr",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    VacationApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    VacationBalanceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    VacationDays = table.Column<int>(type: "integer", nullable: false),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    ReturnToWorkDate = table.Column<DateOnly>(type: "date", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_vacation_orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_vacation_orders_employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalSchema: "hr",
+                        principalTable: "employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_vacation_orders_orders_Id",
+                        column: x => x.Id,
+                        principalSchema: "hr",
+                        principalTable: "orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_vacation_orders_vacation_applications_VacationApplicationId",
+                        column: x => x.VacationApplicationId,
+                        principalSchema: "hr",
+                        principalTable: "vacation_applications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_vacation_orders_vacation_balances_VacationBalanceId",
+                        column: x => x.VacationBalanceId,
+                        principalSchema: "hr",
+                        principalTable: "vacation_balances",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "compensation_orders",
+                schema: "hr",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CompensationApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    VacationBalanceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CompensatedDays = table.Column<int>(type: "integer", nullable: false),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_compensation_orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_compensation_orders_employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalSchema: "hr",
+                        principalTable: "employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_compensation_orders_orders_Id",
+                        column: x => x.Id,
+                        principalSchema: "hr",
+                        principalTable: "orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_compensation_orders_vacation_balances_VacationBalanceId",
+                        column: x => x.VacationBalanceId,
+                        principalSchema: "hr",
+                        principalTable: "vacation_balances",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_compensation_orders_vacation_compensation_applications_Comp~",
+                        column: x => x.CompensationApplicationId,
+                        principalSchema: "hr",
+                        principalTable: "vacation_compensation_applications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "file_attachments",
                 schema: "hr",
                 columns: table => new
@@ -1306,7 +1298,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     VacationApplicationId = table.Column<Guid>(type: "uuid", nullable: true),
                     VacationOrderId = table.Column<Guid>(type: "uuid", nullable: true),
                     BonusOrderId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SalaryDeductionId = table.Column<Guid>(type: "uuid", nullable: true),
                     EmploymentStatusChangeApplicationId = table.Column<Guid>(type: "uuid", nullable: true),
                     EmploymentStatusChangeOrderId = table.Column<Guid>(type: "uuid", nullable: true),
                     WorkOnNonWorkdayOrderId = table.Column<Guid>(type: "uuid", nullable: true),
@@ -1411,12 +1402,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         principalTable: "orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_file_attachments_salary_deductions_SalaryDeductionId",
-                        column: x => x.SalaryDeductionId,
-                        principalSchema: "hr",
-                        principalTable: "salary_deductions",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_file_attachments_unexcused_absences_UnexcusedAbsenceId",
                         column: x => x.UnexcusedAbsenceId,
@@ -1631,6 +1616,12 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 schema: "hr",
                 table: "compensation_orders",
                 column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_compensation_orders_VacationBalanceId",
+                schema: "hr",
+                table: "compensation_orders",
+                column: "VacationBalanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_edu_leave_app_EmployeeId",
@@ -1905,12 +1896,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_file_attachments_SalaryDeductionId",
-                schema: "hr",
-                table: "file_attachments",
-                column: "SalaryDeductionId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_file_attachments_SearchVector",
                 schema: "hr",
                 table: "file_attachments",
@@ -2088,12 +2073,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 .Annotation("Npgsql:IndexMethod", "gin");
 
             migrationBuilder.CreateIndex(
-                name: "IX_salary_deductions_EmployeeId",
-                schema: "hr",
-                table: "salary_deductions",
-                column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_unexcused_absences_EmployeeId",
                 schema: "hr",
                 table: "unexcused_absences",
@@ -2187,6 +2166,12 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 column: "StartDate");
 
             migrationBuilder.CreateIndex(
+                name: "IX_vacation_applications_VacationBalanceId",
+                schema: "hr",
+                table: "vacation_applications",
+                column: "VacationBalanceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_vacation_balances_EmployeeId_WorkYearStart",
                 schema: "hr",
                 table: "vacation_balances",
@@ -2199,6 +2184,12 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 schema: "hr",
                 table: "vacation_compensation_applications",
                 column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_vacation_compensation_applications_VacationBalanceId",
+                schema: "hr",
+                table: "vacation_compensation_applications",
+                column: "VacationBalanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_vacation_orders_EmployeeId",
@@ -2230,6 +2221,12 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 table: "vacation_orders",
                 column: "VacationApplicationId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_vacation_orders_VacationBalanceId",
+                schema: "hr",
+                table: "vacation_orders",
+                column: "VacationBalanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_vacation_return_applications_EmployeeId",
@@ -2323,10 +2320,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                 schema: "hr");
 
             migrationBuilder.DropTable(
-                name: "vacation_balances",
-                schema: "hr");
-
-            migrationBuilder.DropTable(
                 name: "educational_institutions",
                 schema: "hr");
 
@@ -2352,10 +2345,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "order_for_change_of_position",
-                schema: "hr");
-
-            migrationBuilder.DropTable(
-                name: "salary_deductions",
                 schema: "hr");
 
             migrationBuilder.DropTable(
@@ -2408,6 +2397,10 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "vacation_return_applications",
+                schema: "hr");
+
+            migrationBuilder.DropTable(
+                name: "vacation_balances",
                 schema: "hr");
 
             migrationBuilder.DropTable(

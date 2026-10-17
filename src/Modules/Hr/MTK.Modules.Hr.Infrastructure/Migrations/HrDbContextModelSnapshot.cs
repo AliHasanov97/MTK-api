@@ -824,9 +824,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("SalaryDeductionId")
-                        .HasColumnType("uuid");
-
                     b.Property<NpgsqlTsVector>("SearchVector")
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
@@ -895,8 +892,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.HasIndex("OrderForChangeOfPositionId");
 
                     b.HasIndex("OrderId");
-
-                    b.HasIndex("SalaryDeductionId");
 
                     b.HasIndex("SearchVector");
 
@@ -1637,52 +1632,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.ToTable("order_for_change_of_position", "hr");
                 });
 
-            modelBuilder.Entity("MTK.Modules.Hr.Domain.SalaryDeductions.SalaryDeduction", b =>
-                {
-                    b.HasBaseType("MTK.Modules.Hr.Domain.Orders.Order");
-
-                    b.Property<string>("Creditor")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<decimal>("Debt")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("DebtRemaining")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("District")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("JudgementDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("JudgementNo")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("PercentageSalary")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTimeOffset>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("StateFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("StateFeeRemaining")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.ToTable("salary_deductions", "hr");
-                });
-
             modelBuilder.Entity("MTK.Modules.Hr.Domain.UnexcusedAbsences.UnexcusedAbsenceOrder", b =>
                 {
                     b.HasBaseType("MTK.Modules.Hr.Domain.Orders.Order");
@@ -2005,10 +1954,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("MTK.Modules.Hr.Domain.SalaryDeductions.SalaryDeduction", "SalaryDeduction")
-                        .WithMany()
-                        .HasForeignKey("SalaryDeductionId");
-
                     b.HasOne("MTK.Modules.Hr.Domain.UnexcusedAbsences.UnexcusedAbsenceOrder", "UnexcusedAbsence")
                         .WithMany()
                         .HasForeignKey("UnexcusedAbsenceId");
@@ -2076,8 +2021,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                     b.Navigation("NoticeOfChangeInWorkingConditions");
 
                     b.Navigation("OrderForChangeOfPosition");
-
-                    b.Navigation("SalaryDeduction");
 
                     b.Navigation("UnexcusedAbsence");
 
@@ -2489,23 +2432,6 @@ namespace MTK.Modules.Hr.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("ApplicationForChangeOfPosition");
-
-                    b.Navigation("Employee");
-                });
-
-            modelBuilder.Entity("MTK.Modules.Hr.Domain.SalaryDeductions.SalaryDeduction", b =>
-                {
-                    b.HasOne("MTK.Modules.Hr.Domain.Employees.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MTK.Modules.Hr.Domain.Orders.Order", null)
-                        .WithOne()
-                        .HasForeignKey("MTK.Modules.Hr.Domain.SalaryDeductions.SalaryDeduction", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("Employee");
                 });

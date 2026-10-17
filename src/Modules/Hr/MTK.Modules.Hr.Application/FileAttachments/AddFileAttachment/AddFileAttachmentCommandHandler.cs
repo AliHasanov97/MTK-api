@@ -18,7 +18,6 @@ using MTK.Modules.Hr.Application.EducationLeaveApplications;
 using MTK.Modules.Hr.Application.EducationLeaveOrders;
 using MTK.Modules.Hr.Application.VacationCompensationApplications;
 using MTK.Modules.Hr.Application.BonusOrders;
-using MTK.Modules.Hr.Application.SalaryDeductions;
 using MTK.Modules.Hr.Application.EmploymentStatusChangeApplications;
 using MTK.Modules.Hr.Application.EmploymentStatusChangeOrders;
 using MTK.Modules.Hr.Application.WorkOnNonWorkdayOrders;
@@ -72,7 +71,6 @@ public class AddFileAttachmentCommandHandler : ICommandHandler<AddFileAttachment
             !request.VacationApplicationId.HasValue &&
             !request.VacationOrderId.HasValue &&
             !request.BonusOrderId.HasValue &&
-            !request.SalaryDeductionId.HasValue &&
             !request.EmploymentStatusChangeApplicationId.HasValue &&
             !request.EmploymentStatusChangeOrderId.HasValue &&
             !request.WorkOnNonWorkdayOrderId.HasValue &&
@@ -120,7 +118,6 @@ public class AddFileAttachmentCommandHandler : ICommandHandler<AddFileAttachment
                 vacationApplicationId: request.VacationApplicationId,
                 vacationOrderId: request.VacationOrderId,
                 bonusOrderId: request.BonusOrderId,
-                salaryDeductionId: request.SalaryDeductionId,
                 employmentStatusChangeApplicationId: request.EmploymentStatusChangeApplicationId,
                 employmentStatusChangeOrderId: request.EmploymentStatusChangeOrderId,
                 workOnNonWorkdayOrderId: request.WorkOnNonWorkdayOrderId,

@@ -2,7 +2,6 @@ using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Hr.Domain.ApplicationsForChangeOfPosition;
 using MTK.Modules.Hr.Domain.BonusOrders;
 using MTK.Modules.Hr.Domain.CompensationOrders;
-using MTK.Modules.Hr.Domain.SalaryDeductions;
 using MTK.Modules.Hr.Domain.Employees;
 using MTK.Modules.Hr.Domain.EmploymentOrders;
 using MTK.Modules.Hr.Domain.NoticesOfChangeInWorkingConditions;
@@ -87,9 +86,6 @@ public class FileAttachment : FileAttachmentBase
     public Guid? BonusOrderId { get; set; }
     public BonusOrder? BonusOrder { get; set; }
 
-    public Guid? SalaryDeductionId { get; set; }
-    public SalaryDeduction? SalaryDeduction { get; set; }
-
     public Guid? EmploymentStatusChangeApplicationId { get; set; }
     public EmploymentStatusChangeApplication? EmploymentStatusChangeApplication { get; set; }
 
@@ -129,7 +125,6 @@ public class FileAttachment : FileAttachmentBase
         Guid? vacationApplicationId = null,
         Guid? vacationOrderId = null,
         Guid? bonusOrderId = null,
-        Guid? salaryDeductionId = null,
         Guid? employmentStatusChangeApplicationId = null,
         Guid? employmentStatusChangeOrderId = null,
         Guid? workOnNonWorkdayOrderId = null,
@@ -154,7 +149,6 @@ public class FileAttachment : FileAttachmentBase
             !vacationApplicationId.HasValue &&
             !vacationOrderId.HasValue &&
             !bonusOrderId.HasValue &&
-            !salaryDeductionId.HasValue &&
             !employmentStatusChangeApplicationId.HasValue &&
             !employmentStatusChangeOrderId.HasValue &&
             !workOnNonWorkdayOrderId.HasValue &&
@@ -183,7 +177,6 @@ public class FileAttachment : FileAttachmentBase
         attachment.VacationApplicationId = vacationApplicationId;
         attachment.VacationOrderId = vacationOrderId;
         attachment.BonusOrderId = bonusOrderId;
-        attachment.SalaryDeductionId = salaryDeductionId;
         attachment.EmploymentStatusChangeApplicationId = employmentStatusChangeApplicationId;
         attachment.EmploymentStatusChangeOrderId = employmentStatusChangeOrderId;
         attachment.WorkOnNonWorkdayOrderId = workOnNonWorkdayOrderId;

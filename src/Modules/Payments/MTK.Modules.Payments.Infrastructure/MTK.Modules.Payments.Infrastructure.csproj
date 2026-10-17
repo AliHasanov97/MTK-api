@@ -26,4 +26,8 @@
     <ProjectReference Include="..\..\Warehouse\MTK.Modules.Warehouse.IntegrationEvents\MTK.Modules.Warehouse.IntegrationEvents.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Database\Migrations\" />
+  </ItemGroup>
+
 </Project>

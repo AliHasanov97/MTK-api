@@ -70,13 +70,26 @@ internal sealed class ConvertVacationCompensationToOrderCommandHandler
             application.Notes
         );
 
-        // 3.5. Balansdan günləri çıx (artıq VacationBalanceId var, tarix lazım deyil)
-        var balance = await _vacationBalanceRepository.GetByIdAsync(application.VacationBalanceId, cancellationToken);
-        if (balance is null)
-            return Result.Failure<ConvertVacationCompensationToOrderResponse>(
-                new Error("VacationBalance.NotFound", "Məzuniyyət balansı tapılmadı"));
+        // 3.5. FIFO qaydası ilə bütün balanslardan kompensasiya günlərini çıx
+        // İşçinin bütün balanslarını ən köhnədən başlayaraq götür
+        var allBalances = await _vacationBalanceRepository.GetAllByEmployeeIdAsync(
+            application.EmployeeId, cancellationToken);
 
-        balance.RegisterCompensatedDays(application.RequestedDays);
+        // WorkYearStart-a görə sırala (ən köhnə birinci)
+        var sortedBalances = allBalances.OrderBy(b => b.WorkYearStart).ToList();
+
+        var remainingDays = application.RequestedDays;
+        foreach (var balance in sortedBalances)
+        {
+            if (remainingDays <= 0) break;
+
+            var daysToTake = Math.Min(remainingDays, balance.RemainingDays);
+            if (daysToTake > 0)
+            {
+                balance.RegisterCompensatedDays(daysToTake);
+                remainingDays -= daysToTake;
+            }
+        }
 
         // 4. Saxla
         await _compensationOrderRepository.AddAsync(order, cancellationToken);

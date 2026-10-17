@@ -21,7 +21,6 @@ internal sealed class ExportService : IExportService
     private readonly EducationLeaveApplicationExportService _educationLeaveApplicationExportService;
     private readonly EducationLeaveOrderExportService _educationLeaveOrderExportService;
     private readonly BonusOrderExportService _bonusOrderExportService;
-    private readonly SalaryDeductionExportService _salaryDeductionExportService;
     private readonly WorkOnNonWorkdayOrderExportService _workOnNonWorkdayOrderExportService;
     private readonly EmploymentStatusChangeOrderExportService _employmentStatusChangeOrderExportService;
     private readonly EmploymentStatusChangeApplicationExportService _employmentStatusChangeApplicationExportService;
@@ -45,7 +44,6 @@ internal sealed class ExportService : IExportService
         EducationLeaveApplicationExportService educationLeaveApplicationExportService,
         EducationLeaveOrderExportService educationLeaveOrderExportService,
         BonusOrderExportService bonusOrderExportService,
-        SalaryDeductionExportService salaryDeductionExportService,
         WorkOnNonWorkdayOrderExportService workOnNonWorkdayOrderExportService,
         EmploymentStatusChangeOrderExportService employmentStatusChangeOrderExportService,
         EmploymentStatusChangeApplicationExportService employmentStatusChangeApplicationExportService,
@@ -68,7 +66,6 @@ internal sealed class ExportService : IExportService
         _educationLeaveApplicationExportService = educationLeaveApplicationExportService;
         _educationLeaveOrderExportService = educationLeaveOrderExportService;
         _bonusOrderExportService = bonusOrderExportService;
-        _salaryDeductionExportService = salaryDeductionExportService;
         _workOnNonWorkdayOrderExportService = workOnNonWorkdayOrderExportService;
         _employmentStatusChangeOrderExportService = employmentStatusChangeOrderExportService;
         _employmentStatusChangeApplicationExportService = employmentStatusChangeApplicationExportService;
@@ -292,19 +289,6 @@ internal sealed class ExportService : IExportService
             cancellationToken);
 
         var fileName = $"Mükafat_Əmr_{index:D4}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pdf";
-
-        return new ExportResult(stream, fileName);
-    }
-
-    public async Task<ExportResult> ExportSalaryDeductionToPdfAsync(
-        Guid salaryDeductionId,
-        CancellationToken cancellationToken = default)
-    {
-        var (stream, index) = await _salaryDeductionExportService.ExportToPdfAsync(
-            salaryDeductionId,
-            cancellationToken);
-
-        var fileName = $"Əmək_Haqqından_Tutulma_Əmr_{index:D4}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pdf";
 
         return new ExportResult(stream, fileName);
     }

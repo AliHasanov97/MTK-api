@@ -79,9 +79,14 @@ internal sealed class CreateVacationCompensationApplicationCommandHandler
             balance = selectedBalance;
         }
 
-        if (request.RequestedDays > balance.RemainingDays)
+        // Bütün active balansların cəmi qalan günlərini hesabla
+        var allBalances = await _vacationBalanceRepository.GetAllByEmployeeIdAsync(
+            request.EmployeeId, cancellationToken);
+        var totalRemainingDays = allBalances.Sum(b => b.RemainingDays);
+
+        if (request.RequestedDays > totalRemainingDays)
             return Result.Failure<ResponseObjectWithName>(
-                VacationCompensationApplicationErrors.ExceedsBalance(request.RequestedDays, balance.RemainingDays));
+                VacationCompensationApplicationErrors.ExceedsBalance(request.RequestedDays, totalRemainingDays));
 
         // 2. Application yarat
         var applicationResult = VacationCompensationApplication.Create(

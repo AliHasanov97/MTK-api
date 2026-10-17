@@ -75,7 +75,6 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork, IHasAuditActor
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
     public DbSet<PayrollBonus> PayrollBonuses => Set<PayrollBonus>();
-    public DbSet<PayrollDeduction> PayrollDeductions => Set<PayrollDeduction>();
     public DbSet<PayrollAdjustment> PayrollAdjustments => Set<PayrollAdjustment>();
     public DbSet<SalaryPayment> SalaryPayments => Set<SalaryPayment>();
     public DbSet<Building> Buildings => Set<Building>();

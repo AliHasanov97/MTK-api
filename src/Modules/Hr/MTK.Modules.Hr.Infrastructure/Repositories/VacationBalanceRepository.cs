@@ -27,8 +27,11 @@ internal sealed class VacationBalanceRepository : Repository<VacationBalance>, I
 
     public async Task<VacationBalance?> GetOldestWithRemainingDaysAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
+        // RemainingDays = TotalEntitledDays - UsedDays - CompensatedDays
+        // TotalEntitledDays = BaseEntitledDays + ExperienceBonusDays + KarabakhWorkerDays + ChildrenUnder14Days + DisabledChildDays
         return await Context.Set<VacationBalance>()
-            .Where(b => b.EmployeeId == employeeId && b.RemainingDays > 0)
+            .Where(b => b.EmployeeId == employeeId
+                && (b.BaseEntitledDays + b.ExperienceBonusDays + b.KarabakhWorkerDays + b.ChildrenUnder14Days + b.DisabledChildDays - b.UsedDays - b.CompensatedDays) > 0)
             .OrderBy(b => b.WorkYearStart)
             .FirstOrDefaultAsync(cancellationToken);
     }

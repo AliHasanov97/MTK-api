@@ -8,7 +8,6 @@ using MTK.Modules.Hr.Domain.EmploymentOrders;
 using MTK.Modules.Hr.Domain.EmploymentStatusChangeOrders;
 using MTK.Modules.Hr.Domain.Orders;
 using MTK.Modules.Hr.Domain.OrdersForChangeOfPosition;
-using MTK.Modules.Hr.Domain.SalaryDeductions;
 using MTK.Modules.Hr.Domain.UnexcusedAbsences;
 using MTK.Modules.Hr.Domain.UnpaidLeaveOrders;
 using MTK.Modules.Hr.Domain.VacationOrders;
@@ -50,7 +49,6 @@ internal sealed class OrderRepository : Repository<Order>, IOrderRepository
             .Union(Context.Set<VacationOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
             .Union(Context.Set<EducationLeaveOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
             .Union(Context.Set<BonusOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
-            .Union(Context.Set<SalaryDeduction>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
             .Union(Context.Set<EmploymentStatusChangeOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id))
             .Union(Context.Set<VacationReturnOrder>().Where(o => o.EmployeeId == employeeId).Select(o => o.Id));
 
@@ -120,11 +118,6 @@ internal sealed class OrderRepository : Repository<Order>, IOrderRepository
             .LoadAsync(cancellationToken);
 
         await Context.Set<BonusOrder>()
-            .Where(o => orderIds.Contains(o.Id))
-            .Include(o => o.Employee)
-            .LoadAsync(cancellationToken);
-
-        await Context.Set<SalaryDeduction>()
             .Where(o => orderIds.Contains(o.Id))
             .Include(o => o.Employee)
             .LoadAsync(cancellationToken);

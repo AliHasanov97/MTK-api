@@ -124,7 +124,7 @@ public sealed class PayrollRun : Entity
         var payslip = _payslips.FirstOrDefault(p => p.EmployeeId == employeeId)
             ?? throw new InvalidOperationException($"PayrollRun {Id}-də {employeeId} işçisi üçün qəbz tapılmadı");
 
-        payslip.MarkAsPaid(method, paidAt, Month, Year);
+        payslip.MarkAsPaid(method, paidAt);
 
         if (AllPayslipsPaid)
         {
@@ -146,7 +146,7 @@ public sealed class PayrollRun : Entity
         var newlyPaid = _payslips.Where(p => !p.PaidAt.HasValue).ToList();
         foreach (var payslip in newlyPaid)
         {
-            payslip.MarkAsPaid(method, paidAt, Month, Year);
+            payslip.MarkAsPaid(method, paidAt);
         }
 
         MarkPaid();
