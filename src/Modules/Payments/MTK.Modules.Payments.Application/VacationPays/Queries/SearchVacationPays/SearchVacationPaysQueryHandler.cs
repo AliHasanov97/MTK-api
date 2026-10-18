@@ -21,8 +21,8 @@ internal sealed class SearchVacationPaysQueryHandler
         SearchVacationPaysQuery request,
         CancellationToken cancellationToken)
     {
-        var page = request.Page ?? 1;
-        var pageSize = request.PageSize ?? 20;
+        var page = Math.Max(1, request.Page ?? 1);
+        var pageSize = Math.Max(1, request.PageSize ?? 20);
         var skip = (page - 1) * pageSize;
 
         // Parse filters from frontend
