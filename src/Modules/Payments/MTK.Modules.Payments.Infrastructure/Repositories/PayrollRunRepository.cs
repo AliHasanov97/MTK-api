@@ -42,22 +42,23 @@ internal sealed class PayrollRunRepository : Repository<PayrollRun>, IPayrollRun
         int toMonth,
         CancellationToken cancellationToken = default)
     {
-        return await PaymentsContext.PayrollRuns
-            .Where(r => ((r.Year == fromYear && r.Month >= fromMonth) ||
-                         (r.Year > fromYear && r.Year < toYear) ||
-                         (r.Year == toYear && r.Month <= toMonth)))
-            .SelectMany(r => r.Payslips
-                .Where(p => p.EmployeeId == employeeId)
-                .Select(p => new PayslipWithPeriodDto(
-                    r.Year,
-                    r.Month,
-                    p.BaseSalary,
-                    p.BonusAmount,
-                    p.AdjustmentAmount,
-                    p.GrossSalary)))
-            .OrderBy(p => p.Year)
-            .ThenBy(p => p.Month)
-            .ToListAsync(cancellationToken);
+        return await (
+            from r in PaymentsContext.PayrollRuns
+            where (r.Year == fromYear && r.Month >= fromMonth) ||
+                  (r.Year > fromYear && r.Year < toYear) ||
+                  (r.Year == toYear && r.Month <= toMonth)
+            join p in PaymentsContext.Set<Payslip>()
+                on r.Id equals p.PayrollRunId
+            where p.EmployeeId == employeeId
+            orderby r.Year, r.Month
+            select new PayslipWithPeriodDto(
+                r.Year,
+                r.Month,
+                p.BaseSalary,
+                p.BonusAmount,
+                p.AdjustmentAmount,
+                p.GrossSalary)
+        ).ToListAsync(cancellationToken);
     }
 
     public async Task<List<PayrollRun>> GetAllPayrollRunsWithPayslipsByEmployeeAsync(
