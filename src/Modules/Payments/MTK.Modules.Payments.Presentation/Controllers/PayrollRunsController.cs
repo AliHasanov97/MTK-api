@@ -5,10 +5,13 @@ using MTK.Modules.Payments.Application.Payroll.Commands.ApprovePayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Commands.CalculatePayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Commands.PayPayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Commands.PayPayslip;
+using MTK.Modules.Payments.Application.Payroll.Commands.RecalculatePayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Queries.ExportPayrollRun;
 using MTK.Modules.Payments.Application.Payroll.Queries.ExportPayslip;
+using MTK.Modules.Payments.Application.Payroll.Queries.GetAllPayrollRuns;
 using MTK.Modules.Payments.Application.Payroll.Queries.GetPayrollRunById;
 using MTK.Modules.Payments.Application.Payroll.Queries.GetPayrollRunByPeriod;
+using MTK.Modules.Payments.Application.Payroll.Queries.GetPayslipsByEmployee;
 using MTK.Modules.Payments.Domain.Payments;
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
@@ -17,6 +20,21 @@ namespace MTK.Modules.Payments.Presentation.Controllers;
 [RequireAnyRole(Roles.Admin, Roles.Accountant)]
 public class PayrollRunsController(ISender sender) : BaseController(sender)
 {
+    /// <summary>Bütün PayrollRun-ları gətir (qəbzlər olmadan - tarixçə üçün).</summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetAllPayrollRunsQuery(), cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value)
+            : BadRequest(result.Error);
+    }
+
+    /// <summary>
+    /// Verilmiş dövr üçün hesablama yaradır. Ay bitməmiş hesablanmır: yalnız keçmiş təqvim ayı
+    /// üçün mümkündür (məs. noyabrda yalnız oktyabr) — əks halda PayrollRun.PeriodNotClosed.
+    /// </summary>
     [HttpPost("calculate")]
     public async Task<IActionResult> Calculate(
         [FromBody] CalculatePayrollRunCommand command,
@@ -26,6 +44,20 @@ public class PayrollRunsController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value, "Əmək haqqı hesablandı")
+            : BadRequest(result.Error);
+    }
+
+    /// <summary>
+    /// Mövcud hesablamanı yenidən qurur (sonradan gələn bonus/düzəlişləri də daxil etmək üçün).
+    /// Yalnız heç bir qəbz ödənilməmişsə mümkündür — təsdiqlənmişsə təkrar təsdiq tələb olunur.
+    /// </summary>
+    [HttpPost("{id:guid}/recalculate")]
+    public async Task<IActionResult> Recalculate(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new RecalculatePayrollRunCommand(id), cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value, "Əmək haqqı yenidən hesablandı")
             : BadRequest(result.Error);
     }
 
@@ -109,6 +141,17 @@ public class PayrollRunsController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value, "Bütün əmək haqları ödənildi")
+            : BadRequest(result.Error);
+    }
+
+    /// <summary>İşçinin bütün payslip-lərini gətir (bütün PayrollRun-lardan).</summary>
+    [HttpGet("payslips/employee/{employeeId:guid}")]
+    public async Task<IActionResult> GetPayslipsByEmployee(Guid employeeId, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetPayslipsByEmployeeQuery(employeeId), cancellationToken);
+
+        return result.IsSuccess
+            ? Success(result.Value)
             : BadRequest(result.Error);
     }
 }
