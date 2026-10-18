@@ -24,6 +24,7 @@ public sealed class Transaction : SearchableEntity
     public const string PurchaseExpenseCategory = "Satınalma";
     public const string PayrollPaymentCategory = "Əmək haqqı ödənişi";
     public const string SalaryPaymentCategory = "Əmək haqqı ödənişi";
+    public const string VacationPayPaymentCategory = "Məzuniyyət haqqı ödənişi";
 
     private Transaction() : base() { }
 
@@ -49,6 +50,9 @@ public sealed class Transaction : SearchableEntity
     /// <summary>Maaş ödənişindən yaradılmış xərcin mənbə maaş ödənişi identifikatoru.</summary>
     public Guid? SourceSalaryPaymentId { get; private set; }
 
+    /// <summary>Məzuniyyət haqqı ödənişindən yaradılmış xərcin mənbə məzuniyyət ödənişi identifikatoru.</summary>
+    public Guid? SourceVacationPayId { get; private set; }
+
     /// <summary>Identifies the related document opened from a ledger transaction.</summary>
     public string DocumentType => SourcePurchaseId.HasValue
         ? "Purchase"
@@ -56,12 +60,14 @@ public sealed class Transaction : SearchableEntity
             ? "PayrollPayment"
             : SourceSalaryPaymentId.HasValue
                 ? "SalaryPayment"
-                : SourcePaymentId.HasValue
-                    ? (Direction == TransactionDirection.Income ? "ResidentPayment" : "VendorPayment")
-                    : "LedgerEntry";
+                : SourceVacationPayId.HasValue
+                    ? "VacationPayPayment"
+                    : SourcePaymentId.HasValue
+                        ? (Direction == TransactionDirection.Income ? "ResidentPayment" : "VendorPayment")
+                        : "LedgerEntry";
 
     /// <summary>The related document ID, or this ledger entry ID for manual transactions.</summary>
-    public Guid ReferenceId => SourcePurchaseId ?? SourcePayslipId ?? SourceSalaryPaymentId ?? SourcePaymentId ?? Id;
+    public Guid ReferenceId => SourcePurchaseId ?? SourcePayslipId ?? SourceSalaryPaymentId ?? SourceVacationPayId ?? SourcePaymentId ?? Id;
 
     public static Transaction Create(
         TransactionDirection direction,
@@ -72,7 +78,8 @@ public sealed class Transaction : SearchableEntity
         Guid? sourcePaymentId = null,
         Guid? sourcePurchaseId = null,
         Guid? sourcePayslipId = null,
-        Guid? sourceSalaryPaymentId = null)
+        Guid? sourceSalaryPaymentId = null,
+        Guid? sourceVacationPayId = null)
     {
         if (amount <= 0)
             throw new ArgumentException("Transaction amount must be positive");
@@ -88,6 +95,7 @@ public sealed class Transaction : SearchableEntity
             SourcePurchaseId = sourcePurchaseId,
             SourcePayslipId = sourcePayslipId,
             SourceSalaryPaymentId = sourceSalaryPaymentId,
+            SourceVacationPayId = sourceVacationPayId,
         };
         transaction.SetCreatedAt();
         return transaction;
@@ -218,6 +226,28 @@ public sealed class Transaction : SearchableEntity
                 salaryPayment.PaymentDate.ToUniversalTime(),
                 sourceSalaryPaymentId: salaryPayment.Id);
         }
+    }
+
+    /// <summary>
+    /// Məzuniyyət haqqı ödənişi üçün transaction yarat.
+    /// </summary>
+    public static Transaction ForVacationPay(
+        Guid vacationPayId,
+        string employeeFullName,
+        decimal amount,
+        PaymentMethod paymentMethod,
+        DateTimeOffset paidAt,
+        string periodLabel)
+    {
+        var description = $"{employeeFullName} — {periodLabel} məzuniyyət haqqı · {MethodName(paymentMethod)}";
+
+        return Create(
+            TransactionDirection.Expense,
+            VacationPayPaymentCategory,
+            amount,
+            description,
+            paidAt.ToUniversalTime(),
+            sourceVacationPayId: vacationPayId);
     }
 
     // No Delete(): the ledger is append-only.

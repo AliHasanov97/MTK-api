@@ -1071,6 +1071,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("FixedAmount")
+                        .HasColumnType("numeric");
+
                     b.Property<decimal>("Hours")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -1640,6 +1643,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.Property<Guid?>("SourceSalaryPaymentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SourceVacationPayId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("TransactionDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -1735,6 +1741,85 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.ToTable("Users", "payments");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Payments.Domain.VacationPays.VacationPay", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AverageDailyWage")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("AverageMonthlyWage")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("EmployeeFullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("VacationDays")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("VacationEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("VacationOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("VacationStartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("VacationOrderId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.HasIndex("Status", "DueDate");
+
+                    b.ToTable("vacation_pays", "payments");
                 });
 
             modelBuilder.Entity("MTK.Modules.Payments.Domain.Vendors.Vendor", b =>
