@@ -13,6 +13,7 @@ using MTK.Modules.Payments.Application.SalaryPayments.Queries.SearchSalaryPaymen
 
 namespace MTK.Modules.Payments.Presentation.Controllers;
 
+[Route("api/salary-payments")]
 [RequireAnyRole(Roles.Admin, Roles.Accountant)]
 public class SalaryPaymentsController(ISender sender) : BaseController(sender)
 {

@@ -10,8 +10,9 @@ namespace MTK.Modules.Hr.Application.UnpaidLeaveOrders.Events;
 
 /// <summary>
 /// Ödənişsiz məzuniyyət əmri. İşçinin qrafikinə görə məzuniyyət günlərində işləməli olduğu
-/// saatlar (bayram/qeyri-iş günləri çıxılmaqla) maaşdan çıxılır. Düzəliş işarəli saat ilə
-/// və həmin ayın iş saatı norması ilə birlikdə göndərilir (saatlıq dərəcə hesablanması üçün).
+/// saatlar (bayram/qeyri-iş günləri çıxılmaqla) maaşdan çıxılır.
+///
+/// Hər ay üçün ayrı-ayrı adjustment yaradılır (çox aylıq məzuniyyət üçün).
 /// </summary>
 internal sealed class UnpaidLeaveOrderCreatedDomainEventHandler
     : DomainEventHandler<UnpaidLeaveOrderCreatedDomainEvent>
@@ -46,25 +47,46 @@ internal sealed class UnpaidLeaveOrderCreatedDomainEventHandler
         var start = DateOnly.FromDateTime(domainEvent.StartDate.UtcDateTime);
         var end = DateOnly.FromDateTime(domainEvent.EndDate.UtcDateTime);
 
-        var leaveCalendarDays = await _calendarDayRepository.GetByDateRangeAsync(start, end, cancellationToken);
-        var leaveHours = _workHoursCalculator.CalculateNormHours(employee, start, end, leaveCalendarDays);
+        // Hər ay üçün ayrı-ayrı adjustment yarat
+        var current = start;
 
-        var monthStart = new DateOnly(start.Year, start.Month, 1);
-        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-        var monthCalendarDays = await _calendarDayRepository.GetByDateRangeAsync(monthStart, monthEnd, cancellationToken);
-        var normHours = _workHoursCalculator.CalculateNormHours(employee, monthStart, monthEnd, monthCalendarDays);
+        while (current <= end)
+        {
+            var monthStart = new DateOnly(current.Year, current.Month, 1);
+            var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
-        var integrationEvent = new PayrollAdjustmentRequestedIntegrationEvent(
-            Guid.NewGuid(),
-            DateTime.UtcNow,
-            domainEvent.OrderId,
-            domainEvent.EmployeeId,
-            PayrollAdjustmentReason.UnpaidLeave,
-            hours: -leaveHours,
-            normHours: normHours,
-            salaryMonth: start.Month,
-            salaryYear: start.Year);
+            // Həmin aydakı ödənişsiz məzuniyyət dövrünü müəyyənləşdir
+            var periodStart = current > monthStart ? current : monthStart;
+            var periodEnd = end < monthEnd ? end : monthEnd;
 
-        await _eventBus.PublishAsync(integrationEvent, cancellationToken);
+            // Həmin aydakı ödənişsiz məzuniyyət saatlarını hesabla
+            var periodCalendarDays = await _calendarDayRepository.GetByDateRangeAsync(
+                periodStart, periodEnd, cancellationToken);
+            var leaveHoursInMonth = _workHoursCalculator.CalculateNormHours(
+                employee, periodStart, periodEnd, periodCalendarDays);
+
+            // Ayın normasını hesabla
+            var monthCalendarDays = await _calendarDayRepository.GetByDateRangeAsync(
+                monthStart, monthEnd, cancellationToken);
+            var normHours = _workHoursCalculator.CalculateNormHours(
+                employee, monthStart, monthEnd, monthCalendarDays);
+
+            // Həmin aydan ödənişsiz məzuniyyət saatlarını çıx
+            var integrationEvent = new PayrollAdjustmentRequestedIntegrationEvent(
+                Guid.NewGuid(),
+                DateTime.UtcNow,
+                current == start ? domainEvent.OrderId : Guid.NewGuid(), // İlk ay əmrin ID-si, digərləri fərqli
+                domainEvent.EmployeeId,
+                PayrollAdjustmentReason.UnpaidLeave,
+                hours: -leaveHoursInMonth,
+                normHours: normHours,
+                salaryMonth: current.Month,
+                salaryYear: current.Year);
+
+            await _eventBus.PublishAsync(integrationEvent, cancellationToken);
+
+            // Növbəti aya keç
+            current = monthEnd.AddDays(1);
+        }
     }
 }

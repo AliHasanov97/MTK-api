@@ -26,6 +26,7 @@ using MTK.Modules.Warehouse.IntegrationEvents.Nomenclatures;
 using MTK.Modules.Hr.IntegrationEvents.Employees;
 using MTK.Modules.Hr.IntegrationEvents.BonusOrders;
 using MTK.Modules.Hr.IntegrationEvents.Payroll;
+using MTK.Modules.Hr.IntegrationEvents.VacationPays;
 using Outbox = MTK.Modules.Payments.Infrastructure.Outbox;
 
 namespace MTK.Modules.Payments.Infrastructure;
@@ -91,6 +92,7 @@ public static class PaymentsModule
         services.AddScoped<IPayrollBonusRepository, PayrollBonusRepository>();
         services.AddScoped<IPayrollAdjustmentRepository, PayrollAdjustmentRepository>();
         services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
+        services.AddScoped<IVacationPayRepository, VacationPayRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
@@ -117,6 +119,7 @@ public static class PaymentsModule
         services.AddScoped<MTK.Modules.Payments.Application.OwnerBalances.Services.IOwnerBalanceService, MTK.Modules.Payments.Application.OwnerBalances.Services.OwnerBalanceService>();
         services.AddScoped<MTK.Modules.Payments.Application.CompanyBalances.Services.ICompanyBalanceService, MTK.Modules.Payments.Application.CompanyBalances.Services.CompanyBalanceService>();
         services.AddScoped<MTK.Modules.Payments.Application.Payroll.Services.IPayrollRunGenerationService, MTK.Modules.Payments.Application.Payroll.Services.PayrollRunGenerationService>();
+        services.AddScoped<MTK.Modules.Payments.Application.Services.AverageWage.IAverageWageCalculator, MTK.Modules.Payments.Application.Services.AverageWage.AverageWageCalculator>();
 
         // Charge generation services (refactored into separate classes)
         services.AddScoped<MTK.Modules.Payments.Infrastructure.Services.RateProvider>();
@@ -146,6 +149,11 @@ public static class PaymentsModule
 
         // Monthly Payroll Generation Configuration
         services.Configure<Jobs.MonthlyPayrollGenerationOptions>(
+            configuration.GetSection("Payments:MonthlyPayrollGeneration"));
+
+        // Hesablama dövrü qaydası (yalnız keçmiş təqvim ayı) — vaxt qurşağı Quartz işi ilə
+        // eyni açardan oxunur ki, "hansı dövr açıqdır" sualının cavabı biri-birindən ayrı düşməsin.
+        services.Configure<Application.Payroll.Services.PayrollPeriodOptions>(
             configuration.GetSection("Payments:MonthlyPayrollGeneration"));
 
         // Quartz Job Configurators
@@ -221,5 +229,6 @@ public static class PaymentsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<EmployeeUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<BonusOrderCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<PayrollAdjustmentRequestedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<VacationPayCreatedIntegrationEvent>>();
     }
 }

@@ -6,7 +6,10 @@ namespace MTK.Modules.Payments.Application.Payroll.Commands.SyncPayrollAdjustmen
 /// <summary>
 /// HR-dəki bir əmrdən (məzuniyyət/ödənişsiz məzuniyyət/kompensasiya və s.) gələn iş saatı əsaslı
 /// əmək haqqı düzəlişini bu modulda saxlayır. <paramref name="OrderId"/> eyni zamanda
-/// idempotentlik açarıdır (HR əmrinin Id-si). Pul = baza maaş × (Hours / NormHours).
+/// idempotentlik açarıdır (HR əmrinin Id-si).
+/// Pul hesablanması:
+/// - FixedAmount təmin edilibsə → FixedAmount istifadə edilir
+/// - Əks halda → baza maaş × (Hours / NormHours)
 /// </summary>
 public sealed record SyncPayrollAdjustmentCommand(
     Guid OrderId,
@@ -15,4 +18,5 @@ public sealed record SyncPayrollAdjustmentCommand(
     decimal Hours,
     decimal NormHours,
     int SalaryMonth,
-    int SalaryYear) : ICommand;
+    int SalaryYear,
+    decimal? FixedAmount = null) : ICommand;

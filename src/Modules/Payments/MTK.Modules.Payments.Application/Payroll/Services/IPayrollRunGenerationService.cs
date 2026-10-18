@@ -11,5 +11,15 @@ namespace MTK.Modules.Payments.Application.Payroll.Services;
 /// </summary>
 public interface IPayrollRunGenerationService
 {
+    /// <summary>
+    /// Verilmiş ay üçün yeni hesablama yaradır. Yalnız keçmiş təqvim ayı üçün mümkündür
+    /// (bax: <see cref="PayrollPeriodOptions"/>); əks halda <c>PayrollRun.PeriodNotClosed</c>.
+    /// </summary>
     Task<Result<PayrollRunResponse>> GenerateAsync(int year, int month, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Mövcud hesablamanı yenidən qurur (HR-dan sonradan gələn bonus/düzəliş və ya manual düzəliş).
+    /// Yalnız heç bir qəbz ödənilməmişsə mümkündür; nəticədə run yenidən "Calculated" statusuna düşür.
+    /// </summary>
+    Task<Result<PayrollRunResponse>> RecalculateAsync(Guid payrollRunId, CancellationToken cancellationToken = default);
 }

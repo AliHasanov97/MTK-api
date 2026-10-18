@@ -56,6 +56,12 @@ internal sealed class VacationApplicationExportService
         var startYearSuffix = GetYearSuffix(startDate.Year);
         var endYearSuffix = GetYearSuffix(endDate.Year);
 
+        // Ərizə hansı iş ilinə (VacationBalance) bağlıdırsa, "iş dövrü" həmin dövrdür.
+        // Əvvəl bu yer boş "______-______-ci" kimi çap olunurdu.
+        var workPeriod = app.VacationBalance is not null
+            ? $"{app.VacationBalance.WorkYearStart.Year}-{app.VacationBalance.WorkYearEnd.Year}-{GetYearSuffix(app.VacationBalance.WorkYearEnd.Year)}"
+            : "______-______-ci";
+
         Document.Create(container =>
         {
             container.Page(page =>
@@ -130,7 +136,7 @@ internal sealed class VacationApplicationExportService
                         text.DefaultTextStyle(s => s.LineHeight(2f));
                         text.Justify();
                         text.Span("\t\tXahiş edirəm mənə ");
-                        text.Span("______-______-ci").Underline();
+                        text.Span(workPeriod).Underline();
                         text.Span(" iş dövrü üçün ");
                         text.Span($"{startDate.Day:D2}.{startDate.Month:D2}.{startDate.Year}-{startYearSuffix}").Underline();
                         text.Span(" il tarixindən ");

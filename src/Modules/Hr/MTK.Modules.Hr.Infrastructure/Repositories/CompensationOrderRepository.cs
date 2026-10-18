@@ -17,9 +17,12 @@ internal sealed class CompensationOrderRepository
         Guid id,
         CancellationToken cancellationToken = default)
     {
+        // VacationBalance mütləqdir: PDF-də və UI-da "iş ili" dövrü (WorkYearStart-WorkYearEnd)
+        // yalnız bu naviqasiyadan oxunur — include olmasa hissə boş çap olunur.
         return await Context.Set<CompensationOrder>()
             .Include(o => o.Employee)
                 .ThenInclude(e => e.Job)
+            .Include(o => o.VacationBalance)
             .Include(o => o.CreatedBy)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
@@ -35,7 +38,8 @@ internal sealed class CompensationOrderRepository
         var query = ApplyFiltersAndSort(filters, sortCriteria);
         query = ApplyPages(query, page, pageSize);
 
-        // Include Employee, Company, VacationBalance və CreatedBy
+        // Siyahıda yalnız işçi və yaradan göstərilir — "iş ili" (VacationBalance) detal
+        // ekranında və PDF-də lazımdır (bax: GetByIdDefaultAsync).
         query = query
             .Include(o => o.Employee)
             .Include(o => o.CreatedBy);

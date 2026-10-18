@@ -9,6 +9,9 @@ namespace MTK.Modules.Hr.IntegrationEvents.Payroll;
 /// Hesablama (istehsalat saatı): saatlıq dərəcə = aylıq baza maaş / ayın iş saatı norması.
 /// Payments tərəfi <see cref="Hours"/> (işarəli) və <see cref="NormHours"/> (həmin ay üçün
 /// işçinin qrafikinə görə norma) saxlayır; pul = baza maaş × (saat / norma).
+///
+/// YENİ: <see cref="FixedAmount"/> təmin edilibsə, saat əsaslı hesablama ignore edilir və
+/// sabit məbləğ istifadə olunur (məs. kompensasiya üçün orta əmək haqqı hesablaması).
 /// </summary>
 public sealed class PayrollAdjustmentRequestedIntegrationEvent : IntegrationEvent
 {
@@ -21,7 +24,8 @@ public sealed class PayrollAdjustmentRequestedIntegrationEvent : IntegrationEven
         decimal hours,
         decimal normHours,
         int salaryMonth,
-        int salaryYear)
+        int salaryYear,
+        decimal? fixedAmount = null)
         : base(integrationEventId, occurredOnUtc)
     {
         OrderId = orderId;
@@ -31,6 +35,7 @@ public sealed class PayrollAdjustmentRequestedIntegrationEvent : IntegrationEven
         NormHours = normHours;
         SalaryMonth = salaryMonth;
         SalaryYear = salaryYear;
+        FixedAmount = fixedAmount;
     }
 
     /// <summary>Hadisəni doğuran HR əmrinin Id-si — Payments tərəfində idempotentlik açarı.</summary>
@@ -50,4 +55,10 @@ public sealed class PayrollAdjustmentRequestedIntegrationEvent : IntegrationEven
     public int SalaryMonth { get; }
 
     public int SalaryYear { get; }
+
+    /// <summary>
+    /// Sabit məbləğ (opsional). Əgər təmin edilibsə, Hours/NormHours ignore edilir.
+    /// İstifadə: Kompensasiya üçün orta əmək haqqı əsasında hesablama.
+    /// </summary>
+    public decimal? FixedAmount { get; }
 }

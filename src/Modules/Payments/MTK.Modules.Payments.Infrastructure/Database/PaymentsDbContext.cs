@@ -29,6 +29,7 @@ using MTK.Modules.Payments.Domain.Owners;
 using MTK.Modules.Payments.Domain.Employees;
 using MTK.Modules.Payments.Domain.Payroll;
 using MTK.Modules.Payments.Domain.SalaryPayments;
+using MTK.Modules.Payments.Domain.VacationPays;
 using MTK.Modules.Payments.Domain.Nomenclatures;
 using MTK.Modules.Payments.Domain.Purchases;
 using MTK.Modules.Payments.Domain.FileAttachments;
@@ -77,6 +78,7 @@ public sealed class PaymentsDbContext : DbContext, IUnitOfWork, IHasAuditActor
     public DbSet<PayrollBonus> PayrollBonuses => Set<PayrollBonus>();
     public DbSet<PayrollAdjustment> PayrollAdjustments => Set<PayrollAdjustment>();
     public DbSet<SalaryPayment> SalaryPayments => Set<SalaryPayment>();
+    public DbSet<VacationPay> VacationPays => Set<VacationPay>();
     public DbSet<Building> Buildings => Set<Building>();
     public DbSet<Apartment> Apartments => Set<Apartment>();
     public DbSet<Garage> Garages => Set<Garage>();

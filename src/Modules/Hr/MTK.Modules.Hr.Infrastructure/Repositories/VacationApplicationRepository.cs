@@ -42,6 +42,8 @@ internal sealed class VacationApplicationRepository
                 .ThenInclude(e => e.Job)
             .Include(v => v.CreatedBy)
             .Include(v => v.VacationOrder)
+            // Ərizə PDF-ində "iş dövrü" (iş ili) bu balansdan çap olunur.
+            .Include(v => v.VacationBalance)
             .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
     }
 

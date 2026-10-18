@@ -110,6 +110,66 @@ public sealed class PayrollRun : Entity
     private bool AllPayslipsPaid => _payslips.All(p => p.PaidAt.HasValue);
 
     /// <summary>
+    /// Ən azı bir qəbz ödənilibsə true. Ödəniş edildikdən sonra hesablamanın rəqəmləri
+    /// dəyişdirilə bilməz (mühasibat qeydləri artıq yaranıb) — bax: Recalculate.
+    /// </summary>
+    public bool HasPayments => _payslips.Any(p => p.PaidAt.HasValue);
+
+    /// <summary>
+    /// Mövcud hesablamanın bütün qəbzlərini yenidən qurur (HR-dan sonradan gələn bonus/düzəliş
+    /// və ya manual "yenidən hesabla"). Yalnız heç bir ödəniş edilməmişsə mümkündür; nəticədə run
+    /// yenidən "Calculated" statusuna düşür, yəni əvvəl təsdiqlənibsə təkrar təsdiq tələb olunur.
+    /// </summary>
+    public void Recalculate(
+        IReadOnlyCollection<(Guid EmployeeId, string EmployeeFullName, PayrollCalculationResult Result)> payslips)
+    {
+        if (HasPayments)
+        {
+            throw new InvalidOperationException(
+                $"PayrollRun {Id} üzrə artıq ödəniş edilib — yenidən hesablamaq mümkün deyil");
+        }
+
+        if (payslips.Count == 0)
+        {
+            throw new InvalidOperationException("Heç bir qəbz yoxdur — hesablama tamamlana bilməz");
+        }
+
+        var byEmployee = payslips.ToDictionary(p => p.EmployeeId);
+
+        // Siyahıdan çıxan işçilərin (məs. işdən çıxan, artıq aktiv olmayan) qəbzləri silinir.
+        foreach (var obsolete in _payslips.Where(p => !byEmployee.ContainsKey(p.EmployeeId)).ToList())
+        {
+            _payslips.Remove(obsolete);
+        }
+
+        // Mövcud qəbzlər yerindəcə yenilənir — silib yenidən yaratmaq (PayrollRunId, EmployeeId)
+        // unikal indeksini pozur (EF insert-ləri silmələrdən əvvəl göndərir).
+        var existingEmployeeIds = _payslips.Select(p => p.EmployeeId).ToHashSet();
+        foreach (var payslip in _payslips)
+        {
+            var recalculated = byEmployee[payslip.EmployeeId];
+            payslip.UpdateCalculation(recalculated.EmployeeFullName, recalculated.Result);
+        }
+
+        // Yeni işə qəbul olunanlar üçün yeni qəbz yaradılır.
+        foreach (var (employeeId, employeeFullName, result) in payslips)
+        {
+            if (existingEmployeeIds.Contains(employeeId))
+            {
+                continue;
+            }
+
+            _payslips.Add(Payslip.Create(Id, employeeId, employeeFullName, result));
+        }
+
+        Status = PayrollRunStatus.Calculated;
+        CalculatedAt = DateTimeOffset.UtcNow;
+        ApprovedAt = null;
+        PaidAt = null;
+        SetUpdatedAt();
+    }
+
+    /// <summary>
     /// Bir işçinin qəbzini ödənilmiş qeyd edir. Son ödənilməmiş qəbz bu olarsa, run özü
     /// "Paid"ə keçir (MarkPaid). Çağıran (PayPayslipCommandHandler) bunun ardından Transaction
     /// yaradır — bax: Transaction.ForPayrollPayment.

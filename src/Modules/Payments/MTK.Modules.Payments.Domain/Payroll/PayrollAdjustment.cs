@@ -10,6 +10,9 @@ namespace MTK.Modules.Payments.Domain.Payroll;
 /// mənfi = maaşdan çıxılma), <see cref="NormHours"/> isə həmin dövr üçün işçinin iş saatı normasıdır.
 /// Əmək haqqı hesablamasında pul = baza maaş × (Hours / NormHours) — yəni saatlıq dərəcə
 /// (baza maaş / norma) çıxılan/əlavə olunan saata vurulur.
+///
+/// <see cref="FixedAmount"/> təmin edilibsə, saat əsaslı hesablama ignore edilir və sabit məbləğ
+/// istifadə olunur (məs. kompensasiya üçün orta əmək haqqı hesablaması).
 /// </summary>
 public sealed class PayrollAdjustment : Entity
 {
@@ -20,7 +23,8 @@ public sealed class PayrollAdjustment : Entity
         decimal hours,
         decimal normHours,
         int salaryMonth,
-        int salaryYear) : base(id)
+        int salaryYear,
+        decimal? fixedAmount = null) : base(id)
     {
         EmployeeId = employeeId;
         Reason = reason;
@@ -28,6 +32,7 @@ public sealed class PayrollAdjustment : Entity
         NormHours = normHours;
         SalaryMonth = salaryMonth;
         SalaryYear = salaryYear;
+        FixedAmount = fixedAmount;
     }
 
     private PayrollAdjustment() : base() { }
@@ -47,6 +52,12 @@ public sealed class PayrollAdjustment : Entity
 
     public int SalaryYear { get; private set; }
 
+    /// <summary>
+    /// Sabit məbləğ (opsional). Təmin edilibsə, Hours/NormHours əsaslı hesablama ignore edilir.
+    /// Kompensasiya üçün orta əmək haqqı əsasında hesablama.
+    /// </summary>
+    public decimal? FixedAmount { get; private set; }
+
     public static PayrollAdjustment Create(
         Guid id,
         Guid employeeId,
@@ -54,9 +65,10 @@ public sealed class PayrollAdjustment : Entity
         decimal hours,
         decimal normHours,
         int salaryMonth,
-        int salaryYear)
+        int salaryYear,
+        decimal? fixedAmount = null)
     {
-        var adjustment = new PayrollAdjustment(id, employeeId, reason, hours, normHours, salaryMonth, salaryYear);
+        var adjustment = new PayrollAdjustment(id, employeeId, reason, hours, normHours, salaryMonth, salaryYear, fixedAmount);
         adjustment.SetCreatedAt();
         return adjustment;
     }

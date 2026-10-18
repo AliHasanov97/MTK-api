@@ -53,6 +53,28 @@ public sealed class Payslip : Entity
         return payslip;
     }
 
+    /// <summary>
+    /// Yenidən hesablama: eyni işçinin mövcud qəbzi <b>yerində</b> yenilənir. Qəbzi silib yenisini
+    /// yaratmaq (PayrollRunId, EmployeeId) unikal indeksini pozur — EF silmələrdən əvvəl insert etməyə
+    /// çalışır. Yalnız PayrollRun.Recalculate çağırır.
+    /// </summary>
+    internal void UpdateCalculation(string employeeFullName, PayrollCalculationResult result)
+    {
+        if (PaidAt.HasValue)
+        {
+            throw new InvalidOperationException($"Payslip {Id} artıq ödənilib ({PaidAt:yyyy-MM-dd}) — dəyişdirilə bilməz");
+        }
+
+        EmployeeFullName = employeeFullName;
+        BaseSalary = result.BaseSalary;
+        BonusAmount = result.BonusAmount;
+        AdjustmentAmount = result.AdjustmentAmount;
+        GrossSalary = result.GrossSalary;
+        FinalNetSalary = result.FinalNetSalary;
+        TotalEmployerCost = result.TotalEmployerCost;
+        SetUpdatedAt();
+    }
+
     /// <summary>Yalnız PayrollRun.PayPayslip/PayAllPayslips tərəfindən çağırılır — status qaydası aggregate-dədir.</summary>
     internal void MarkAsPaid(PaymentMethod method, DateTimeOffset paidAt)
     {

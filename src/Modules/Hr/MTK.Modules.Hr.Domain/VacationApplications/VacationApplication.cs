@@ -72,10 +72,8 @@ public sealed class VacationApplication : Application
             return Result.Failure<VacationApplication>(
                 new Error("VacationApplication.InvalidDates", "Bitmə tarixi başlama tarixindən əvvəl ola bilməz"));
 
-        // Validation: start date cannot be in the past
-        if (startDate.Date < DateTimeOffset.UtcNow.Date)
-            return Result.Failure<VacationApplication>(
-                new Error("VacationApplication.StartDateInPast", "Başlama tarixi keçmişdə ola bilməz"));
+        // NOT: Keçmiş tarix məhdudiyyəti götürülüb (Variant 2: Çevik qayda)
+        // UI-da xəbərdarlıq göstərilməlidir
 
         var id = Guid.NewGuid();
         var application = new VacationApplication
@@ -117,9 +115,8 @@ public sealed class VacationApplication : Application
             return Result.Failure(
                 new Error("VacationApplication.InvalidDates", "Bitmə tarixi başlama tarixindən əvvəl ola bilməz"));
 
-        if (startDate.Date < DateTimeOffset.UtcNow.Date)
-            return Result.Failure(
-                new Error("VacationApplication.StartDateInPast", "Başlama tarixi keçmişdə ola bilməz"));
+        // NOT: Keçmiş tarix məhdudiyyəti götürülüb (Variant 2: Çevik qayda)
+        // UI-da xəbərdarlıq göstərilməlidir
 
         StartDate = DateTimeHelper.ToUtcDateOnly(startDate);
         EndDate = DateTimeHelper.ToUtcDateOnly(endDate);

@@ -24,10 +24,11 @@ internal sealed class VacationCompensationApplicationRepository
         var query = ApplyFiltersAndSort(filters, sortCriteria);
         query = ApplyPages(query, page, pageSize);
 
-        // Include Employee, Company və VacationBalance
+        // Siyahıda yalnız işçi və ondan yaranan əmr göstərilir — "iş ili" (VacationBalance)
+        // detal ekranında və PDF-də lazımdır (bax: GetByIdWithLinesAsync).
         query = query
             .Include(v => v.Employee)
-            .Include(j => j.CompensationOrder);
+            .Include(v => v.CompensationOrder);
 
         return await query.ToListAsync(cancellationToken);
     }
@@ -36,9 +37,12 @@ internal sealed class VacationCompensationApplicationRepository
         Guid id,
         CancellationToken cancellationToken = default)
     {
+        // VacationBalance mütləqdir: PDF-də və UI-da "iş ili dövrü" (WorkYearStart-WorkYearEnd)
+        // yalnız bu naviqasiyadan oxunur — include olmasa hissə boş çap olunur.
         return await Context.Set<VacationCompensationApplication>()
             .Include(v => v.Employee)
                 .ThenInclude(e => e.Job)
+            .Include(v => v.VacationBalance)
             .Include(v => v.CreatedBy)
             .Include(v => v.CompensationOrder)
             .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);

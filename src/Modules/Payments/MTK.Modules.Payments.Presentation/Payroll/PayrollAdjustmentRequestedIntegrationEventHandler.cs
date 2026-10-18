@@ -22,7 +22,8 @@ internal sealed class PayrollAdjustmentRequestedIntegrationEventHandler(ISender 
             integrationEvent.Hours,
             integrationEvent.NormHours,
             integrationEvent.SalaryMonth,
-            integrationEvent.SalaryYear);
+            integrationEvent.SalaryYear,
+            integrationEvent.FixedAmount);
 
         Result result = await sender.Send(command, cancellationToken);
 

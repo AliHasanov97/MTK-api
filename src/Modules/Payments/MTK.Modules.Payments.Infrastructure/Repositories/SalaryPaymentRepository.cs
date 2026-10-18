@@ -33,4 +33,23 @@ internal sealed class SalaryPaymentRepository : SearchableRepository<SalaryPayme
                 s.SalaryYear == year &&
                 s.SalaryMonth == month, cancellationToken);
     }
+
+    public async Task<List<SalaryPayment>> GetByEmployeeAndPeriodRangeAsync(
+        Guid employeeId,
+        int fromYear,
+        int fromMonth,
+        int toYear,
+        int toMonth,
+        CancellationToken cancellationToken = default)
+    {
+        return await PaymentsContext.SalaryPayments
+            .Where(s => s.EmployeeId == employeeId &&
+                        s.Status == SalaryPaymentStatus.Paid &&
+                        ((s.SalaryYear == fromYear && s.SalaryMonth >= fromMonth) ||
+                         (s.SalaryYear > fromYear && s.SalaryYear < toYear) ||
+                         (s.SalaryYear == toYear && s.SalaryMonth <= toMonth)))
+            .OrderBy(s => s.SalaryYear)
+            .ThenBy(s => s.SalaryMonth)
+            .ToListAsync(cancellationToken);
+    }
 }
