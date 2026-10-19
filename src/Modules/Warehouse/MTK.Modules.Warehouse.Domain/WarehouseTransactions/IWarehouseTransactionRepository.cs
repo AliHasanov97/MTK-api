@@ -30,6 +30,15 @@ public interface IWarehouseTransactionRepository : IRepository<WarehouseTransact
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Hər nomenklatura üçün ən son mal qəbulundakı vahid qiyməti. Aylıq hesabatda
+    /// cari stokun uçot dəyərini göstərmək üçün istifadə olunur — ayrıca qiymət
+    /// cədvəli yoxdur, qiymət qəbul hərəkətində saxlanılır.
+    /// </summary>
+    Task<Dictionary<Guid, decimal>> GetLatestUnitPricesAsync(
+        IReadOnlyCollection<Guid> nomenclatureIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// İstinad üzrə əməliyyat tapır (məs: Accounting Purchase ID)
     /// </summary>
     Task<WarehouseTransaction?> GetByReferenceAsync(

@@ -7,6 +7,7 @@ using MTK.Modules.Identity.Application;
 using MTK.Modules.Identity.Infrastructure;
 using MTK.Modules.Payments.Application;
 using MTK.Modules.Payments.Infrastructure;
+using MTK.Modules.Reports.Infrastructure;
 using MTK.Modules.Warehouse.Application;
 using MTK.Modules.Warehouse.Infrastructure;
 
@@ -67,6 +68,7 @@ public static class ModuleExtensions
         services.AddPaymentsModule(configuration);
         services.AddWarehouseModule(configuration);
         services.AddHrModule(configuration);
+        services.AddReportingModule(configuration);
 
         // TODO: Register other modules here
         // services.AddBillingModule(configuration);

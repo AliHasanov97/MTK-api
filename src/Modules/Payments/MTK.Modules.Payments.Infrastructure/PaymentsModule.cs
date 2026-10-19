@@ -101,6 +101,10 @@ public static class PaymentsModule
         services.AddScoped<INomenclatureShadowRepository, NomenclatureShadowRepository>();
         services.AddScoped<IPurchaseRepository, PurchaseRepository>();
 
+        // Aylıq hesabatın maliyyə oxu modeli (read-only, ayrıca repository deyil).
+        services.AddScoped<MTK.Modules.Payments.Application.Abstractions.Reporting.IMonthlyFinancialReportReader,
+            Reporting.MonthlyFinancialReportReader>();
+
         // The only place this module reaches into Identity's concrete IUserContext —
         // see CurrentUserProvider's own docs.
         services.AddScoped<MTK.Modules.Payments.Application.Abstractions.ICurrentUserProvider, Services.CurrentUserProvider>();
@@ -108,6 +112,7 @@ public static class PaymentsModule
         // Export services (PDF/Excel)
         services.AddScoped<IPaymentReceiptExportService, PaymentReceiptExportService>();
         services.AddScoped<IAnnualPaymentReportExcelExportService, AnnualPaymentReportExcelExportService>();
+        services.AddScoped<IAnnualPaymentReportPdfExportService, AnnualPaymentReportPdfExportService>();
         services.AddScoped<IContractExportService, ContractExportService>();
         services.AddScoped<IPayslipExportService, PayslipExportService>();
         services.AddScoped<ISalaryPaymentExportService, SalaryPaymentExportService>();

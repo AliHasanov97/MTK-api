@@ -56,6 +56,29 @@ internal sealed class WarehouseTransactionRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Dictionary<Guid, decimal>> GetLatestUnitPricesAsync(
+        IReadOnlyCollection<Guid> nomenclatureIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (nomenclatureIds.Count == 0)
+        {
+            return new Dictionary<Guid, decimal>();
+        }
+
+        var ids = nomenclatureIds.ToList();
+        var rows = await WarehouseContext.WarehouseTransactions
+            .AsNoTracking()
+            .Where(t => ids.Contains(t.NomenclatureId) && t.UnitPrice != null)
+            .Select(t => new { t.NomenclatureId, t.UnitPrice, t.TransactionDate })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(t => t.NomenclatureId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(t => t.TransactionDate).First().UnitPrice!.Value);
+    }
+
     public async Task<WarehouseTransaction?> GetByReferenceAsync(
         string referenceType,
         Guid referenceId,

@@ -5,6 +5,7 @@ using MTK.Modules.Payments.Application.Charges.Commands.CreateCharge;
 using MTK.Modules.Payments.Application.Charges.Commands.CreateOneTimeServiceExpense;
 using MTK.Modules.Payments.Application.Charges.Commands.GenerateChargesForPeriod;
 using MTK.Modules.Payments.Application.Charges.Queries.ExportAnnualPaymentReport;
+using MTK.Modules.Payments.Application.Charges.Queries.ExportAnnualPaymentReportPdf;
 using MTK.Modules.Payments.Application.Charges.Queries.GetAnnualPaymentReport;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargeAllocations;
 using MTK.Modules.Payments.Application.Charges.Queries.GetChargesByOwner;
@@ -77,6 +78,22 @@ public class ChargesController(ISender sender) : BaseController(sender)
         CancellationToken cancellationToken)
     {
         var query = new ExportAnnualPaymentReportQuery(year, propertyType);
+        var result = await _sender.Send(query, cancellationToken);
+
+        return result.IsSuccess
+            ? File(result.Value.FileContent, result.Value.ContentType, result.Value.FileName)
+            : BadRequest(result.Error);
+    }
+
+    /// <summary>Yuxarıdakı illik hesabatın PDF versiyası (Excel ilə eyni məlumat).</summary>
+    [HttpGet("reports/annual/export-pdf")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager, Roles.Accountant)]
+    public async Task<IActionResult> ExportAnnualPaymentReportPdf(
+        [FromQuery] int year,
+        [FromQuery] PropertyType? propertyType,
+        CancellationToken cancellationToken)
+    {
+        var query = new ExportAnnualPaymentReportPdfQuery(year, propertyType);
         var result = await _sender.Send(query, cancellationToken);
 
         return result.IsSuccess
