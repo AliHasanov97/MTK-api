@@ -23,12 +23,14 @@ internal sealed class UpsertCompanyCommandHandler : ICommandHandler<UpsertCompan
 
         if (company is null)
         {
-            company = Company.Create(request.Name, request.Director, request.Address);
+            company = Company.Create(request.Name, request.Director, request.Address,
+                request.Email, request.Phone, request.WorkHours);
             _companyRepository.Add(company);
         }
         else
         {
-            company.Update(request.Name, request.Director, request.Address);
+            company.Update(request.Name, request.Director, request.Address,
+                request.Email, request.Phone, request.WorkHours);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

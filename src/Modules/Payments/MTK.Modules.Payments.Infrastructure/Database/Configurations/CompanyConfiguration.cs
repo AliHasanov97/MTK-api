@@ -23,6 +23,17 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(c => c.Email)
+            .IsRequired()
+            .HasMaxLength(200)
+            .HasDefaultValue("info@mtk.az");
+
+        builder.Property(c => c.Phone)
+            .HasMaxLength(50);
+
+        builder.Property(c => c.WorkHours)
+            .HasMaxLength(200);
+
         builder.Property(c => c.CreatedAt).IsRequired();
         builder.Property(c => c.UpdatedAt);
     }

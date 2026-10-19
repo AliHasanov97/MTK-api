@@ -17,14 +17,26 @@ public sealed class Company : Entity
     public string Name { get; private set; } = string.Empty;
     public string? Director { get; private set; }
     public string Address { get; private set; } = string.Empty;
+    public string Email { get; private set; } = "info@mtk.az";
+    public string? Phone { get; private set; }
+    public string? WorkHours { get; private set; }
 
-    public static Company Create(string name, string? director, string address)
+    public static Company Create(
+        string name,
+        string? director,
+        string address,
+        string email = "info@mtk.az",
+        string? phone = null,
+        string? workHours = null)
     {
         var company = new Company
         {
             Name = name,
             Director = director,
-            Address = address
+            Address = address,
+            Email = email,
+            Phone = phone,
+            WorkHours = workHours
         };
 
         company.SetCreatedAt();
@@ -39,11 +51,20 @@ public sealed class Company : Entity
         return company;
     }
 
-    public void Update(string name, string? director, string address)
+    public void Update(
+        string name,
+        string? director,
+        string address,
+        string email = "info@mtk.az",
+        string? phone = null,
+        string? workHours = null)
     {
         Name = name;
         Director = director;
         Address = address;
+        Email = email;
+        Phone = phone;
+        WorkHours = workHours;
         SetUpdatedAt();
 
         RaiseDomainEvent(new CompanyUpdatedDomainEvent

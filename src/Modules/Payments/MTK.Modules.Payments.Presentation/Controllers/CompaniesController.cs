@@ -25,7 +25,16 @@ public class CompaniesController(ISender sender) : BaseController(sender)
     public async Task<IActionResult> GetPublic(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetCompanyQuery(), cancellationToken);
-        return result.IsSuccess ? Success(new { result.Value.Name }) : BadRequest(result.Error);
+        return result.IsSuccess
+            ? Success(new
+            {
+                result.Value.Name,
+                result.Value.Email,
+                result.Value.Phone,
+                result.Value.Address,
+                result.Value.WorkHours
+            })
+            : BadRequest(result.Error);
     }
 
     [HttpPut]
