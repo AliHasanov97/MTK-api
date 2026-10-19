@@ -1,4 +1,7 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("MTK.Tests")]
 
 namespace MTK.Modules.Payments.Infrastructure;
 

@@ -2,6 +2,7 @@ using MTK.Common.Application.Behaviors;
 using MTK.Common.Infrastructure;
 using MTK.Modules.Buildings.Application;
 using MTK.Modules.Buildings.Infrastructure;
+using MTK.Modules.Communications.Infrastructure;
 using MTK.Modules.Hr.Infrastructure;
 using MTK.Modules.Identity.Application;
 using MTK.Modules.Identity.Infrastructure;
@@ -30,7 +31,8 @@ public static class ModuleExtensions
                 BuildingsModule.ConfigureConsumers,
                 PaymentsModule.ConfigureConsumers,
                 WarehouseModule.ConfigureConsumers,
-                HrModule.ConfigureConsumers
+                HrModule.ConfigureConsumers,
+                CommunicationsModule.ConfigureConsumers
             ],
             databaseConnectionString: configuration.GetConnectionString("Database")!,
             configuration: configuration);
@@ -69,6 +71,7 @@ public static class ModuleExtensions
         services.AddWarehouseModule(configuration);
         services.AddHrModule(configuration);
         services.AddReportingModule(configuration);
+        services.AddCommunicationsModule(configuration);
 
         // TODO: Register other modules here
         // services.AddBillingModule(configuration);

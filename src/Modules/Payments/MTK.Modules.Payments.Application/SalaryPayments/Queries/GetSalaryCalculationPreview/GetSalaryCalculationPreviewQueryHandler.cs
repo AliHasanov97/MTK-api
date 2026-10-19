@@ -50,7 +50,7 @@ internal sealed class GetSalaryCalculationPreviewQueryHandler
         // 3. Calculate totals
         var totalBonuses = employeeBonuses.Sum(b => b.Amount);
         var totalAdjustments = employeeAdjustments.Sum(a =>
-            CalculateAdjustmentAmount(employee.BaseSalary, a.Hours, a.NormHours));
+            a.FixedAmount ?? CalculateAdjustmentAmount(employee.BaseSalary, a.Hours, a.NormHours));
 
         var grossSalary = employee.BaseSalary + totalBonuses + totalAdjustments;
 
@@ -70,7 +70,7 @@ internal sealed class GetSalaryCalculationPreviewQueryHandler
                 GetAdjustmentDescription(a.Reason),
                 a.Hours,
                 a.NormHours,
-                CalculateAdjustmentAmount(employee.BaseSalary, a.Hours, a.NormHours))).ToList(),
+                a.FixedAmount ?? CalculateAdjustmentAmount(employee.BaseSalary, a.Hours, a.NormHours))).ToList(),
             totalBonuses,
             totalAdjustments,
             grossSalary));

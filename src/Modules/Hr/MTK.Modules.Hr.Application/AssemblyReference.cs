@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("MTK.Modules.Hr.Infrastructure")]
+[assembly: InternalsVisibleTo("MTK.Tests")]
 
 namespace MTK.Modules.Hr.Application;
 

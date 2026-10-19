@@ -95,7 +95,7 @@ internal sealed class CreateSalaryPaymentCommandHandler
         // 7. Add lines for adjustments (calculate amount based on hours)
         foreach (var adjustment in employeeAdjustments)
         {
-            var amount = CalculateAdjustmentAmount(employee.BaseSalary, adjustment.Hours, adjustment.NormHours);
+            var amount = adjustment.FixedAmount ?? CalculateAdjustmentAmount(employee.BaseSalary, adjustment.Hours, adjustment.NormHours);
             var description = GetAdjustmentDescription(adjustment.Reason, adjustment.Hours, adjustment.NormHours);
 
             salaryPayment.AddLine(

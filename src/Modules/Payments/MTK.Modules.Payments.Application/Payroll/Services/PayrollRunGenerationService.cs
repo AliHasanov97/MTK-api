@@ -143,6 +143,12 @@ internal sealed class PayrollRunGenerationService : IPayrollRunGenerationService
             {
                 foreach (var adjustment in employeeAdjustments)
                 {
+                    if (adjustment.FixedAmount.HasValue)
+                    {
+                        adjustmentAmount += adjustment.FixedAmount.Value;
+                        continue;
+                    }
+
                     if (adjustment.NormHours <= 0m)
                     {
                         continue;

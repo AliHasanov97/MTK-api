@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MTK.Modules.Buildings.Infrastructure.Database;
+using MTK.Modules.Communications.Infrastructure.Database;
 using MTK.Modules.Hr.Infrastructure.Database;
 using MTK.Modules.Identity.Infrastructure.Database;
 using MTK.Modules.Payments.Infrastructure.Database;
@@ -33,6 +34,10 @@ public static class MigrationExtensions
         // Apply Hr module migrations
         var hrDbContext = scope.ServiceProvider.GetRequiredService<HrDbContext>();
         await hrDbContext.Database.MigrateAsync();
+
+        // Apply Communications module migrations
+        var communicationsDbContext = scope.ServiceProvider.GetRequiredService<CommunicationsDbContext>();
+        await communicationsDbContext.Database.MigrateAsync();
 
         // TODO: Apply other module migrations here
     }
