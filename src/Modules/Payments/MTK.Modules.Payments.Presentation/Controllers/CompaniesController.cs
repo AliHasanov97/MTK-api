@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MTK.Common.Application.Authorization;
 using MTK.Modules.Payments.Application.Companies.Commands.UpsertCompany;
@@ -13,6 +14,18 @@ public class CompaniesController(ISender sender) : BaseController(sender)
     {
         var result = await _sender.Send(new GetCompanyQuery(), cancellationToken);
         return result.IsSuccess ? Success(result.Value) : BadRequest(result.Error);
+    }
+
+    /// <summary>
+    /// Giriş etməmiş istifadəçilər üçün (landing səhifəsi): yalnız şirkət adı.
+    /// Direktor və ünvan bilərəkdən qaytarılmır.
+    /// </summary>
+    [HttpGet("public")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublic(CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetCompanyQuery(), cancellationToken);
+        return result.IsSuccess ? Success(new { result.Value.Name }) : BadRequest(result.Error);
     }
 
     [HttpPut]
