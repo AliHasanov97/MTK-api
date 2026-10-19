@@ -287,16 +287,17 @@ public class Repository<T>: IRepository<T> where T : Entity
     }
     protected virtual IQueryable<TItem> ApplyPages<TItem>(IQueryable<TItem> query, int? page, int? pageSize)
     {
-        if (page is null || page < 0)
+        if (page is null || page < 1)
         {
-            page = 0;
+            page = 1;
         }
         if (pageSize is null or <= 0)
         {
             pageSize = 100; // Default page size
         }
-        
-        query = query.Skip(page.Value * pageSize.Value).Take(pageSize.Value);
+
+        // Page is 1-based (page 1, 2, 3...), but Skip is 0-based
+        query = query.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
         return query;
     }
     

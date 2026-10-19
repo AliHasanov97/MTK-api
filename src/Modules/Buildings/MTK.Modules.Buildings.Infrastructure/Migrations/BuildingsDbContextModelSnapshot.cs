@@ -221,6 +221,105 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     b.ToTable("Apartments", "buildings");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.Appeals.Appeal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("GarageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SubmitterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SubmitterId");
+
+                    b.ToTable("appeals", "buildings");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.Appeals.AppealComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppealId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppealId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("appeal_comments", "buildings");
+                });
+
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.AuditLogs.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -667,6 +766,15 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     b.Navigation("CurrentOwner");
                 });
 
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.Appeals.AppealComment", b =>
+                {
+                    b.HasOne("MTK.Modules.Buildings.Domain.Appeals.Appeal", null)
+                        .WithMany("Comments")
+                        .HasForeignKey("AppealId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Buildings.Building", b =>
                 {
                     b.OwnsOne("MTK.Modules.Buildings.Domain.ValueObjects.Address", "Address", b1 =>
@@ -778,6 +886,11 @@ namespace MTK.Modules.Buildings.Infrastructure.Migrations
                     b.Navigation("NewOwner");
 
                     b.Navigation("PreviousOwner");
+                });
+
+            modelBuilder.Entity("MTK.Modules.Buildings.Domain.Appeals.Appeal", b =>
+                {
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("MTK.Modules.Buildings.Domain.Buildings.Building", b =>

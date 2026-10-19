@@ -10,10 +10,13 @@ using IUnitOfWork = MTK.Modules.Buildings.Application.Abstractions.Data.IUnitOfW
 using MTK.Common.Infrastructure.Inbox;
 using MTK.Common.Infrastructure.Outbox;
 using MTK.Modules.Buildings.Application.Apartments.Commands.CreateApartment;
+using MTK.Modules.Buildings.Application.Abstractions;
 using MTK.Modules.Buildings.Domain.Repositories;
+using MTK.Modules.Buildings.Domain.Appeals;
 using MTK.Modules.Buildings.Infrastructure.Database;
 using MTK.Modules.Buildings.Infrastructure.Inbox;
 using MTK.Modules.Buildings.Infrastructure.Repositories;
+using MTK.Modules.Buildings.Infrastructure.Services;
 using MTK.Modules.Buildings.Presentation.IntegrationEventHandlers.Users;
 using MTK.Modules.Identity.IntegrationEvents.Users;
 using Outbox = MTK.Modules.Buildings.Infrastructure.Outbox;
@@ -59,6 +62,9 @@ public static class BuildingsModule
         // Unit of Work
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<BuildingsDbContext>());
 
+        // Services
+        services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+
         // Repositories
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
@@ -69,6 +75,7 @@ public static class BuildingsModule
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IFileAttachmentRepository, FileAttachmentRepository>();
+        services.AddScoped<IAppealRepository, AppealRepository>();
 
         // Outbox & Inbox Configuration
         services.Configure<OutboxOptions>(configuration.GetSection("Buildings:Outbox"));
