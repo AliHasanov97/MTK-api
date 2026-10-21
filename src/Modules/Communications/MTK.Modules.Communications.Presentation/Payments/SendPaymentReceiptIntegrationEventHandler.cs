@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MTK.Common.Application.EventBus;
+using MTK.Modules.Communications.Presentation.Branding;
 using MTK.Modules.Communications.Presentation.DebtReminders;
 using MTK.Modules.Payments.IntegrationEvents.Payments;
 
@@ -23,6 +24,7 @@ internal sealed class SendPaymentReceiptIntegrationEventHandler(
         if (string.IsNullOrWhiteSpace(email.ApiKey) || string.IsNullOrWhiteSpace(email.FromAddress))
             throw new InvalidOperationException("Communications:Email:ApiKey and FromAddress must be configured to send payment receipts.");
 
+        string displayName = EmailBranding.DisplayName(integrationEvent.CompanyName, email.FromName);
         for (int attempt = 1; ; attempt++)
         {
             try
@@ -31,18 +33,19 @@ internal sealed class SendPaymentReceiptIntegrationEventHandler(
                 {
                     Content = JsonContent.Create(new
                     {
-                        from = $"{email.FromName} <{email.FromAddress}>",
+                        from = $"{displayName} <{email.FromAddress}>",
                         to = new[] { integrationEvent.Email },
-                        subject = $"MTK | Ödəniş qəbzi № {integrationEvent.ReceiptNumber}",
+                        subject = $"{displayName} | \u00D6d\u0259ni\u015F q\u0259bzi \u2116 {integrationEvent.ReceiptNumber}",
                         html = BuildHtml(integrationEvent),
                         text = BuildText(integrationEvent),
-                        attachments = new[]
+                        attachments = new object[]
                         {
                             new
                             {
                                 filename = integrationEvent.FileName,
                                 content = Convert.ToBase64String(integrationEvent.PdfContent)
-                            }
+                            },
+                            EmailBranding.LogoAttachment
                         }
                     })
                 };
@@ -85,29 +88,29 @@ internal sealed class SendPaymentReceiptIntegrationEventHandler(
             <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:#fff;border:1px solid #e5e9e1;border-radius:14px;overflow:hidden">
               <tr><td style="background:#345c4a;padding:23px 30px;color:#fff">
                 <table role="presentation" cellspacing="0" cellpadding="0"><tr>
-                  <td width="40" height="40" align="center" valign="middle" style="background:#c9e3a1;border-radius:10px;color:#345c4a;font-family:Georgia,serif;font-size:24px;font-weight:bold">V</td>
-                  <td style="padding-left:12px"><div style="font-size:18px;font-weight:700">MTK</div><div style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#d7e5dc;margin-top:4px">Sakin hesabı</div></td>
+                  <td width="88" height="72" align="center" valign="middle" style="background:#fff;border-radius:8px"><img src="cid:{{EmailBranding.LogoContentId}}" alt="{{Html(receipt.CompanyName)}}" width="78" style="display:block;width:78px;height:auto;max-height:66px;border:0"></td>
+                  <td style="padding-left:14px"><div style="font-size:18px;font-weight:700">{{Html(receipt.CompanyName)}}</div><div style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#d7e5dc;margin-top:4px">Sakin hesab&#305;</div></td>
                 </tr></table>
               </td></tr>
               <tr><td style="padding:28px 30px">
-                <div style="font-size:21px;line-height:1.3;font-weight:700;letter-spacing:-.4px;margin-bottom:18px">Ödəniş qəbzi</div>
-                <p style="font-size:15px;margin:0 0 12px">Hörmətli <strong>{{Html(receipt.OwnerName)}}</strong>,</p>
-                <p style="font-size:13px;line-height:1.7;color:#64716c;margin:0">Ödənişiniz qeydə alındı. Qəbzin PDF nüsxəsini bu məktuba əlavə etmişik.</p>
+                <div style="font-size:21px;line-height:1.3;font-weight:700;letter-spacing:-.4px;margin-bottom:18px">&#214;d&#601;ni&#351; q&#601;bzi</div>
+                <p style="font-size:15px;margin:0 0 12px">H&ouml;rm&#601;tli <strong>{{Html(receipt.OwnerName)}}</strong>,</p>
+                <p style="font-size:13px;line-height:1.7;color:#64716c;margin:0">&#214;d&#601;ni&#351;iniz qeyd&#601; al&#305;nd&#305;. Q&#601;bzin PDF n&uuml;sx&#601;sini bu m&#601;ktuba &#601;lav&#601; etmi&#351;ik.</p>
                 <div style="margin-top:20px;padding:15px 16px;background:#f7f8f4;border:1px solid #e5e9e1;border-radius:9px">
-                  <div style="font-size:11px;color:#64716c">Qəbz nömrəsi</div>
-                  <div style="font-size:18px;font-weight:700;color:#345c4a;margin-top:5px">№ {{Html(receipt.ReceiptNumber)}}</div>
+                  <div style="font-size:11px;color:#64716c">Q&#601;bz n&ouml;mr&#601;si</div>
+                  <div style="font-size:18px;font-weight:700;color:#345c4a;margin-top:5px">&#8470; {{Html(receipt.ReceiptNumber)}}</div>
                 </div>
               </td></tr>
-              <tr><td style="padding:18px 30px;background:#f7f8f4;border-top:1px solid #e5e9e1;font-size:11px;color:#64716c">Bu mesaj avtomatik göndərilib. Hörmətlə, MTK.</td></tr>
+              <tr><td style="padding:18px 30px;background:#f7f8f4;border-top:1px solid #e5e9e1;font-size:11px;color:#64716c">Bu mesaj avtomatik g&ouml;nd&#601;rilib. H&ouml;rm&#601;tl&#601;, {{Html(receipt.CompanyName)}}.</td></tr>
             </table>
           </td></tr></table>
         </body></html>
         """;
 
     private static string BuildText(PaymentReceiptEmailRequestedIntegrationEvent receipt) =>
-        $"Hörmətli {receipt.OwnerName},{Environment.NewLine}{Environment.NewLine}" +
-        $"Ödənişiniz qeydə alındı. Qəbz № {receipt.ReceiptNumber} PDF faylı məktuba əlavə olunub.{Environment.NewLine}" +
-        "Hörmətlə, MTK";
+        $"H\u00F6rm\u0259tli {receipt.OwnerName},{Environment.NewLine}{Environment.NewLine}" +
+        $"\u00D6d\u0259ni\u015Finiz qeyd\u0259 al\u0131nd\u0131. Q\u0259bz \u2116 {receipt.ReceiptNumber} PDF fayl\u0131 m\u0259ktuba \u0259lav\u0259 olunub.{Environment.NewLine}" +
+        $"H\u00F6rm\u0259tl\u0259, {receipt.CompanyName}";
 
     private static string Html(string value) => WebUtility.HtmlEncode(value);
 }

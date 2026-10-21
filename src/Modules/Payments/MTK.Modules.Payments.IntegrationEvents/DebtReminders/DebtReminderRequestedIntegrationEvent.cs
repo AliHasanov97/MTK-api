@@ -10,6 +10,7 @@ public sealed class DebtReminderRequestedIntegrationEvent : IntegrationEvent
         DateTime occurredOnUtc,
         Guid ownerId,
         string ownerName,
+        string companyName,
         string email,
         IReadOnlyCollection<string> unpaidPeriods,
         decimal outstandingAmount,
@@ -20,6 +21,7 @@ public sealed class DebtReminderRequestedIntegrationEvent : IntegrationEvent
     {
         OwnerId = ownerId;
         OwnerName = ownerName;
+        CompanyName = companyName;
         Email = email;
         UnpaidPeriods = unpaidPeriods.ToArray();
         OutstandingAmount = outstandingAmount;
@@ -30,6 +32,7 @@ public sealed class DebtReminderRequestedIntegrationEvent : IntegrationEvent
 
     public Guid OwnerId { get; }
     public string OwnerName { get; }
+    public string CompanyName { get; }
     public string Email { get; }
     public IReadOnlyCollection<string> UnpaidPeriods { get; }
     public decimal OutstandingAmount { get; }

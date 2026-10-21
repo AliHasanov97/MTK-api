@@ -11,6 +11,7 @@ public sealed class PaymentReceiptEmailRequestedIntegrationEvent : IntegrationEv
         Guid ownerId,
         string email,
         string ownerName,
+        string companyName,
         string receiptNumber,
         string fileName,
         byte[] pdfContent)
@@ -20,6 +21,7 @@ public sealed class PaymentReceiptEmailRequestedIntegrationEvent : IntegrationEv
         OwnerId = ownerId;
         Email = email;
         OwnerName = ownerName;
+        CompanyName = companyName;
         ReceiptNumber = receiptNumber;
         FileName = fileName;
         PdfContent = pdfContent;
@@ -29,6 +31,7 @@ public sealed class PaymentReceiptEmailRequestedIntegrationEvent : IntegrationEv
     public Guid OwnerId { get; }
     public string Email { get; }
     public string OwnerName { get; }
+    public string CompanyName { get; }
     public string ReceiptNumber { get; }
     public string FileName { get; }
     public byte[] PdfContent { get; }

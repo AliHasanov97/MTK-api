@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\Payments\MTK.Modules.Payments.IntegrationEvents\MTK.Modules.Payments.IntegrationEvents.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\..\themes\mtk\account\resources\img\logo.png" LogicalName="MTK.EmailBranding.logo.png" />
+  </ItemGroup>
+
 </Project>

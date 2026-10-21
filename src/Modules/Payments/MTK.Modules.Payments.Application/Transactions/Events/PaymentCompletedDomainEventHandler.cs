@@ -41,6 +41,7 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
     private readonly IOwnerRepository _ownerRepository;
     private readonly ISender _sender;
     private readonly IEventBus _eventBus;
+    private readonly ICompanyRepository _companyRepository;
 
     public PaymentCompletedDomainEventHandler(
         IPaymentRepository paymentRepository,
@@ -54,7 +55,8 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
         IUnitOfWork unitOfWork,
         IOwnerRepository ownerRepository,
         ISender sender,
-        IEventBus eventBus)
+        IEventBus eventBus,
+        ICompanyRepository companyRepository)
     {
         _paymentRepository = paymentRepository;
         _vendorRepository = vendorRepository;
@@ -68,6 +70,7 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
         _ownerRepository = ownerRepository;
         _sender = sender;
         _eventBus = eventBus;
+        _companyRepository = companyRepository;
     }
 
     public override async Task Handle(
@@ -119,6 +122,7 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
                         owner.Id,
                         owner.Email,
                         owner.FullName,
+                        (await _companyRepository.GetAsync(cancellationToken))?.Name ?? "MTK",
                         payment.ReceiptNumber.ToString("D8", CultureInfo.InvariantCulture),
                         receipt.FileName,
                         receipt.FileContent), cancellationToken);

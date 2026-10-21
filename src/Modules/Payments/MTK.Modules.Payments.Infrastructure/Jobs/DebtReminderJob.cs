@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MTK.Common.Application.EventBus;
 using MTK.Modules.Payments.Domain.Charges;
+using MTK.Modules.Payments.Domain.Repositories;
 using MTK.Modules.Payments.IntegrationEvents.DebtReminders;
 using MTK.Modules.Payments.Infrastructure.Database;
 using Quartz;
@@ -15,6 +16,7 @@ namespace MTK.Modules.Payments.Infrastructure.Jobs;
 [DisallowConcurrentExecution]
 internal sealed class DebtReminderJob(
     PaymentsDbContext dbContext,
+    ICompanyRepository companyRepository,
     IEventBus eventBus,
     IOptions<DebtReminderOptions> options,
     ILogger<DebtReminderJob> logger) : IJob
@@ -24,6 +26,9 @@ internal sealed class DebtReminderJob(
         var localDate = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow,
             TimeZoneInfo.FindSystemTimeZoneById(options.Value.TimeZoneId)).Date;
         var monthKey = localDate.ToString("yyyy-MM");
+        var companyName = (await companyRepository.GetAsync(context.CancellationToken))?.Name;
+        if (string.IsNullOrWhiteSpace(companyName))
+            companyName = "MTK";
 
         var debtRows = await dbContext.Charges.AsNoTracking()
             .Where(c => c.OwnerId != null
@@ -122,6 +127,7 @@ internal sealed class DebtReminderJob(
                 DateTime.UtcNow,
                 owner.Id,
                 owner.FullName,
+                companyName,
                 owner.Email,
                 qualifyingOwner.Periods,
                 qualifyingOwner.Amount,
