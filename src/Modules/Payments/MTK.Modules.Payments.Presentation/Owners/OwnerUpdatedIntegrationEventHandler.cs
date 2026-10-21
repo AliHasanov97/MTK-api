@@ -16,7 +16,7 @@ internal sealed class OwnerUpdatedIntegrationEventHandler(
         OwnerUpdatedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken = default)
     {
-        var command = new SyncOwnerCommand(integrationEvent.OwnerId, integrationEvent.FullName);
+        var command = new SyncOwnerCommand(integrationEvent.OwnerId, integrationEvent.FullName, integrationEvent.Email);
         Result result = await sender.Send(command, cancellationToken);
 
         if (result.IsFailure)

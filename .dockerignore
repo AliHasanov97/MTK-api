@@ -1,5 +1,6 @@
 **/.dockerignore
 **/.env
+src/Apps/MTK.Api/appsettings.Development.json
 **/.git
 **/.gitignore
 **/.vs

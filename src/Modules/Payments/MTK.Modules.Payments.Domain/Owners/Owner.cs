@@ -11,25 +11,28 @@ namespace MTK.Modules.Payments.Domain.Owners;
 /// </summary>
 public sealed class Owner : Entity
 {
-    private Owner(Guid id, string fullName) : base(id)
+    private Owner(Guid id, string fullName, string email) : base(id)
     {
         FullName = fullName;
+        Email = email;
     }
 
     private Owner() : base() { }
 
     public string FullName { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
 
-    public static Owner Create(Guid id, string fullName)
+    public static Owner Create(Guid id, string fullName, string email)
     {
-        var owner = new Owner(id, fullName);
+        var owner = new Owner(id, fullName, email);
         owner.SetCreatedAt();
         return owner;
     }
 
-    public void UpdateFullName(string fullName)
+    public void UpdateContactInfo(string fullName, string email)
     {
         FullName = fullName;
+        Email = email;
         SetUpdatedAt();
     }
 }

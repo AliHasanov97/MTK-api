@@ -75,7 +75,7 @@ public sealed class Owner : SearchableEntity
         };
 
         owner.SetCreatedAt();
-        owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, userId, owner.FullName));
+        owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, userId, owner.FullName, owner.Email));
 
         return owner;
     }
@@ -104,7 +104,7 @@ public sealed class Owner : SearchableEntity
         };
 
         owner.SetCreatedAt();
-        owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, null, owner.FullName));
+        owner.RaiseDomainEvent(new OwnerCreatedDomainEvent(owner.Id, null, owner.FullName, owner.Email));
 
         return owner;
     }

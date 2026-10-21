@@ -13,13 +13,16 @@ public sealed class OwnerCreatedIntegrationEvent : IntegrationEvent
         Guid integrationEventId,
         DateTime occurredOnUtc,
         Guid ownerId,
-        string fullName)
+        string fullName,
+        string email)
         : base(integrationEventId, occurredOnUtc)
     {
         OwnerId = ownerId;
         FullName = fullName;
+        Email = email;
     }
 
     public Guid OwnerId { get; }
     public string FullName { get; }
+    public string Email { get; }
 }

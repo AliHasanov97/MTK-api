@@ -155,6 +155,8 @@ public static class PaymentsModule
         // Monthly Payroll Generation Configuration
         services.Configure<Jobs.MonthlyPayrollGenerationOptions>(
             configuration.GetSection("Payments:MonthlyPayrollGeneration"));
+        services.Configure<Jobs.DebtReminderOptions>(
+            configuration.GetSection("Payments:DebtReminders"));
 
         // Hesablama dövrü qaydası (yalnız keçmiş təqvim ayı) — vaxt qurşağı Quartz işi ilə
         // eyni açardan oxunur ki, "hansı dövr açıqdır" sualının cavabı biri-birindən ayrı düşməsin.
@@ -166,6 +168,7 @@ public static class PaymentsModule
         services.ConfigureOptions<Inbox.ConfigureProcessInboxJob>();
         services.ConfigureOptions<Jobs.ConfigureMonthlyChargeGenerationJob>();
         services.ConfigureOptions<Jobs.ConfigureMonthlyPayrollGenerationJob>();
+        services.ConfigureOptions<Jobs.ConfigureDebtReminderJob>();
 
         return services;
     }

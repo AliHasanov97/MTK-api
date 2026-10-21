@@ -22,11 +22,11 @@ internal sealed class SyncOwnerCommandHandler : ICommandHandler<SyncOwnerCommand
         var owner = await _ownerRepository.GetByIdDefaultAsync(request.OwnerId, cancellationToken);
         if (owner is not null)
         {
-            owner.UpdateFullName(request.FullName);
+            owner.UpdateContactInfo(request.FullName, request.Email);
         }
         else
         {
-            owner = Owner.Create(request.OwnerId, request.FullName);
+            owner = Owner.Create(request.OwnerId, request.FullName, request.Email);
             _ownerRepository.Add(owner);
         }
 

@@ -23,7 +23,8 @@ internal sealed class OwnerCreatedDomainEventHandler : DomainEventHandler<OwnerC
             Guid.NewGuid(),
             DateTime.UtcNow,
             domainEvent.OwnerId,
-            domainEvent.FullName);
+            domainEvent.FullName,
+            domainEvent.Email);
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

@@ -15,5 +15,9 @@ internal sealed class OwnerConfiguration : IEntityTypeConfiguration<Owner>
         builder.Property(o => o.FullName)
             .IsRequired()
             .HasMaxLength(200);
+
+        builder.Property(o => o.Email)
+            .IsRequired()
+            .HasMaxLength(255);
     }
 }

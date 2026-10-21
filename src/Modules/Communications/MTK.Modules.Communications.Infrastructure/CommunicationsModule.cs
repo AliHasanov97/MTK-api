@@ -12,6 +12,7 @@ using MTK.Modules.Communications.Application.Abstractions.Data;
 using MTK.Modules.Communications.Infrastructure.Authentication;
 using MTK.Modules.Communications.Infrastructure.Database;
 using MTK.Modules.Communications.Infrastructure.Inbox;
+using MTK.Modules.Communications.Presentation.DebtReminders;
 using Outbox = MTK.Modules.Communications.Infrastructure.Outbox;
 
 namespace MTK.Modules.Communications.Infrastructure;
@@ -61,6 +62,9 @@ public static class CommunicationsModule
         // Outbox & Inbox Configuration
         services.Configure<OutboxOptions>(configuration.GetSection("Communications:Outbox"));
         services.Configure<InboxOptions>(configuration.GetSection("Communications:Inbox"));
+        services.Configure<EmailSenderOptions>(configuration.GetSection("Communications:Email"));
+        services.AddHttpClient("Resend", client =>
+            client.BaseAddress = new Uri("https://api.resend.com/"));
 
         // Quartz Job Configurators
         services.ConfigureOptions<Outbox.ConfigureProcessOutboxJob>();
@@ -121,5 +125,6 @@ public static class CommunicationsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Identity.IntegrationEvents.Users.UserCreatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Identity.IntegrationEvents.Users.UserUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Identity.IntegrationEvents.Users.UserDeletedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.DebtReminders.DebtReminderRequestedIntegrationEvent>>();
     }
 }

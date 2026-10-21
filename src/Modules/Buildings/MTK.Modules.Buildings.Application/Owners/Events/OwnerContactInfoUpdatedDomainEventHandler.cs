@@ -22,7 +22,8 @@ internal sealed class OwnerContactInfoUpdatedDomainEventHandler : DomainEventHan
             Guid.NewGuid(),
             DateTime.UtcNow,
             domainEvent.OwnerId,
-            domainEvent.FullName);
+            domainEvent.FullName,
+            domainEvent.Email);
 
         await _eventBus.PublishAsync(integrationEvent, cancellationToken);
     }

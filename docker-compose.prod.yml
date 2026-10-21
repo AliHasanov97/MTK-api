@@ -98,6 +98,10 @@ services:
 
       ConnectionStrings__Database: "Host=postgres;Port=5432;Database=MTK;Username=mtkuser;Password=${POSTGRES_PASSWORD};Include Error Detail=true"
 
+      Communications__Email__ApiKey: ${RESEND_API_KEY:-}
+      Communications__Email__FromAddress: ${RESEND_FROM_ADDRESS:-no-reply@vahid.az}
+      Communications__Email__FromName: ${RESEND_FROM_NAME:-MTK}
+
       Keycloak__Realm: mtk
       Keycloak__OpenIdUrl: "https://${KEYCLOAK_HOSTNAME}/realms/mtk/protocol/openid-connect/"
       Keycloak__TokenUrl: "https://${KEYCLOAK_HOSTNAME}/realms/mtk/protocol/openid-connect/token"
