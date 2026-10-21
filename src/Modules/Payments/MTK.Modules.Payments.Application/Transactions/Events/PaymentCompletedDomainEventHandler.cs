@@ -1,4 +1,6 @@
 using System.Globalization;
+using MediatR;
+using MTK.Common.Application.EventBus;
 using MTK.Common.Application.Messaging;
 using MTK.Common.Domain.Abstractions;
 using MTK.Modules.Payments.Application.Abstractions.Data;
@@ -9,6 +11,8 @@ using MTK.Modules.Payments.Domain.Payments;
 using MTK.Modules.Payments.Domain.Payments.Events;
 using MTK.Modules.Payments.Domain.Repositories;
 using MTK.Modules.Payments.Domain.Transactions;
+using MTK.Modules.Payments.Application.Payments.Queries.ExportPaymentReceipt;
+using MTK.Modules.Payments.IntegrationEvents.Payments;
 
 namespace MTK.Modules.Payments.Application.Transactions.Events;
 
@@ -34,6 +38,9 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
     private readonly ITransactionRepository _transactionRepository;
     private readonly ICompanyBalanceService _companyBalanceService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOwnerRepository _ownerRepository;
+    private readonly ISender _sender;
+    private readonly IEventBus _eventBus;
 
     public PaymentCompletedDomainEventHandler(
         IPaymentRepository paymentRepository,
@@ -44,7 +51,10 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
         IPropertyOwnershipRepository propertyOwnershipRepository,
         ITransactionRepository transactionRepository,
         ICompanyBalanceService companyBalanceService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IOwnerRepository ownerRepository,
+        ISender sender,
+        IEventBus eventBus)
     {
         _paymentRepository = paymentRepository;
         _vendorRepository = vendorRepository;
@@ -55,6 +65,9 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
         _transactionRepository = transactionRepository;
         _companyBalanceService = companyBalanceService;
         _unitOfWork = unitOfWork;
+        _ownerRepository = ownerRepository;
+        _sender = sender;
+        _eventBus = eventBus;
     }
 
     public override async Task Handle(
@@ -89,6 +102,29 @@ internal sealed class PaymentCompletedDomainEventHandler : DomainEventHandler<Pa
 
         await _companyBalanceService.RecalculateAsync(cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (payment.PartyType == PartyType.Owner)
+        {
+            var owner = await _ownerRepository.GetByIdDefaultAsync(payment.PartyId, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(owner?.Email))
+            {
+                var receiptResult = await _sender.Send(new ExportPaymentReceiptQuery(payment.Id), cancellationToken);
+                if (receiptResult.IsSuccess)
+                {
+                    var receipt = receiptResult.Value;
+                    await _eventBus.PublishAsync(new PaymentReceiptEmailRequestedIntegrationEvent(
+                        Guid.NewGuid(),
+                        DateTime.UtcNow,
+                        payment.Id,
+                        owner.Id,
+                        owner.Email,
+                        owner.FullName,
+                        payment.ReceiptNumber.ToString("D8", CultureInfo.InvariantCulture),
+                        receipt.FileName,
+                        receipt.FileContent), cancellationToken);
+                }
+            }
+        }
     }
 
     /// <summary>

@@ -990,6 +990,12 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<long>("ReceiptNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ReceiptNumber"));
+
                     b.Property<NpgsqlTsVector>("SearchVector")
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
@@ -1023,6 +1029,9 @@ namespace MTK.Modules.Payments.Infrastructure.Migrations
                     b.HasIndex("OwnerId");
 
                     b.HasIndex("PaymentDate");
+
+                    b.HasIndex("ReceiptNumber")
+                        .IsUnique();
 
                     b.HasIndex("SearchVector");
 

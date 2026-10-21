@@ -6,10 +6,7 @@ using QuestPDF.Infrastructure;
 
 namespace MTK.Modules.Payments.Infrastructure.Export;
 
-/// <summary>
-/// Maaş ödənişi qəbzi PDF export service.
-/// PayslipExportService ilə eyni vizual dil.
-/// </summary>
+/// <summary>Maaş ödənişi qəbzi PDF ixracı.</summary>
 internal sealed class SalaryPaymentExportService : ISalaryPaymentExportService
 {
     private static readonly string AccentColor = Colors.Blue.Darken2;
@@ -24,10 +21,8 @@ internal sealed class SalaryPaymentExportService : ISalaryPaymentExportService
     public MemoryStream ExportToPdf(SalaryPaymentExportData data)
     {
         var stream = new MemoryStream();
-
         Document.Create(container => container.Page(page => ComposePage(page, data)))
             .GeneratePdf(stream);
-
         return stream;
     }
 
@@ -36,29 +31,24 @@ internal sealed class SalaryPaymentExportService : ISalaryPaymentExportService
         page.Size(PageSizes.A4);
         page.Margin(36);
         page.PageColor(Colors.White);
-        page.DefaultTextStyle(x => x.FontSize(11f).FontFamily("Times New Roman").FontColor(Colors.Grey.Darken4));
+        page.DefaultTextStyle(style => style.FontSize(11).FontFamily("Times New Roman").FontColor(Colors.Grey.Darken4));
 
         page.Content().Column(column =>
         {
             column.Spacing(6);
-
-            // ---- Header ----
             column.Item().Row(row =>
             {
-                row.RelativeItem().Column(head =>
+                row.RelativeItem().Column(header =>
                 {
-                    head.Item().Text(data.CompanyName.ToUpper(new CultureInfo("az-AZ")))
-                        .FontSize(9f).FontColor(AccentColor).LetterSpacing(0.05f);
-                    head.Item().Text("Əmək haqqı qəbzi").FontSize(18).Bold().FontColor(Colors.Grey.Darken4);
+                    header.Item().Text(data.CompanyName.ToUpper(new CultureInfo("az-AZ")))
+                        .FontSize(9).FontColor(AccentColor).LetterSpacing(0.05f);
+                    header.Item().Text("Əmək haqqı qəbzi").FontSize(18).Bold();
                 });
-
-                row.ConstantItem(140).AlignRight().Text($"{AzMonths[data.Month - 1]} {data.Year}")
-                    .FontSize(11).Bold().FontColor(Colors.Grey.Darken2);
+                row.ConstantItem(140).AlignRight()
+                    .Text($"{AzMonths[data.Month - 1]} {data.Year}").FontSize(11).Bold();
             });
 
-            column.Item().LineHorizontal(1f).LineColor(AccentColor);
-
-            // ---- Employee ----
+            column.Item().LineHorizontal(1).LineColor(AccentColor);
             column.Item().PaddingTop(4).Text(text =>
             {
                 text.Span("İşçi: ").FontColor(Colors.Grey.Darken2);
@@ -66,23 +56,10 @@ internal sealed class SalaryPaymentExportService : ISalaryPaymentExportService
             });
 
             column.Item().PaddingTop(8);
-
-            // ---- Base Salary ----
             Line(column, "Əsas əmək haqqı", data.BaseSalary);
 
-            // ---- Lines (Bonuses and Adjustments) ----
-            var bonusLines = data.Lines.Where(l => l.LineType == "Bonus").ToList();
-            var adjustmentLines = data.Lines.Where(l => l.LineType == "Adjustment").ToList();
-
-            foreach (var bonus in bonusLines)
-            {
-                Line(column, bonus.Description, bonus.Amount);
-            }
-
-            foreach (var adjustment in adjustmentLines)
-            {
-                Line(column, adjustment.Description, adjustment.Amount);
-            }
+            foreach (var line in data.Lines)
+                Line(column, line.Description, line.Amount);
 
             column.Item().PaddingTop(2).LineHorizontal(0.75f).LineColor(RuleColor);
             Line(column, "Ümumi (gross)", data.GrossSalary, bold: true);
@@ -90,38 +67,32 @@ internal sealed class SalaryPaymentExportService : ISalaryPaymentExportService
             column.Item().PaddingTop(6).LineHorizontal(1.5f).LineColor(AccentColor);
             column.Item().PaddingTop(4).Row(row =>
             {
-                row.RelativeItem().Text("Ələ keçən məbləğ".ToUpper(new CultureInfo("az-AZ")))
+                row.RelativeItem().Text("ƏLƏ KEÇƏN MƏBLƏĞ")
                     .Bold().FontSize(13).FontColor(Colors.Grey.Darken4);
                 row.ConstantItem(120).AlignRight().Text($"{data.GrossSalary:N2} AZN")
                     .Bold().FontSize(15).FontColor(AccentColor);
             });
 
-            // ---- Payment Details ----
-            column.Item().PaddingTop(12);
-            column.Item().Text(text =>
+            column.Item().PaddingTop(12).Text(text =>
             {
                 text.Span("Ödəniş metodu: ").FontColor(Colors.Grey.Darken2);
-                text.Span(GetPaymentMethodName(data.PaymentMethod)).FontSize(11);
+                text.Span(GetPaymentMethodName(data.PaymentMethod));
             });
-
             column.Item().Text(text =>
             {
                 text.Span("Ödəniş tarixi: ").FontColor(Colors.Grey.Darken2);
-                text.Span($"{data.PaymentDate:dd.MM.yyyy}").FontSize(11);
+                text.Span(data.PaymentDate.ToString("dd.MM.yyyy"));
             });
 
             if (!string.IsNullOrWhiteSpace(data.Notes))
-            {
-                column.Item().PaddingTop(4);
-                column.Item().Text(text =>
+                column.Item().PaddingTop(4).Text(text =>
                 {
                     text.Span("Qeyd: ").FontColor(Colors.Grey.Darken2);
-                    text.Span(data.Notes).FontSize(11);
+                    text.Span(data.Notes);
                 });
-            }
 
-            column.Item().PaddingTop(24).AlignCenter().Text(
-                "Bu sənəd elektron qaydada yaradılıb və imza tələb etmir.")
+            column.Item().PaddingTop(24).AlignCenter()
+                .Text("Bu sənəd elektron qaydada yaradılıb və imza tələb etmir.")
                 .FontSize(8.5f).FontColor(Colors.Grey.Darken1).Italic();
         });
     }
@@ -132,7 +103,6 @@ internal sealed class SalaryPaymentExportService : ISalaryPaymentExportService
         {
             var labelText = row.RelativeItem().Text(label).FontColor(Colors.Grey.Darken2);
             var valueText = row.ConstantItem(100).AlignRight().Text($"{amount:N2}");
-
             if (bold)
             {
                 labelText.Bold().FontColor(Colors.Grey.Darken4);

@@ -1,3 +1,4 @@
+using System.Globalization;
 using MTK.Modules.Payments.Application.Abstractions.Services.Export;
 using MTK.Modules.Payments.Application.Contracts.Queries.GetContractById;
 using MTK.Modules.Payments.Domain.Contracts;
@@ -7,166 +8,283 @@ using QuestPDF.Infrastructure;
 
 namespace MTK.Modules.Payments.Infrastructure.Export;
 
+/// <summary>Contract PDF styled consistently with the monthly report and payment receipt.</summary>
 internal sealed class ContractExportService : IContractExportService
 {
-    private static readonly Dictionary<ContractStatus, string> StatusLabels = new()
-    {
-        [ContractStatus.Draft] = "Hazırlanır",
-        [ContractStatus.Active] = "Qüvvədədir",
-        [ContractStatus.Suspended] = "Dayandırılıb",
-        [ContractStatus.Terminated] = "Ləğv edilib",
-    };
+    private const string Navy = "#0F2A43";
+    private const string Accent = "#1D4E89";
+    private const string Rule = "#D7E0EA";
+    private const string Muted = "#5B6B7C";
+    private const string TextColor = "#1E293B";
+    private const string SoftBackground = "#F7F9FC";
+    private const string Green = "#067647";
+    private const string Amber = "#B54708";
 
-    private static readonly Dictionary<BillingPeriod, string> BillingPeriodLabels = new()
-    {
-        [BillingPeriod.Monthly] = "Aylıq",
-        [BillingPeriod.Quarterly] = "Rüblük",
-        [BillingPeriod.Yearly] = "İllik",
-        [BillingPeriod.OneTime] = "Birdəfəlik",
-    };
+    private static readonly CultureInfo Az = CultureInfo.GetCultureInfo("az-Latn-AZ");
+
+    private static readonly IReadOnlyDictionary<ContractStatus, string> StatusLabels =
+        new Dictionary<ContractStatus, string>
+        {
+            [ContractStatus.Draft] = "Layihə",
+            [ContractStatus.Active] = "Qüvvədədir",
+            [ContractStatus.Suspended] = "Dayandırılıb",
+            [ContractStatus.Terminated] = "Ləğv edilib",
+        };
+
+    private static readonly IReadOnlyDictionary<BillingPeriod, string> BillingPeriodLabels =
+        new Dictionary<BillingPeriod, string>
+        {
+            [BillingPeriod.Monthly] = "Aylıq",
+            [BillingPeriod.Quarterly] = "Rüblük",
+            [BillingPeriod.Yearly] = "İllik",
+            [BillingPeriod.OneTime] = "Birdəfəlik",
+        };
 
     public MemoryStream ExportToPdf(ContractResponse contract)
     {
         var stream = new MemoryStream();
 
-        Document.Create(container =>
+        Document.Create(document => document.Page(page =>
         {
-            container.Page(page =>
+            page.Size(PageSizes.A4);
+            page.Margin(34);
+            page.PageColor(Colors.White);
+            page.DefaultTextStyle(style => style
+                .FontFamily("Times New Roman")
+                .FontSize(9)
+                .FontColor(TextColor));
+
+            page.Footer().PaddingTop(8).Row(row =>
             {
-                page.Size(PageSizes.A4);
-                page.Margin(40);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
-
-                page.Content().Column(column =>
-                {
-                    column.Spacing(14);
-
-                    column.Item().Element(c => ComposeHeader(c, contract));
-                    column.Item().Element(c => ComposeInfo(c, contract));
-                    column.Item().Element(c => ComposeServices(c, contract));
-                    column.Item().Element(c => ComposeNote(c, contract));
-                });
+                row.RelativeItem().Text($"Müqavilə № {contract.Number} · PDF sənədi")
+                    .FontSize(7).FontColor(Muted).Italic();
+                row.ConstantItem(70).AlignRight().DefaultTextStyle(style => style.FontSize(7).FontColor(Muted))
+                    .Text(text =>
+                    {
+                        text.CurrentPageNumber();
+                        text.Span(" / ");
+                        text.TotalPages();
+                    });
             });
-        }).GeneratePdf(stream);
+
+            page.Content().Column(column =>
+            {
+                column.Spacing(10);
+                ComposeHeader(column, contract);
+                ComposePartiesAndTerm(column, contract);
+                ComposeServices(column, contract);
+                ComposeNote(column, contract);
+            });
+        })).GeneratePdf(stream);
 
         stream.Position = 0;
         return stream;
     }
 
-    private static void ComposeHeader(IContainer container, ContractResponse contract)
+    private static void ComposeHeader(ColumnDescriptor column, ContractResponse contract)
     {
-        container.Column(column =>
+        column.Item().Row(row =>
         {
-            column.Spacing(4);
+            row.RelativeItem().Column(title =>
+            {
+                title.Item().Text("MTK · MÜQAVİLƏ MƏLUMATLARI")
+                    .FontSize(8).Bold().FontColor(Accent).LetterSpacing(0.06f);
+                title.Item().PaddingTop(3).Text("MÜQAVİLƏ")
+                    .FontSize(22).Bold().FontColor(Navy);
+                title.Item().Text($"Müqavilə № {contract.Number}")
+                    .FontSize(11).Bold().FontColor(TextColor);
+            });
 
-            column.Item().AlignCenter().Text($"MÜQAVİLƏ № {contract.Number}").FontSize(14).Bold();
-            column.Item().AlignCenter().Text(contract.VendorName ?? contract.CustomerName ?? "Tərəf təyin edilməyib").FontSize(11);
-            column.Item().PaddingTop(6).BorderBottom(1);
+            row.ConstantItem(115).AlignRight().Border(0.7f).BorderColor(Rule)
+                .Background(StatusBackground(contract)).Padding(10).Column(status =>
+                {
+                    status.Item().AlignRight().Text("STATUS")
+                        .FontSize(7).Bold().FontColor(Muted).LetterSpacing(0.04f);
+                    status.Item().PaddingTop(4).AlignRight().Text(StatusLabel(contract))
+                        .FontSize(10).Bold().FontColor(StatusColor(contract));
+                });
         });
+
+        column.Item().PaddingTop(3).LineHorizontal(1.4f).LineColor(Navy);
     }
 
-    private static void ComposeInfo(IContainer container, ContractResponse contract)
+    private static void ComposePartiesAndTerm(ColumnDescriptor column, ContractResponse contract)
     {
-        container.Column(column =>
+        Section(column, "TƏRƏFLƏR VƏ MÜDDƏT");
+
+        column.Item().Row(row =>
         {
-            column.Spacing(4);
+            row.RelativeItem(1.25f).Border(0.7f).BorderColor(Rule).Background(SoftBackground)
+                .Padding(11).Column(party =>
+                {
+                    string partyType = contract.VendorId.HasValue ? "TƏDARÜKÇÜ" : "MÜŞTƏRİ";
+                    string partyName = contract.VendorName ?? contract.CustomerName ?? "Tərəf təyin edilməyib";
+                    party.Item().Text("MÜQAVİLƏ TƏRƏFİ")
+                        .FontSize(7).Bold().FontColor(Muted).LetterSpacing(0.04f);
+                    party.Item().PaddingTop(4).Text(partyName)
+                        .FontSize(12).Bold().FontColor(Navy);
+                    party.Item().PaddingTop(3).Text(partyType)
+                        .FontSize(7).Bold().FontColor(Accent).LetterSpacing(0.03f);
+                });
 
-            column.Item().Row(row =>
+            row.ConstantItem(10);
+            row.RelativeItem().Border(0.7f).BorderColor(Rule).Padding(11).Column(term =>
             {
-                row.RelativeItem().Text(text =>
+                term.Item().Text("MÜQAVİLƏNİN QÜVVƏDƏ OLMA MÜDDƏTİ")
+                    .FontSize(7).Bold().FontColor(Muted).LetterSpacing(0.03f);
+                term.Item().PaddingTop(6).Row(dates =>
                 {
-                    text.Span("Başlanğıc:  ").FontSize(10);
-                    text.Span(contract.StartDate.ToString("dd.MM.yyyy")).FontSize(10).Bold();
-                });
-                row.RelativeItem().Text(text =>
-                {
-                    text.Span("Bitmə:  ").FontSize(10);
-                    text.Span(contract.EndDate.ToString("dd.MM.yyyy")).FontSize(10).Bold();
-                });
-            });
-
-            column.Item().Text(text =>
-            {
-                text.Span("Status:  ").FontSize(10);
-                text.Span(StatusLabels.GetValueOrDefault(contract.Status, contract.Status.ToString())).FontSize(10).Bold();
-            });
-
-            column.Item().Row(row =>
-            {
-                row.RelativeItem().Text(text =>
-                {
-                    text.Span("Aylıq yük:  ").FontSize(10);
-                    text.Span($"{contract.MonthlyAmount:N2} ₼").FontSize(10).Bold();
-                });
-                row.RelativeItem().Text(text =>
-                {
-                    text.Span("Dövr üzrə cəm:  ").FontSize(10);
-                    text.Span($"{contract.TotalAmount:N2} ₼").FontSize(10).Bold();
-                });
-            });
-        });
-    }
-
-    private static void ComposeServices(IContainer container, ContractResponse contract)
-    {
-        container.Column(column =>
-        {
-            column.Spacing(6);
-
-            column.Item().Text("Xidmətlər").FontSize(11).Bold();
-
-            if (contract.Services.Count == 0)
-            {
-                column.Item().Text("Xidmət əlavə edilməyib.").FontSize(9);
-                return;
-            }
-
-            column.Item().Table(table =>
-            {
-                table.ColumnsDefinition(columns =>
-                {
-                    columns.RelativeColumn(3);
-                    columns.RelativeColumn(1);
-                    columns.ConstantColumn(80);
-                });
-
-                table.Header(header =>
-                {
-                    header.Cell().BorderBottom(1).Padding(3).Text("Xidmət").FontSize(9).Bold();
-                    header.Cell().BorderBottom(1).Padding(3).Text("Dövr").FontSize(9).Bold();
-                    header.Cell().BorderBottom(1).Padding(3).AlignRight().Text("Qiymət (₼)").FontSize(9).Bold();
-                });
-
-                foreach (var service in contract.Services)
-                {
-                    table.Cell().Padding(3).Text(text =>
+                    dates.RelativeItem().Column(start =>
                     {
-                        text.Span(service.Name).FontSize(9);
-                        if (!string.IsNullOrWhiteSpace(service.Description))
-                        {
-                            text.Span($" — {service.Description}").FontSize(9).FontColor(Colors.Grey.Darken1);
-                        }
+                        start.Item().Text("Başlanma tarixi").FontSize(7).FontColor(Muted);
+                        start.Item().PaddingTop(2).Text(Date(contract.StartDate))
+                            .FontSize(10).Bold().FontColor(Navy);
                     });
-                    table.Cell().Padding(3).Text(BillingPeriodLabels.GetValueOrDefault(
-                        service.BillingPeriod, service.BillingPeriod.ToString())).FontSize(9);
-                    table.Cell().Padding(3).AlignRight().Text(service.PeriodAmount.ToString("N2")).FontSize(9);
-                }
+                    dates.RelativeItem().Column(end =>
+                    {
+                        end.Item().Text("Bitmə tarixi").FontSize(7).FontColor(Muted);
+                        end.Item().PaddingTop(2).Text(Date(contract.EndDate))
+                            .FontSize(10).Bold().FontColor(Navy);
+                    });
+                });
+            });
+        });
+
+        column.Item().Row(row =>
+        {
+            row.RelativeItem().Background("#EFF6FF").Padding(10).Column(metric =>
+            {
+                metric.Item().Text("AKTİV AYLIQ XİDMƏTLƏR ÜZRƏ")
+                    .FontSize(7).Bold().FontColor(Accent).LetterSpacing(0.03f);
+                metric.Item().PaddingTop(4).Text(Money(contract.MonthlyAmount))
+                    .FontSize(15).Bold().FontColor(Navy);
+            });
+            row.ConstantItem(8);
+            row.RelativeItem().Background(SoftBackground).Padding(10).Column(metric =>
+            {
+                metric.Item().Text("MÜQAVİLƏDƏKİ XİDMƏTLƏR")
+                    .FontSize(7).Bold().FontColor(Muted).LetterSpacing(0.03f);
+                metric.Item().PaddingTop(4).Text(contract.Services.Count.ToString(Az))
+                    .FontSize(15).Bold().FontColor(Navy);
             });
         });
     }
 
-    private static void ComposeNote(IContainer container, ContractResponse contract)
+    private static void ComposeServices(ColumnDescriptor column, ContractResponse contract)
     {
-        if (string.IsNullOrWhiteSpace(contract.Note))
+        Section(column, "XİDMƏTLƏR VƏ QİYMƏTLƏR");
+
+        if (contract.Services.Count == 0)
         {
+            column.Item().Border(0.7f).BorderColor(Rule).Background(SoftBackground).Padding(12)
+                .Text("Müqaviləyə xidmət əlavə edilməyib.")
+                .FontSize(9).FontColor(Muted);
             return;
         }
 
-        container.PaddingTop(10).Text(text =>
+        column.Item().Table(table =>
         {
-            text.Span("Qeyd:  ").FontSize(9);
-            text.Span(contract.Note).FontSize(9);
+            table.ColumnsDefinition(columns =>
+            {
+                columns.RelativeColumn(3.4f);
+                columns.RelativeColumn(1.1f);
+                columns.RelativeColumn(1.15f);
+                columns.RelativeColumn(1.2f);
+                columns.ConstantColumn(58);
+            });
+
+            table.Header(header =>
+            {
+                header.Cell().Element(HeaderCell).Text("Xidmət və şərtlər");
+                header.Cell().Element(HeaderCell).Text("Hesablama dövrü");
+                header.Cell().Element(HeaderCell).AlignRight().Text("Vahid qiyməti");
+                header.Cell().Element(HeaderCell).AlignRight().Text("Dövr üzrə məbləğ");
+                header.Cell().Element(HeaderCell).AlignCenter().Text("Status");
+            });
+
+            foreach (var service in contract.Services)
+            {
+                table.Cell().Element(BodyCell).Column(details =>
+                {
+                    details.Item().Text(service.Name).FontSize(8.5f).Bold().FontColor(Navy);
+                    if (!string.IsNullOrWhiteSpace(service.Description))
+                        details.Item().PaddingTop(2).Text(service.Description).FontSize(7).FontColor(Muted);
+
+                    var servicePeriod = ServicePeriod(service);
+                    if (servicePeriod is not null)
+                        details.Item().PaddingTop(3).Text(servicePeriod).FontSize(6.5f).FontColor(Muted);
+
+                    if (service.PaymentTermDays is { } paymentTermDays)
+                        details.Item().PaddingTop(2).Text($"Ödəniş müddəti: {paymentTermDays} gün")
+                            .FontSize(6.5f).FontColor(Muted);
+                });
+
+                table.Cell().Element(BodyCell).Text(BillingPeriodLabel(service.BillingPeriod));
+                table.Cell().Element(BodyCell).AlignRight().Text(Money(service.UnitPrice));
+                table.Cell().Element(BodyCell).AlignRight().Text(Money(service.PeriodAmount)).Bold();
+                table.Cell().Element(BodyCell).AlignCenter()
+                    .Text(service.IsActive ? "Aktiv" : "Dayandırılıb")
+                    .FontSize(7).FontColor(service.IsActive ? Green : Muted);
+            }
         });
+
+        column.Item().PaddingTop(3).Text(
+                "Dövr üzrə məbləğ hər xidmət üçün göstərilən hesablama dövrünə aiddir. " +
+                "Aylıq cəm yalnız aktiv aylıq xidmətləri əhatə edir.")
+            .FontSize(7).FontColor(Muted).Italic();
     }
+
+    private static void ComposeNote(ColumnDescriptor column, ContractResponse contract)
+    {
+        if (string.IsNullOrWhiteSpace(contract.Note))
+            return;
+
+        Section(column, "ƏLAVƏ QEYD");
+        column.Item().Border(0.7f).BorderColor(Rule).Background(SoftBackground)
+            .Padding(10).Text(contract.Note).FontSize(8.5f).LineHeight(1.3f);
+    }
+
+    private static void Section(ColumnDescriptor column, string title)
+    {
+        column.Item().PaddingTop(3).Text(title).FontSize(8).Bold().FontColor(Navy)
+            .LetterSpacing(0.04f);
+        column.Item().PaddingTop(2).LineHorizontal(0.7f).LineColor(Rule);
+    }
+
+    private static IContainer HeaderCell(IContainer container) => container
+        .Background(Navy).PaddingVertical(7).PaddingHorizontal(6)
+        .DefaultTextStyle(style => style.FontSize(7).Bold().FontColor(Colors.White));
+
+    private static IContainer BodyCell(IContainer container) => container
+        .BorderBottom(0.5f).BorderColor(Rule).PaddingVertical(7).PaddingHorizontal(6)
+        .DefaultTextStyle(style => style.FontSize(7.5f).FontColor(TextColor));
+
+    private static string StatusLabel(ContractResponse contract) => contract.IsExpired
+        ? "Müddəti bitib"
+        : StatusLabels.GetValueOrDefault(contract.Status, contract.Status.ToString());
+
+    private static string StatusColor(ContractResponse contract) => contract.IsActive
+        ? Green
+        : contract.Status == ContractStatus.Draft ? Accent : Amber;
+
+    private static string StatusBackground(ContractResponse contract) => contract.IsActive
+        ? "#ECFDF3"
+        : contract.Status == ContractStatus.Draft ? "#EFF6FF" : "#FFFAEB";
+
+    private static string BillingPeriodLabel(BillingPeriod period) =>
+        BillingPeriodLabels.GetValueOrDefault(period, period.ToString());
+
+    private static string? ServicePeriod(ContractServiceResponse service)
+    {
+        if (service.ServiceStartDate is null && service.ServiceEndDate is null)
+            return null;
+
+        string start = service.ServiceStartDate is { } serviceStart ? Date(serviceStart) : "Başlanğıc göstərilməyib";
+        string end = service.ServiceEndDate is { } serviceEnd ? Date(serviceEnd) : "Bitmə tarixi göstərilməyib";
+        return $"Xidmət müddəti: {start} – {end}";
+    }
+
+    private static string Date(DateTimeOffset value) => value.ToString("dd.MM.yyyy", Az);
+
+    private static string Money(decimal amount) => $"{amount.ToString("N2", Az)} ₼";
 }

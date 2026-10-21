@@ -35,4 +35,6 @@ public sealed record WarehouseMovementRow(
     string ItemName,
     string Type,
     decimal Quantity,
+    decimal? UnitPrice,
+    decimal? Value,
     string? Note);

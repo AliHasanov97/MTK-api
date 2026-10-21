@@ -14,8 +14,14 @@ namespace MTK.Modules.Payments.Infrastructure.Export;
 /// </summary>
 internal sealed class PayslipExportService : IPayslipExportService
 {
+    private const string Navy = "#0F2A43";
+    private const string Accent = "#1D4E89";
+    private const string Rule = "#D7E0EA";
+    private const string Muted = "#5B6B7C";
+    private const string SoftBackground = "#F7F9FC";
     private static readonly string AccentColor = Colors.Blue.Darken2;
     private static readonly string RuleColor = Colors.Grey.Lighten1;
+    private static readonly CultureInfo Az = CreateAzCulture();
 
     private static readonly string[] AzMonths =
     [
@@ -33,19 +39,168 @@ internal sealed class PayslipExportService : IPayslipExportService
         return stream;
     }
 
-    public MemoryStream ExportRunToPdf(IReadOnlyCollection<PayslipExportData> payslips)
+    public MemoryStream ExportRunToPdf(PayrollRunExportData report)
     {
         var stream = new MemoryStream();
 
-        Document.Create(container =>
-        {
-            foreach (var payslip in payslips)
-            {
-                container.Page(page => ComposePayslipPage(page, payslip));
-            }
-        }).GeneratePdf(stream);
+        Document.Create(container => container.Page(page => ComposePayrollReportPage(page, report)))
+            .GeneratePdf(stream);
 
+        stream.Position = 0;
         return stream;
+    }
+
+    private static void ComposePayrollReportPage(PageDescriptor page, PayrollRunExportData report)
+    {
+        page.Size(PageSizes.A4.Landscape());
+        page.MarginHorizontal(28);
+        page.MarginVertical(24);
+        page.PageColor(Colors.White);
+        page.DefaultTextStyle(style => style.FontFamily("Times New Roman").FontSize(8).FontColor("#1E293B"));
+
+        page.Footer().PaddingTop(6).BorderTop(0.5f).BorderColor(Rule).Row(row =>
+        {
+            row.RelativeItem().Text($"Yaradılma tarixi: {DateTimeOffset.UtcNow:dd.MM.yyyy HH:mm} UTC")
+                .FontSize(7).FontColor(Muted);
+            row.ConstantItem(90).AlignRight().DefaultTextStyle(style => style.FontSize(7).FontColor(Muted))
+                .Text(text =>
+                {
+                    text.CurrentPageNumber();
+                    text.Span(" / ");
+                    text.TotalPages();
+                });
+        });
+
+        page.Content().Column(column =>
+        {
+            column.Spacing(8);
+            column.Item().Row(row =>
+            {
+                row.RelativeItem().Column(header =>
+                {
+                    header.Item().Text(report.CompanyName).FontSize(9).Bold().FontColor(Accent);
+                    header.Item().PaddingTop(3).Text("ƏMƏKHAQQI ÜMUMİ HESABATI")
+                        .FontSize(16).Bold().FontColor(Navy);
+                });
+
+                row.ConstantItem(180).AlignRight().AlignMiddle().Column(meta =>
+                {
+                    meta.Item().AlignRight().Text("HESABLANMA DÖVRÜ").FontSize(7).Bold().FontColor(Muted);
+                    meta.Item().PaddingTop(3).AlignRight()
+                        .Text($"{AzMonths[report.Month - 1]} {report.Year}").FontSize(11).Bold().FontColor(Navy);
+                    meta.Item().PaddingTop(2).AlignRight().Text($"Status: {RunStatus(report.Status)}")
+                        .FontSize(8).FontColor(Muted);
+                });
+            });
+
+            column.Item().PaddingTop(4).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.ConstantColumn(24);
+                    columns.RelativeColumn(2.4f);
+                    columns.RelativeColumn(1.05f);
+                    columns.RelativeColumn(0.85f);
+                    columns.RelativeColumn(0.9f);
+                    columns.RelativeColumn(1.05f);
+                    columns.RelativeColumn(1.05f);
+                    columns.RelativeColumn(1.15f);
+                    columns.RelativeColumn(1.0f);
+                    columns.RelativeColumn(1.15f);
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(HeaderCell).Text("№");
+                    header.Cell().Element(HeaderCell).Text("İşçi");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("Əsas maaş");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("Bonus");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("Düzəliş");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("Gross");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("Xalis");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("İşəgötürən xərci");
+                    header.Cell().Element(HeaderCell).Text("Ödəniş üsulu");
+                    header.Cell().Element(HeaderCell).Text("Ödəniş statusu");
+                });
+
+                var index = 0;
+                foreach (var employee in report.Employees)
+                {
+                    index++;
+                    ReportCell(table, index.ToString(Az));
+                    ReportCell(table, employee.EmployeeFullName);
+                    ReportMoneyCell(table, employee.BaseSalary);
+                    ReportMoneyCell(table, employee.BonusAmount);
+                    ReportMoneyCell(table, employee.AdjustmentAmount);
+                    ReportMoneyCell(table, employee.GrossSalary);
+                    ReportMoneyCell(table, employee.FinalNetSalary);
+                    ReportMoneyCell(table, employee.TotalEmployerCost);
+                    ReportCell(table, PaymentMethodName(employee.PaymentMethod));
+                    ReportCell(table, employee.PaidAt is { } paidAt
+                        ? $"Ödənilib\n{paidAt:dd.MM.yyyy}"
+                        : "Gözləyir");
+                }
+
+                table.Cell().Element(TotalCell).Text(string.Empty);
+                table.Cell().Element(TotalCell).Text($"CƏMİ · {report.Employees.Count} işçi");
+                ReportTotalMoneyCell(table, report.Employees.Sum(e => e.BaseSalary));
+                ReportTotalMoneyCell(table, report.Employees.Sum(e => e.BonusAmount));
+                ReportTotalMoneyCell(table, report.Employees.Sum(e => e.AdjustmentAmount));
+                ReportTotalMoneyCell(table, report.Employees.Sum(e => e.GrossSalary));
+                ReportTotalMoneyCell(table, report.Employees.Sum(e => e.FinalNetSalary));
+                ReportTotalMoneyCell(table, report.Employees.Sum(e => e.TotalEmployerCost));
+                table.Cell().Element(TotalCell).Text(string.Empty);
+                table.Cell().Element(TotalCell).Text(string.Empty);
+            });
+        });
+    }
+
+    private static void ReportCell(TableDescriptor table, string value) =>
+        table.Cell().Element(DataCell).Text(value);
+
+    private static void ReportMoneyCell(TableDescriptor table, decimal value) =>
+        table.Cell().Element(DataCell).AlignRight().Text(Money(value));
+
+    private static void ReportTotalMoneyCell(TableDescriptor table, decimal value) =>
+        table.Cell().Element(TotalCell).AlignRight().Text(Money(value));
+
+    private static IContainer HeaderCell(IContainer container) => container
+        .Background(Navy).PaddingVertical(7).PaddingHorizontal(5)
+        .DefaultTextStyle(style => style.FontSize(7).Bold().FontColor(Colors.White));
+
+    private static IContainer DataCell(IContainer container) => container
+        .BorderBottom(0.5f).BorderColor(Rule).PaddingVertical(6).PaddingHorizontal(5);
+
+    private static IContainer TotalCell(IContainer container) => container
+        .Background(SoftBackground).BorderBottom(0.7f).BorderColor(Rule).PaddingVertical(7).PaddingHorizontal(5)
+        .DefaultTextStyle(style => style.FontSize(7.5f).Bold().FontColor(Navy));
+
+    private static string Money(decimal amount) => $"{amount.ToString("N2", Az)} ₼";
+
+    private static string PaymentMethodName(string? method) => method switch
+    {
+        null => "—",
+        "Cash" => "Nağd",
+        "BankTransfer" => "Bank köçürməsi",
+        "Card" => "Kart",
+        _ => method
+    };
+
+    private static string RunStatus(string status) => status switch
+    {
+        "Draft" => "Qaralama",
+        "Calculated" => "Hesablanıb",
+        "Approved" => "Təsdiqlənib",
+        "Paid" => "Ödənilib",
+        _ => status
+    };
+
+    private static CultureInfo CreateAzCulture()
+    {
+        var culture = (CultureInfo)CultureInfo.GetCultureInfo("az-Latn-AZ").Clone();
+        culture.NumberFormat.NumberDecimalSeparator = ",";
+        culture.NumberFormat.NumberGroupSeparator = ".";
+        return culture;
     }
 
     private static void ComposePayslipPage(PageDescriptor page, PayslipExportData data)

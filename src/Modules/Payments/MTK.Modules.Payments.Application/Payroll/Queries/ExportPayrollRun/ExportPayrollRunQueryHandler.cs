@@ -42,20 +42,26 @@ internal sealed class ExportPayrollRunQueryHandler : IQueryHandler<ExportPayroll
         var company = await _companyRepository.GetAsync(cancellationToken);
         var companyName = company?.Name ?? "MTK";
 
-        var payslips = run.Payslips
-            .Select(p => new PayslipExportData(
-                companyName,
-                p.EmployeeFullName,
-                run.Year,
-                run.Month,
-                p.BaseSalary,
-                p.BonusAmount,
-                p.GrossSalary,
-                p.FinalNetSalary))
-            .OrderBy(p => p.EmployeeFullName)
-            .ToList();
+        var report = new PayrollRunExportData(
+            companyName,
+            run.Year,
+            run.Month,
+            run.Status.ToString(),
+            run.Payslips
+                .Select(p => new PayrollRunEmployeeRow(
+                    p.EmployeeFullName,
+                    p.BaseSalary,
+                    p.BonusAmount,
+                    p.AdjustmentAmount,
+                    p.GrossSalary,
+                    p.FinalNetSalary,
+                    p.TotalEmployerCost,
+                    p.PaidAt,
+                    p.PaymentMethod?.ToString()))
+                .OrderBy(p => p.EmployeeFullName)
+                .ToList());
 
-        var stream = _exportService.ExportRunToPdf(payslips);
+        var stream = _exportService.ExportRunToPdf(report);
         var fileName = $"Emek_haqqi_{run.Year}-{run.Month:D2}.pdf";
 
         return new ExportFileResult(stream.ToArray(), fileName, "application/pdf");

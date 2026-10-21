@@ -1,6 +1,5 @@
 using System.Globalization;
 using MTK.Modules.Payments.Application.Abstractions.Services.Export;
-using MTK.Modules.Payments.Domain.Charges;
 using MTK.Modules.Payments.Domain.Parties;
 using MTK.Modules.Payments.Domain.Payments;
 using QuestPDF.Fluent;
@@ -9,22 +8,19 @@ using QuestPDF.Infrastructure;
 
 namespace MTK.Modules.Payments.Infrastructure.Export;
 
-/// <summary>
-/// Matches the complex's existing paper receipt wording (a handwritten/stamped "Qəbz"
-/// template), not a generic invoice layout — residents expect the same phrasing they
-/// already know from the paper version, just typeset cleanly. Only the company name is
-/// fixed here (a single-complex assumption); the building address and the signing
-/// issuer's name/title are resolved per-payment by the caller (see
-/// ExportPaymentReceiptQueryHandler), since the issuer isn't always the same person or
-/// role — could be the Komendant or the Xəzinədar, whoever actually recorded it.
-/// </summary>
+/// <summary>Payment receipt styled to match the monthly report PDF.</summary>
 internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
 {
-    private const string DefaultIssuerTitle = "Komendantı";
+    private const string Navy = "#0F2A43";
+    private const string Accent = "#1D4E89";
+    private const string Rule = "#D7E0EA";
+    private const string Muted = "#5B6B7C";
+    private const string TextColor = "#1E293B";
+    private const string SoftBackground = "#F7F9FC";
+    private const string Green = "#067647";
+    private const string GreenBackground = "#ECFDF3";
 
-    private static readonly string AccentColor = Colors.Blue.Darken2;
-    private static readonly string RuleColor = Colors.Grey.Lighten1;
-
+    private static readonly CultureInfo Az = CultureInfo.GetCultureInfo("az-Latn-AZ");
     private static readonly string[] AzMonths =
     [
         "Yanvar", "Fevral", "Mart", "Aprel", "May", "İyun",
@@ -35,258 +31,250 @@ internal sealed class PaymentReceiptExportService : IPaymentReceiptExportService
     {
         var stream = new MemoryStream();
 
-        Document.Create(container =>
+        Document.Create(document => document.Page(page =>
         {
-            container.Page(page =>
+            page.Size(PageSizes.A5);
+            page.Margin(30);
+            page.PageColor(Colors.White);
+            page.DefaultTextStyle(style => style
+                .FontFamily("Times New Roman")
+                .FontSize(9)
+                .FontColor(TextColor));
+
+            page.Footer().PaddingTop(8).Row(row =>
             {
-                // A pre-printed receipt-pad slip (a third of an A4 sheet, landscape) —
-                // matches the complex's actual paper "Qəbz" stock, not a full A4/A5 page.
-                page.Size(new PageSize(210, 99, Unit.Millimetre));
-                page.Margin(0);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(11f).FontFamily("Times New Roman").FontColor(Colors.Grey.Darken4));
-
-                page.Content()
-                    .Padding(8)
-                    .Border(1.2f)
-                    .BorderColor(AccentColor)
-                    .Padding(9)
-                    .Column(column =>
+                row.RelativeItem().Text("Bu qəbz elektron qaydada yaradılıb.")
+                    .FontSize(7).FontColor(Muted).Italic();
+                row.ConstantItem(70).AlignRight().DefaultTextStyle(style => style.FontSize(7).FontColor(Muted))
+                    .Text(text =>
                     {
-                        column.Spacing(3.5f);
-
-                        // ---- Header: company eyebrow, title, receipt no./date on one row ----
-                        column.Item().Row(row =>
-                        {
-                            row.RelativeItem().Column(head =>
-                            {
-                                head.Item().Text(data.CompanyName.ToUpper(new CultureInfo("az-AZ")))
-                                    .FontSize(8f).FontColor(AccentColor).LetterSpacing(0.05f);
-                                head.Item().Text("Qəbz").FontSize(20).Bold().FontColor(Colors.Grey.Darken4);
-                            });
-
-                            row.ConstantItem(95).AlignRight().Column(meta =>
-                            {
-                                meta.Item().AlignRight().Text($"№ {ShortRef(data.PaymentId)}")
-                                    .FontSize(9f).FontColor(Colors.Grey.Darken2);
-                                meta.Item().AlignRight().Text(
-                                    $"«{data.PaymentDate.Day}» {AzMonths[data.PaymentDate.Month - 1]} {data.PaymentDate.Year}-ci il")
-                                    .FontSize(9.5f);
-                            });
-                        });
-
-                        column.Item().LineHorizontal(0.75f).LineColor(RuleColor);
-
-                        // ---- Payer ----
-                        column.Item().Text(text =>
-                        {
-                            text.Span("Verilir: ").FontColor(Colors.Grey.Darken2);
-                            text.Span(data.PayerName ?? "—").Bold().FontSize(13f);
-                        });
-
-                        // ---- Body ----
-                        if (data.PartyType == PartyType.Owner)
-                        {
-                            ComposeOwnerBody(column, data);
-                        }
-                        else
-                        {
-                            ComposeVendorBody(column, data);
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(data.Notes))
-                        {
-                            column.Item().Text($"Qeyd: {data.Notes}")
-                                .FontSize(9f).Italic().FontColor(Colors.Grey.Darken1);
-                        }
-
-                        // Normal top-down flow (not pinned to the page bottom): an
-                        // itemised bulk/toplu payment can grow a few extra lines, and
-                        // forcing the signature to the page's bottom edge would push it
-                        // onto a second page instead of just flowing below the longer body.
-                        column.Item().PaddingTop(5).Row(row =>
-                        {
-                            row.RelativeItem().AlignBottom().Text(MethodLabel(data.PaymentMethod))
-                                .FontSize(9.5f).FontColor(Colors.Grey.Darken2);
-
-                            row.ConstantItem(150).AlignRight().Column(sig =>
-                            {
-                                sig.Spacing(1f);
-                                sig.Item().AlignRight().Text($"\"{data.CompanyName}\" MTK-nın").FontSize(9.5f);
-                                sig.Item().AlignRight().Text($"{data.IssuerTitle ?? DefaultIssuerTitle}:").FontSize(9.5f);
-                                sig.Item().PaddingTop(7).AlignRight().Text(data.IssuerName ?? "—")
-                                    .FontSize(12f).Bold();
-                                sig.Item().PaddingTop(1).Width(130).LineHorizontal(0.5f).LineColor(RuleColor);
-                            });
-                        });
+                        text.CurrentPageNumber();
+                        text.Span(" / ");
+                        text.TotalPages();
                     });
             });
-        }).GeneratePdf(stream);
+
+            page.Content().Column(column =>
+            {
+                column.Spacing(7);
+                ComposeHeader(column, data);
+                ComposePaymentSummary(column, data);
+                ComposeAllocation(column, data);
+                ComposeNotes(column, data);
+                ComposeSignature(column, data);
+            });
+        })).GeneratePdf(stream);
 
         stream.Position = 0;
         return stream;
     }
 
-    // "Ondan ötrü ki, [ünvan] ünvanında yerləşən "[şirkət]" MTK-nın inşa etdiyi yaşayış
-    // binasında [N] saylı mənzilə/qaraja görə [ay] [il]-ci il üçün [məbləğ] AZN kommunal
-    // haqqı ödənişdir." — the exact wording of the paper receipt, used whenever the
-    // payment settles a single unit for a single, unambiguous period. A bulk/toplu
-    // payment — several months at once, OR (crucially) several DIFFERENT units at
-    // once, e.g. part clearing an apartment's debt and the rest a garage's — is NOT
-    // squeezed into that one-unit/one-month sentence: it gets an itemised line per
-    // unit+period instead, so the receipt never claims the whole amount went to one
-    // unit when it actually didn't.
-    private static void ComposeOwnerBody(ColumnDescriptor column, PaymentReceiptData data)
+    private static void ComposeHeader(ColumnDescriptor column, PaymentReceiptData data)
     {
-        // No settled charges at all (Lines empty) means this payment hasn't actually been
-        // applied to anything — it's sitting as a prepayment/advance on the owner's account
-        // (same case the web UI labels "avans kimi saxlanılır"). Any Apartment/Garage number
-        // or period the handler resolved here is only the payment's original TARGET, not
-        // where the money actually went — asserting a unit+month would misstate the receipt.
+        column.Item().Row(row =>
+        {
+            row.RelativeItem().Column(company =>
+            {
+                company.Item().Text(data.CompanyName.ToUpper(Az))
+                    .FontSize(8).Bold().FontColor(Accent).LetterSpacing(0.06f);
+                company.Item().PaddingTop(2).Text("ÖDƏNİŞ QƏBZİ")
+                    .FontSize(21).Bold().FontColor(Navy);
+                company.Item().Text(data.PartyType == PartyType.Owner
+                        ? "Sakin tərəfindən edilmiş ödəniş"
+                        : "Tədarükçüyə edilmiş ödəniş")
+                    .FontSize(8).FontColor(Muted);
+            });
+
+            row.ConstantItem(110).AlignRight().Column(meta =>
+            {
+                meta.Item().AlignRight().Text($"Qəbz № {data.ReceiptNumber:D8}")
+                    .FontSize(8).FontColor(Muted);
+                meta.Item().PaddingTop(3).AlignRight()
+                    .Text(data.PaymentDate.ToString("dd.MM.yyyy", Az))
+                    .FontSize(12).Bold().FontColor(Navy);
+                meta.Item().AlignRight().Text(data.PaymentDate.ToString("HH:mm", Az))
+                    .FontSize(8).FontColor(Muted);
+            });
+        });
+
+        column.Item().PaddingTop(3).LineHorizontal(1.4f).LineColor(Navy);
+    }
+
+    private static void ComposePaymentSummary(ColumnDescriptor column, PaymentReceiptData data)
+    {
+        Section(column, data.PartyType == PartyType.Owner ? "ÖDƏNİŞ EDƏN" : "ÖDƏNİŞ ALAN");
+        column.Item().Row(row =>
+        {
+            row.RelativeItem().Border(0.7f).BorderColor(Rule).Background(SoftBackground)
+                .Padding(10).Column(party =>
+                {
+                    party.Item().Text(data.PayerName ?? "Məlumat göstərilməyib")
+                        .FontSize(11).Bold().FontColor(Navy);
+                    if (data.PartyType == PartyType.Owner
+                        && !string.IsNullOrWhiteSpace(data.PayerEmail))
+                    {
+                        party.Item().PaddingTop(3).Text(data.PayerEmail)
+                            .FontSize(8).FontColor(Muted);
+                    }
+                });
+
+            row.ConstantItem(10);
+            row.ConstantItem(120).Background("#EFF6FF").Padding(10).Column(amount =>
+            {
+                amount.Item().Text("ÖDƏNİŞ MƏBLƏĞİ")
+                    .FontSize(7).Bold().FontColor(Accent).LetterSpacing(0.04f);
+                amount.Item().PaddingTop(5).Text(Money(data.Amount))
+                    .FontSize(16).Bold().FontColor(Navy);
+                amount.Item().Text("AZN").FontSize(8).FontColor(Muted);
+            });
+        });
+
+        column.Item().PaddingTop(1).Row(row =>
+        {
+            row.RelativeItem().Text(text =>
+            {
+                text.Span("Ödəniş üsulu: ").FontColor(Muted);
+                text.Span(MethodLabel(data.PaymentMethod)).Bold();
+            });
+            if (data.Period is not null)
+            {
+                row.RelativeItem().AlignRight().Text($"Hesablaşma dövrü: {FormatPeriodLabel(data.Period)}")
+                    .FontColor(Muted);
+            }
+        });
+    }
+
+    private static void ComposeAllocation(ColumnDescriptor column, PaymentReceiptData data)
+    {
+        Section(column, data.PartyType == PartyType.Owner ? "BORCA TƏTBİQ OLUNAN MƏBLƏĞ" : "ÖDƏNİŞİN TƏYİNATI");
+
         if (data.Lines.Count == 0)
         {
-            column.Item().Text(
-                $"Ondan ötrü ki, \"{data.CompanyName}\" MTK-nın hesabına {Money(data.Amount)} AZN ödəniş daxil olub. " +
-                "Bu məbləğ hələ heç bir haqqa tətbiq olunmayıb və sahibin hesabında avans kimi saxlanılır.")
-                .Justify().LineHeight(1.08f);
+            var recipient = data.PartyType == PartyType.Owner ? "sakin" : "tədarükçü";
+            column.Item().Border(0.7f).BorderColor(Rule).Background(SoftBackground).Padding(10)
+                .Text($"Bu ödəniş hələ hesablanmış borc və ya xərc maddəsinə tətbiq edilməyib. " +
+                      $"{Money(data.Amount)} AZN {recipient} hesabında avans kimi saxlanılır.")
+                .FontSize(8.5f).LineHeight(1.3f);
             return;
         }
 
-        // A line only carries its own PropertyLabel when the payment settled more than
-        // one unit — see ExportPaymentReceiptQueryHandler. Grouping by (label, period)
-        // catches both bulk shapes at once: several units, or several months of the same unit.
-        var groups = data.Lines
-            .GroupBy(l => (l.PropertyLabel, l.Period))
-            .ToList();
-        bool isBulkPayment = groups.Count > 1;
-
-        // data.Amount is what the owner PAID, not necessarily what got APPLIED — FIFO can
-        // leave a remainder with no open charge to cover (same "qalıq ... avans kimi
-        // saxlanılır" the web UI shows). The sentence below must only claim the portion
-        // this unit/period actually received; the leftover gets its own note further down.
-        var appliedTotal = data.Lines.Sum(l => l.Amount);
-        var remainder = data.Amount - appliedTotal;
-        bool hasRemainder = remainder > 0.004m;
-
-        var unitWord = data.PropertyType == PropertyType.Garage ? "qaraja" : "mənzilə";
-        var unitClause = isBulkPayment
-            ? "əmlaklara görə"
-            : data.PropertyNumber is not null
-                ? $"{data.PropertyNumber} saylı {unitWord} görə"
-                : unitWord + " görə";
-
-        column.Item().Text(
-            $"Ondan ötrü ki, {data.BuildingAddress ?? "—"} ünvanında yerləşən \"{data.CompanyName}\" MTK-nın inşa etdiyi " +
-            $"yaşayış binasında {unitClause}").Justify().LineHeight(1.08f);
-
-        if (!isBulkPayment)
+        column.Item().Table(table =>
         {
-            var (periodMonth, periodYear) = ResolvePeriod(data);
-            column.Item().Text(
-                $"{AzMonths[periodMonth - 1]} {periodYear}-ci il üçün {Money(appliedTotal)} AZN kommunal haqqı ödənişdir.");
-        }
-        else
-        {
-            // Toplu ödəniş: hər əmlak/dövr öz sətrində, cəmi aydın görünsün deyə.
-            column.Item().Text("aşağıdakılara görə:").Justify();
-
-            foreach (var group in groups)
+            table.ColumnsDefinition(columns =>
             {
-                var (propertyLabel, period) = group.Key;
-                var periodLabel = FormatPeriodLabel(period);
-                var label = propertyLabel is not null && periodLabel is not null
-                    ? $"{propertyLabel}, {periodLabel}"
-                    : propertyLabel ?? periodLabel ?? group.First().Description;
+                columns.RelativeColumn(3);
+                columns.RelativeColumn(2);
+                columns.ConstantColumn(70);
+            });
 
-                var amount = group.Sum(l => l.Amount);
-                column.Item().PaddingLeft(10).Text($"— {label}: {Money(amount)} AZN").FontSize(10f);
+            table.Header(header =>
+            {
+                header.Cell().Element(HeaderCell).Text(data.PartyType == PartyType.Owner ? "Borcun aid olduğu əmlak" : "Xərc / xidmət");
+                header.Cell().Element(HeaderCell).Text("Dövr / açıqlama");
+                header.Cell().Element(HeaderCell).AlignRight().Text("Məbləğ");
+            });
+
+            foreach (var line in data.Lines)
+            {
+                string item = line.PropertyLabel ?? line.Description;
+                string detail = line.Period is not null
+                    ? FormatPeriodLabel(line.Period) ?? line.Description
+                    : line.Description;
+
+                table.Cell().Element(BodyCell).Text(item);
+                table.Cell().Element(BodyCell).Text(detail);
+                table.Cell().Element(BodyCell).AlignRight().Text(Money(line.Amount));
             }
 
-            column.Item().Text($"Cəmi: {Money(appliedTotal)} AZN kommunal haqqı ödənişdir.").Bold();
-        }
+            table.Cell().ColumnSpan(2).Element(FooterCell).AlignRight().Text("Tətbiq olunan cəmi");
+            table.Cell().Element(FooterCell).AlignRight().Text(Money(data.Lines.Sum(line => line.Amount)));
+        });
 
-        if (hasRemainder)
+        var appliedTotal = data.Lines.Sum(line => line.Amount);
+        var remainder = Math.Max(0, data.Amount - appliedTotal);
+        if (remainder > 0.004m)
         {
-            column.Item().Text($"Qalan {Money(remainder)} AZN sahibin hesabında avans kimi saxlanılır.")
-                .Italic().FontColor(Colors.Grey.Darken2);
+            var recipient = data.PartyType == PartyType.Owner ? "sakin" : "tədarükçü";
+            column.Item().PaddingTop(4).Border(0.7f).BorderColor("#ABEFC6")
+                .Background(GreenBackground).Padding(8).Text(
+                    $"Tətbiq olunmamış qalıq: {Money(remainder)} AZN. Məbləğ {recipient} hesabında avans kimi saxlanılır.")
+                .FontSize(8).FontColor(Green);
         }
     }
+
+    private static void ComposeNotes(ColumnDescriptor column, PaymentReceiptData data)
+    {
+        if (string.IsNullOrWhiteSpace(data.Notes))
+            return;
+
+        Section(column, "ƏLAVƏ QEYD");
+        column.Item().Text(data.Notes).FontSize(8.5f).FontColor(TextColor).LineHeight(1.25f);
+    }
+
+    private static void ComposeSignature(ColumnDescriptor column, PaymentReceiptData data)
+    {
+        column.Item().PaddingTop(8).LineHorizontal(0.7f).LineColor(Rule);
+        column.Item().PaddingTop(7).Row(row =>
+        {
+            row.RelativeItem().Column(info =>
+            {
+                info.Item().Text("Qəbzi rəsmiləşdirən")
+                    .FontSize(7).FontColor(Muted);
+                info.Item().PaddingTop(3).Text(data.IssuerName ?? "Məlumat göstərilməyib")
+                    .FontSize(9).Bold().FontColor(Navy);
+                if (!string.IsNullOrWhiteSpace(data.IssuerTitle))
+                    info.Item().Text(data.IssuerTitle).FontSize(8).FontColor(Muted);
+            });
+
+            row.ConstantItem(105).AlignRight().Column(company =>
+            {
+                company.Item().AlignRight().Text(data.CompanyName)
+                    .FontSize(8).Bold().FontColor(Navy);
+                company.Item().PaddingTop(13).Width(100).AlignRight()
+                    .LineHorizontal(0.6f).LineColor(Rule);
+                company.Item().AlignRight().Text("İmza / möhür")
+                    .FontSize(7).FontColor(Muted);
+            });
+        });
+    }
+
+    private static void Section(ColumnDescriptor column, string title)
+    {
+        column.Item().PaddingTop(3).Text(title).FontSize(8).Bold().FontColor(Navy)
+            .LetterSpacing(0.04f);
+        column.Item().PaddingTop(2).LineHorizontal(0.7f).LineColor(Rule);
+    }
+
+    private static IContainer HeaderCell(IContainer container) => container
+        .Background(Navy).PaddingVertical(6).PaddingHorizontal(6)
+        .DefaultTextStyle(style => style.FontSize(7).Bold().FontColor(Colors.White));
+
+    private static IContainer BodyCell(IContainer container) => container
+        .BorderBottom(0.5f).BorderColor(Rule).PaddingVertical(6).PaddingHorizontal(6)
+        .DefaultTextStyle(style => style.FontSize(7.5f).FontColor(TextColor));
+
+    private static IContainer FooterCell(IContainer container) => container
+        .Background(SoftBackground).PaddingVertical(7).PaddingHorizontal(6)
+        .DefaultTextStyle(style => style.FontSize(8).Bold().FontColor(Navy));
+
+    private static string Money(decimal amount) => $"{amount.ToString("N2", Az)} AZN";
 
     private static string? FormatPeriodLabel(string? period)
     {
         if (period is not { Length: 7 }
             || !int.TryParse(period.AsSpan(0, 4), out var year)
-            || !int.TryParse(period.AsSpan(5, 2), out var month))
-        {
+            || !int.TryParse(period.AsSpan(5, 2), out var month)
+            || month is < 1 or > 12)
             return null;
-        }
 
-        return $"{AzMonths[month - 1]} {year}-ci il";
+        return $"{AzMonths[month - 1]} {year}";
     }
-
-    private static void ComposeVendorBody(ColumnDescriptor column, PaymentReceiptData data)
-    {
-        // Same unapplied-advance case as ComposeOwnerBody: nothing was actually settled yet.
-        if (data.Lines.Count == 0)
-        {
-            column.Item().Text(
-                $"Ondan ötrü ki, \"{data.CompanyName}\" MTK-nın hesabına {Money(data.Amount)} AZN ödəniş daxil olub. " +
-                "Bu məbləğ hələ heç bir xərcə tətbiq olunmayıb və tədarükçünün hesabında avans kimi saxlanılır.")
-                .Justify().LineHeight(1.08f);
-            return;
-        }
-
-        var appliedTotal = data.Lines.Sum(l => l.Amount);
-        var remainder = data.Amount - appliedTotal;
-        bool hasRemainder = remainder > 0.004m;
-
-        var description = data.Lines.Count == 1
-            ? data.Lines.First().Description
-            : "aşağıdakı xidmətlərə görə";
-
-        column.Item().Text($"Ondan ötrü ki, {description} {Money(appliedTotal)} AZN")
-            .Justify().LineHeight(1.08f);
-
-        if (data.Lines.Count > 1)
-        {
-            foreach (var line in data.Lines)
-            {
-                column.Item().PaddingLeft(10).Text($"— {line.Description}: {Money(line.Amount)} AZN").FontSize(10f);
-            }
-        }
-
-        column.Item().Text("ödənişdir.");
-
-        if (hasRemainder)
-        {
-            column.Item().Text($"Qalan {Money(remainder)} AZN tədarükçünün hesabında avans kimi saxlanılır.")
-                .Italic().FontColor(Colors.Grey.Darken2);
-        }
-    }
-
-    // "yyyy-MM" when every settled charge shares one billing period; otherwise the
-    // payment's own date — still a concrete, meaningful month for the receipt to name.
-    private static (int Month, int Year) ResolvePeriod(PaymentReceiptData data)
-    {
-        if (data.Period is { Length: 7 } period
-            && int.TryParse(period.AsSpan(0, 4), out var year)
-            && int.TryParse(period.AsSpan(5, 2), out var month))
-        {
-            return (month, year);
-        }
-
-        return (data.PaymentDate.Month, data.PaymentDate.Year);
-    }
-
-    private static string Money(decimal amount) => amount.ToString("N2", CultureInfo.InvariantCulture);
-
-    private static string ShortRef(Guid id) => id.ToString()[..8].ToUpperInvariant();
 
     private static string MethodLabel(PaymentMethod method) => method switch
     {
-        PaymentMethod.Cash => "Nağd ödəniş",
+        PaymentMethod.Cash => "Nağd",
         PaymentMethod.BankTransfer => "Bank köçürməsi",
-        PaymentMethod.Card => "Kartla ödəniş",
+        PaymentMethod.Card => "Kartla",
         _ => method.ToString(),
     };
 }

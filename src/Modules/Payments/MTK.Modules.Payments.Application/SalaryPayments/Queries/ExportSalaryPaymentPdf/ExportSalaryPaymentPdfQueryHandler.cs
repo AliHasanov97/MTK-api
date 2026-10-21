@@ -38,7 +38,7 @@ internal sealed class ExportSalaryPaymentPdfQueryHandler
         }
 
         var exportData = new SalaryPaymentExportData(
-            CompanyName: "Məktəb İdarəetmə Kompleksi", // TODO: Get from company settings
+            CompanyName: "Məktəb İdarəetmə Kompleksi",
             EmployeeFullName: salaryPayment.EmployeeFullName,
             Month: salaryPayment.SalaryMonth,
             Year: salaryPayment.SalaryYear,

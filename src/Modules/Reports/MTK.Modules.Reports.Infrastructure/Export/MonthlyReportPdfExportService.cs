@@ -555,14 +555,6 @@ internal sealed class MonthlyReportPdfExportService : IMonthlyReportPdfExportSer
 
     private static void WarehouseSection(ColumnDescriptor column, WarehouseMonthlyReportResponse warehouse)
     {
-        KpiRow(column,
-            ("Faktiki qalıq", Qty(warehouse.CurrentStockQuantity), "cari stok miqdarı"),
-            ("Mal/material sayı", warehouse.StockItemCount.ToString(), "stok sətirləri"),
-            ("Uçot dəyəri", Money(warehouse.StockValue), "son qəbul qiymətləri ilə"));
-        KpiRow(column,
-            ("Mədaxil", Qty(warehouse.ReceiptQuantity), $"{warehouse.ReceiptCount} əməliyyat"),
-            ("Məxaric", Qty(warehouse.IssueQuantity), $"{warehouse.IssueCount} əməliyyat"));
-
         column.Item().PaddingTop(6).Text("Faktiki mövcud olan mal və materiallar")
             .FontSize(9).Bold().FontColor(Accent);
 
@@ -580,8 +572,6 @@ internal sealed class MonthlyReportPdfExportService : IMonthlyReportPdfExportSer
                     columns.RelativeColumn(2.4f);
                     columns.RelativeColumn(0.8f);
                     columns.RelativeColumn(1f);
-                    columns.RelativeColumn(1f);
-                    columns.RelativeColumn(1f);
                 });
 
                 table.Header(header =>
@@ -590,8 +580,6 @@ internal sealed class MonthlyReportPdfExportService : IMonthlyReportPdfExportSer
                     header.Cell().PdfHeaderCell().Text("Mal / material");
                     header.Cell().PdfHeaderCell().Text("Vahid");
                     header.Cell().PdfHeaderCell().AlignRight().Text("Qalıq");
-                    header.Cell().PdfHeaderCell().AlignRight().Text("Vahid qiymət");
-                    header.Cell().PdfHeaderCell().AlignRight().Text("Dəyər");
                 });
 
                 foreach (var row in warehouse.Items)
@@ -600,18 +588,12 @@ internal sealed class MonthlyReportPdfExportService : IMonthlyReportPdfExportSer
                     table.Cell().PdfDataCell().Text(row.Name);
                     table.Cell().PdfDataCell().Text(row.Unit);
                     table.Cell().PdfDataCell().AlignRight().Text(Qty(row.Quantity));
-                    table.Cell().PdfDataCell().AlignRight()
-                        .Text(row.UnitPrice is null ? "—" : Money(row.UnitPrice.Value));
-                    table.Cell().PdfDataCell().AlignRight()
-                        .Text(row.Value is null ? "—" : Money(row.Value.Value));
                 }
 
                 table.Cell().PdfTotalCell().Text("Cəmi");
                 table.Cell().PdfTotalCell().Text(string.Empty);
                 table.Cell().PdfTotalCell().Text(string.Empty);
                 table.Cell().PdfTotalCell().AlignRight().Text(Qty(warehouse.CurrentStockQuantity));
-                table.Cell().PdfTotalCell().Text(string.Empty);
-                table.Cell().PdfTotalCell().AlignRight().Text(Money(warehouse.StockValue));
             });
         }
 
@@ -629,10 +611,12 @@ internal sealed class MonthlyReportPdfExportService : IMonthlyReportPdfExportSer
             table.ColumnsDefinition(columns =>
             {
                 columns.RelativeColumn(1.1f);
-                columns.RelativeColumn(2.4f);
-                columns.RelativeColumn(1f);
+                columns.RelativeColumn(2f);
                 columns.RelativeColumn(0.9f);
-                columns.RelativeColumn(2.2f);
+                columns.RelativeColumn(0.8f);
+                columns.RelativeColumn(1.1f);
+                columns.RelativeColumn(1.1f);
+                columns.RelativeColumn(1.8f);
             });
 
             table.Header(header =>
@@ -641,6 +625,8 @@ internal sealed class MonthlyReportPdfExportService : IMonthlyReportPdfExportSer
                 header.Cell().PdfHeaderCell().Text("Mal / material");
                 header.Cell().PdfHeaderCell().Text("Əməliyyat");
                 header.Cell().PdfHeaderCell().AlignRight().Text("Miqdar");
+                header.Cell().PdfHeaderCell().AlignRight().Text("Vahid qiymət");
+                header.Cell().PdfHeaderCell().AlignRight().Text("Dəyər");
                 header.Cell().PdfHeaderCell().Text("Qeyd");
             });
 
@@ -650,6 +636,10 @@ internal sealed class MonthlyReportPdfExportService : IMonthlyReportPdfExportSer
                 table.Cell().PdfDataCell().Text(row.ItemName);
                 table.Cell().PdfDataCell().Text(row.Type);
                 table.Cell().PdfDataCell().AlignRight().Text(Qty(row.Quantity));
+                table.Cell().PdfDataCell().AlignRight()
+                    .Text(row.UnitPrice is null ? "—" : Money(row.UnitPrice.Value));
+                table.Cell().PdfDataCell().AlignRight()
+                    .Text(row.Value is null ? "—" : Money(row.Value.Value));
                 table.Cell().PdfDataCell().Text(string.IsNullOrWhiteSpace(row.Note) ? "—" : row.Note);
             }
         });

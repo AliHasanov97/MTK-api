@@ -79,6 +79,8 @@ internal sealed class GetWarehouseMonthlyReportQueryHandler
                 t.Nomenclature.Name,
                 t.TransactionType == TransactionType.Receipt ? "Mədaxil" : "Məxaric",
                 t.Quantity,
+                t.UnitPrice,
+                t.TotalPrice,
                 t.Notes))
             .OrderByDescending(m => m.Date)
             .ToList();

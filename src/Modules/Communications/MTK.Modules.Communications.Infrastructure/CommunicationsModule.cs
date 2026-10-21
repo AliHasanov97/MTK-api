@@ -126,5 +126,6 @@ public static class CommunicationsModule
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Identity.IntegrationEvents.Users.UserUpdatedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Identity.IntegrationEvents.Users.UserDeletedIntegrationEvent>>();
         registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.DebtReminders.DebtReminderRequestedIntegrationEvent>>();
+        registrationConfigurator.AddConsumer<IntegrationEventConsumer<MTK.Modules.Payments.IntegrationEvents.Payments.PaymentReceiptEmailRequestedIntegrationEvent>>();
     }
 }

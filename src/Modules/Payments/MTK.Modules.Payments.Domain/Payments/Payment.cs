@@ -36,6 +36,8 @@ public sealed class Payment : SearchableEntity
     public Guid PartyId => OwnerId ?? CustomerId ?? VendorId!.Value;
 
     public decimal Amount { get; private set; }
+    /// <summary>Database-generated, stable serial shown as the human-readable receipt number.</summary>
+    public long ReceiptNumber { get; private set; }
     public PaymentMethod PaymentMethod { get; private set; }
     public DateTimeOffset PaymentDate { get; private set; }
     public PaymentStatus Status { get; private set; }

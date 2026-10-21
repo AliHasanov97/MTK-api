@@ -6,6 +6,7 @@ using MTK.Modules.Payments.Application.Purchases.Commands.CreatePurchase;
 using MTK.Modules.Payments.Application.Purchases.Commands.DeletePurchase;
 using MTK.Modules.Payments.Application.Purchases.Commands.ReceivePurchase;
 using MTK.Modules.Payments.Application.Purchases.Commands.UpdatePurchase;
+using MTK.Modules.Payments.Application.Purchases.Queries.ExportPurchase;
 using MTK.Modules.Payments.Application.Purchases.Queries.GetPurchaseById;
 using MTK.Modules.Payments.Application.Purchases.Queries.GetNomenclaturePurchaseHistory;
 using MTK.Modules.Payments.Application.Purchases.Queries.SearchPurchases;
@@ -39,6 +40,19 @@ public class PurchasesController(ISender sender) : BaseController(sender)
 
         return result.IsSuccess
             ? Success(result.Value)
+            : BadRequest(result.Error);
+    }
+
+    [HttpGet("{purchaseId:guid}/export")]
+    [RequireAnyRole(Roles.Admin, Roles.BuildingManager, Roles.Accountant)]
+    public async Task<IActionResult> ExportPurchase(
+        Guid purchaseId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new ExportPurchaseQuery(purchaseId), cancellationToken);
+
+        return result.IsSuccess
+            ? File(result.Value.FileContent, result.Value.ContentType, result.Value.FileName)
             : BadRequest(result.Error);
     }
 

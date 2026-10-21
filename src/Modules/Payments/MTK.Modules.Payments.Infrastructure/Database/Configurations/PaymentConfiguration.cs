@@ -31,6 +31,10 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsRequired()
             .HasPrecision(18, 2);
 
+        builder.Property(p => p.ReceiptNumber)
+            .UseIdentityByDefaultColumn();
+        builder.HasIndex(p => p.ReceiptNumber).IsUnique();
+
         builder.Property(p => p.PaymentMethod)
             .HasConversion<string>()
             .IsRequired()

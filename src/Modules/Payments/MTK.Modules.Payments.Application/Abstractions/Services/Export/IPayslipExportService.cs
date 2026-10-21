@@ -6,7 +6,7 @@ public interface IPayslipExportService
     MemoryStream ExportToPdf(PayslipExportData data);
 
     /// <summary>Bir PayrollRun-dakı bütün işçilər üçün — hər biri öz səhifəsində, bir sənəddə.</summary>
-    MemoryStream ExportRunToPdf(IReadOnlyCollection<PayslipExportData> payslips);
+    MemoryStream ExportRunToPdf(PayrollRunExportData report);
 }
 
 /// <summary>
@@ -22,3 +22,21 @@ public sealed record PayslipExportData(
     decimal BonusAmount,
     decimal GrossSalary,
     decimal FinalNetSalary);
+
+public sealed record PayrollRunExportData(
+    string CompanyName,
+    int Year,
+    int Month,
+    string Status,
+    IReadOnlyCollection<PayrollRunEmployeeRow> Employees);
+
+public sealed record PayrollRunEmployeeRow(
+    string EmployeeFullName,
+    decimal BaseSalary,
+    decimal BonusAmount,
+    decimal AdjustmentAmount,
+    decimal GrossSalary,
+    decimal FinalNetSalary,
+    decimal TotalEmployerCost,
+    DateTimeOffset? PaidAt,
+    string? PaymentMethod);

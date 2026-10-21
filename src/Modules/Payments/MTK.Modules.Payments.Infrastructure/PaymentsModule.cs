@@ -114,6 +114,7 @@ public static class PaymentsModule
         services.AddScoped<IAnnualPaymentReportExcelExportService, AnnualPaymentReportExcelExportService>();
         services.AddScoped<IAnnualPaymentReportPdfExportService, AnnualPaymentReportPdfExportService>();
         services.AddScoped<IContractExportService, ContractExportService>();
+        services.AddScoped<IPurchaseExportService, PurchaseExportService>();
         services.AddScoped<IPayslipExportService, PayslipExportService>();
         services.AddScoped<ISalaryPaymentExportService, SalaryPaymentExportService>();
 
